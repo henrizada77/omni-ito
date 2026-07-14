@@ -21,7 +21,9 @@ import {
   Menu,
   X,
   Download,
-  Gift
+  Gift,
+  Calendar,
+  Award
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 
@@ -90,6 +92,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [dbBenefits, setDbBenefits] = useState<any[]>([]);
   const [dbColaboradorBeneficios, setDbColaboradorBeneficios] = useState<any[]>([]);
 
+  // --- MÓDULO 7: PLANO DE CARREIRA E AVALIAÇÃO DESEMPENHO ---
+  const [dbPlanosCarreira, setDbPlanosCarreira] = useState<any[]>([]);
+  const [dbAvaliacoesDesempenho, setDbAvaliacoesDesempenho] = useState<any[]>([]);
+
   // --- MÓDULO 1: DOCUMENTOS ---
   const [modelos, setModelos] = useState<any[]>([]);
   const [selectedModeloId, setSelectedModeloId] = useState<string>('');
@@ -107,7 +113,17 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [newModeloTitulo, setNewModeloTitulo] = useState('');
   const [newModeloConteudo, setNewModeloConteudo] = useState('');
   const [isSavingModelo, setIsSavingModelo] = useState(false);
+  const [uploadFileType, setUploadFileType] = useState<'identidade' | 'residencia' | 'aso' | 'foto' | 'outros'>('identidade');
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [showNewModeloForm, setShowNewModeloForm] = useState(false);
+
+  // New Coordinate Positioner states
+  const [colabSigPos, setColabSigPos] = useState<{ x: number; y: number; page: number } | null>({ x: 80, y: 150, page: 1 });
+  const [repSigPos, setRepSigPos] = useState<{ x: number; y: number; page: number } | null>({ x: 380, y: 150, page: 1 });
+  const [activePositioningRole, setActivePositioningRole] = useState<'colaborador' | 'representante'>('colaborador');
+  const [activePreviewPage, setActivePreviewPage] = useState<number>(1);
+  const [modelFileType, setModelFileType] = useState<'texto' | 'pdf' | 'docx'>('texto');
   // Histórico
   const [docsHistorico, setDocsHistorico] = useState<any[]>([]);
   const fetchDocsHistorico = async () => {
@@ -121,6 +137,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     const file = e.target.files?.[0];
     if (file) {
       setUploadedPdfName(file.name);
+      const isDocx = file.name.endsWith('.docx') || file.name.endsWith('.doc');
+      setModelFileType(isDocx ? 'docx' : 'pdf');
       const reader = new FileReader();
       reader.onload = () => {
         const base64 = (reader.result as string).split(',')[1];
@@ -363,6 +381,34 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [activeColaboradorForDrawer, setActiveColaboradorForDrawer] = useState<any>(null);
   const [selectedColabDocuments, setSelectedColabDocuments] = useState<any[]>([]);
 
+  // Offboarding form states
+  const [isOffboardingMode, setIsOffboardingMode] = useState(false);
+  const [offboardDate, setOffboardDate] = useState(new Date().toISOString().split('T')[0]);
+  const [offboardType, setOffboardType] = useState<'Voluntario' | 'Involuntario'>('Voluntario');
+  const [offboardReason, setOffboardReason] = useState('');
+  const [isSavingOffboard, setIsSavingOffboard] = useState(false);
+
+  // Férias & ASO Panel States
+  const [searchQueryFeriasAso, setSearchQueryFeriasAso] = useState('');
+  const [filterSetorFeriasAso, setFilterSetorFeriasAso] = useState('Todos');
+  const [filterStatusAso, setFilterStatusAso] = useState('Todos');
+  const [filterStatusFerias, setFilterStatusFerias] = useState('Todos');
+  const [selectedColabForQuickUpdate, setSelectedColabForQuickUpdate] = useState<any>(null);
+  const [quickAsoDate, setQuickAsoDate] = useState('');
+  const [quickFeriasDate, setQuickFeriasDate] = useState('');
+  const [isSavingQuickDates, setIsSavingQuickDates] = useState(false);
+
+  // Avaliações Panel Filters
+  const [searchQueryAvaliacoes, setSearchQueryAvaliacoes] = useState('');
+  const [filterSetorAvaliacoes, setFilterSetorAvaliacoes] = useState('Todos');
+  const [filterStatusPromo, setFilterStatusPromo] = useState('Todos');
+
+  // Career Evaluation states
+  const [isRegisteringAvaliacao, setIsRegisteringAvaliacao] = useState(false);
+  const [newAvaliacaoNota, setNewAvaliacaoNota] = useState(4.0);
+  const [newAvaliacaoComentarios, setNewAvaliacaoComentarios] = useState('');
+  const [isSavingAvaliacao, setIsSavingAvaliacao] = useState(false);
+
   // Link Generation States
   const [newCandidateName, setNewCandidateName] = useState('Ana Souza Pereira');
   const [newCandidateEmail, setNewCandidateEmail] = useState('ana.souza@gmail.com');
@@ -400,7 +446,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [isFinishingAdmission, setIsFinishingAdmission] = useState(false);
 
   // Ocorrências States
-  const [drawerTab, setDrawerTab] = useState<'pessoal' | 'admissao' | 'ocorrencias'>('pessoal');
+  const [drawerTab, setDrawerTab] = useState<'pessoal' | 'admissao' | 'ocorrencias' | 'carreira'>('pessoal');
   const [ocorrenciasList, setOcorrenciasList] = useState<any[]>([]);
   const [isRegisteringOcorrencia, setIsRegisteringOcorrencia] = useState(false);
   const [ocTipo, setOcTipo] = useState('Atraso');
@@ -464,6 +510,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     return 'Recém-admitido';
   };
 
+  const isUnderExperience = (admissaoDateStr: string) => {
+    if (!admissaoDateStr) return false;
+    const start = new Date(admissaoDateStr);
+    const now = new Date();
+    const diffTime = now.getTime() - start.getTime();
+    const diffDays = diffTime / (1000 * 60 * 60 * 24);
+    return diffDays <= 90;
+  };
+
   const fetchSelectedColabDocuments = async (cpf: string) => {
     try {
       const { data, error } = await supabase
@@ -486,9 +541,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       fetchOcorrencias(activeColaboradorForDrawer.id);
       setDrawerTab('pessoal');
       setIsRegisteringOcorrencia(false);
+      setIsOffboardingMode(false);
+      setOffboardDate(new Date().toISOString().split('T')[0]);
+      setOffboardType('Voluntario');
+      setOffboardReason('');
+      setIsRegisteringAvaliacao(false);
+      setNewAvaliacaoNota(4.0);
+      setNewAvaliacaoComentarios('');
     } else {
       setSelectedColabDocuments([]);
       setOcorrenciasList([]);
+      setIsOffboardingMode(false);
+      setIsRegisteringAvaliacao(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeColaboradorForDrawer]);
@@ -648,11 +712,20 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       // 2. Definir detalhes do token e transicionar status para aguardando_assinatura
       if (selectedTokenId) {
+        const savedModel = modelos.find(m => m.id === approvalTemplateId);
         const details = {
           ...candidateData,
           integrado: true,
-          pdf_template_base64: approvalTemplateId === 'upload' ? uploadedPdfBase64 : null,
-          template_id: approvalTemplateId
+          pdf_template_base64: approvalTemplateId === 'upload' 
+            ? uploadedPdfBase64 
+            : (savedModel ? savedModel.conteudo : null),
+          template_id: approvalTemplateId,
+          colab_signature_position: approvalTemplateId === 'upload'
+            ? colabSigPos
+            : (savedModel ? savedModel.assinatura_coordenadas : null),
+          rep_signature_position: approvalTemplateId === 'upload'
+            ? repSigPos
+            : (savedModel ? savedModel.assinatura_rep_coordenadas : null)
         };
         await supabase
           .from('admission_tokens')
@@ -760,7 +833,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           signatureRepresentativeBase64: representativeSignatureBase64,
           coordinatorEmail: user.email,
           pdfTemplateBase64: details.pdf_template_base64 || null,
-          documentName: `contrato_${details.cpf.replace(/\D/g, '')}_consolidado`
+          documentName: `contrato_${details.cpf.replace(/\D/g, '')}_consolidado`,
+          colabSignaturePosition: details.colab_signature_position || null,
+          repSignaturePosition: details.rep_signature_position || null
         })
       });
 
@@ -937,6 +1012,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       // Refresh list
       fetchOcorrencias(activeColaboradorForDrawer.id);
+      fetchDashboardKpis();
     } catch (err: any) {
       alert('Erro ao registrar ocorrência: ' + err.message);
     } finally {
@@ -1052,10 +1128,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const fetchColaboradoresList = async () => {
     try {
-      const [colabsRes, benefitsRes, assocRes] = await Promise.all([
+      const [colabsRes, benefitsRes, assocRes, planosRes, avaliacoesRes] = await Promise.all([
         supabase.from('colaboradores').select('*').order('nome', { ascending: true }),
         supabase.from('beneficios').select('*'),
-        supabase.from('colaborador_beneficios').select('*')
+        supabase.from('colaborador_beneficios').select('*'),
+        supabase.from('planos_carreira').select('*'),
+        supabase.from('avaliacoes_desempenho').select('*').order('data_avaliacao', { ascending: false })
       ]);
 
       if (colabsRes.error) throw colabsRes.error;
@@ -1075,6 +1153,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       if (benefitsRes.data) setDbBenefits(benefitsRes.data);
       if (assocRes.data) setDbColaboradorBeneficios(assocRes.data);
+      if (planosRes.data) setDbPlanosCarreira(planosRes.data);
+      if (avaliacoesRes.data) setDbAvaliacoesDesempenho(avaliacoesRes.data);
 
     } catch (err) {
       console.error('Error fetching colaboradores and benefits:', err);
@@ -1180,10 +1260,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   // --- MÓDULO 5: DASHBOARD KPIs (dados reais) ---
   const [kpiAtivos, setKpiAtivos] = useState(0);
+  const [kpiEfetivados, setKpiEfetivados] = useState(0);
   const [kpiContratos, setKpiContratos] = useState(0);
   const [kpiAdmissoesP, setKpiAdmissoesP] = useState(0);
   const [kpiAsoVencer, setKpiAsoVencer] = useState<any[]>([]);
   const [kpiFeriasVencer, setKpiFeriasVencer] = useState<any[]>([]);
+  const [kpiExperienciaVencer, setKpiExperienciaVencer] = useState<any[]>([]);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
   // Drawer edit mode
   const [isEditingDrawer, setIsEditingDrawer] = useState(false);
@@ -1192,23 +1274,30 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const fetchDashboardKpis = async () => {
     try {
-      const today = new Date().toISOString().split('T')[0];
       const in30 = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
+      const date90Ago = new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0];
+      const date60Ago = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
 
-      const [ativos, contratos, admPend, asoQ, feriasQ, logs] = await Promise.all([
-        supabase.from('colaboradores').select('id', { count: 'exact', head: true }).eq('status', 'ativo'),
+      const [colabsQ, contratos, admPend, asoQ, feriasQ, expQ, logs] = await Promise.all([
+        supabase.from('colaboradores').select('id, status, data_admissao').neq('status', 'desligado'),
         supabase.from('documentos_assinados').select('id', { count: 'exact', head: true }).eq('status', 'finalizado'),
         supabase.from('admission_tokens').select('id', { count: 'exact', head: true }).in('status', ['aguardando_homologacao', 'aguardando_assinatura', 'aguardando_assinatura_rh']),
-        supabase.from('colaboradores').select('id, nome, cargo, setor, data_aso_vencimento').eq('status', 'ativo').lte('data_aso_vencimento', in30).gte('data_aso_vencimento', today).order('data_aso_vencimento'),
-        supabase.from('colaboradores').select('id, nome, cargo, setor, data_ferias_vencimento').eq('status', 'ativo').lte('data_ferias_vencimento', in30).gte('data_ferias_vencimento', today).order('data_ferias_vencimento'),
+        supabase.from('colaboradores').select('id, nome, cargo, setor, data_aso_vencimento').eq('status', 'ativo').lte('data_aso_vencimento', in30).order('data_aso_vencimento'),
+        supabase.from('colaboradores').select('id, nome, cargo, setor, data_ferias_vencimento').eq('status', 'ativo').lte('data_ferias_vencimento', in30).order('data_ferias_vencimento'),
+        supabase.from('colaboradores').select('id, nome, cargo, setor, data_admissao').neq('status', 'desligado').gte('data_admissao', date90Ago).lte('data_admissao', date60Ago).order('data_admissao'),
         supabase.from('logs_auditoria').select('usuario_email, acao, criado_em').order('criado_em', { ascending: false }).limit(5)
       ]);
 
-      setKpiAtivos(ativos.count ?? 0);
+      const totalColabs = colabsQ.data?.length ?? 0;
+      const efetivados = colabsQ.data?.filter(c => c.status === 'ativo' && c.data_admissao <= date90Ago).length ?? 0;
+
+      setKpiAtivos(totalColabs);
+      setKpiEfetivados(efetivados);
       setKpiContratos(contratos.count ?? 0);
       setKpiAdmissoesP(admPend.count ?? 0);
       setKpiAsoVencer(asoQ.data ?? []);
       setKpiFeriasVencer(feriasQ.data ?? []);
+      setKpiExperienciaVencer(expQ.data ?? []);
       setRecentLogs(logs.data ?? []);
     } catch (err) {
       console.error('KPI fetch error:', err);
@@ -1230,9 +1319,16 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         .eq('id', activeColaboradorForDrawer.id);
       if (error) throw error;
       setActiveColaboradorForDrawer({ ...activeColaboradorForDrawer, ...drawerEditData });
+      
+      // Update local state list for instant responsiveness (no lag)
+      setColaboradoresList(prev => prev.map(c => 
+        c.id === activeColaboradorForDrawer.id ? { ...c, ...drawerEditData } : c
+      ));
+
       await logAuditoria('EDICAO_FICHA_COLABORADOR', { colaborador_id: activeColaboradorForDrawer.id, campos: Object.keys(drawerEditData) });
       setIsEditingDrawer(false);
       fetchColaboradoresList();
+      fetchDashboardKpis();
     } catch (err: any) {
       alert('Erro ao salvar: ' + err.message);
     } finally {
@@ -1240,19 +1336,173 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     }
   };
 
+  const handleOffboardColaborador = async () => {
+    if (!activeColaboradorForDrawer) return;
+    if (!offboardDate || !offboardType) {
+      alert('Por favor, preencha a data e o tipo de desligamento.');
+      return;
+    }
+    
+    if (!window.confirm(`Tem certeza que deseja desligar o colaborador "${activeColaboradorForDrawer.nome}"? Esta ação removerá todos os seus benefícios e definirá seu status como desligado.`)) return;
+    
+    setIsSavingOffboard(true);
+    try {
+      // 1. Delete benefit associations
+      const { error: deleteAssocError } = await supabase
+        .from('colaborador_beneficios')
+        .delete()
+        .eq('colaborador_id', activeColaboradorForDrawer.id);
+        
+      if (deleteAssocError) throw deleteAssocError;
+
+      // 2. Update status of the collaborator
+      const updateData = {
+        status: 'desligado',
+        tipo_desligamento: offboardType,
+        data_desligamento: offboardDate,
+        motivo_desligamento: offboardReason.trim() || null
+      };
+
+      const { error: updateError } = await supabase
+        .from('colaboradores')
+        .update(updateData)
+        .eq('id', activeColaboradorForDrawer.id);
+
+      if (updateError) throw updateError;
+
+      // 3. Log Audit
+      await logAuditoria('DESLIGAMENTO_COLABORADOR', { 
+        colaborador_id: activeColaboradorForDrawer.id, 
+        nome: activeColaboradorForDrawer.nome,
+        tipo: offboardType,
+        data: offboardDate
+      });
+
+      // 4. Update the local active state for the drawer
+      setActiveColaboradorForDrawer({ 
+        ...activeColaboradorForDrawer, 
+        ...updateData 
+      });
+
+      // Update local state list for instant responsiveness (no lag)
+      setColaboradoresList(prev => prev.map(c => 
+        c.id === activeColaboradorForDrawer.id ? { ...c, ...updateData } : c
+      ));
+
+      setIsOffboardingMode(false);
+      alert(`Colaborador ${activeColaboradorForDrawer.nome} desligado com sucesso!`);
+      
+      // 5. Refresh lists
+      fetchColaboradoresList();
+      fetchDashboardKpis();
+      fetchAnalyticsData();
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao desligar colaborador: ' + err.message);
+    } finally {
+      setIsSavingOffboard(false);
+    }
+  };
+
+  const handleCadastrarAvaliacao = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeColaboradorForDrawer) return;
+    setIsSavingAvaliacao(true);
+    try {
+      const userObjStr = localStorage.getItem('omni_user');
+      const userObj = userObjStr ? JSON.parse(userObjStr) : null;
+      const avaliadorEmail = userObj?.email || 'coordenadora@itoclinic.com';
+
+      const { data, error } = await supabase
+        .from('avaliacoes_desempenho')
+        .insert({
+          colaborador_id: activeColaboradorForDrawer.id,
+          nota: newAvaliacaoNota,
+          comentarios: newAvaliacaoComentarios.trim() || null,
+          avaliador_email: avaliadorEmail,
+          data_avaliacao: new Date().toISOString().split('T')[0]
+        })
+        .select('*')
+        .single();
+
+      if (error) throw error;
+
+      // Update state locally for instant feedback
+      if (data) {
+        setDbAvaliacoesDesempenho(prev => [data, ...prev]);
+      }
+
+      await logAuditoria('LANCAMENTO_AVALIACAO_DESEMPENHO', {
+        colaborador_id: activeColaboradorForDrawer.id,
+        nome: activeColaboradorForDrawer.nome,
+        nota: newAvaliacaoNota
+      });
+
+      alert(`Avaliação de desempenho lançada com sucesso com nota ${newAvaliacaoNota}!`);
+      setIsRegisteringAvaliacao(false);
+      setNewAvaliacaoNota(4.0);
+      setNewAvaliacaoComentarios('');
+    } catch (err: any) {
+      alert('Erro ao registrar avaliação: ' + err.message);
+    } finally {
+      setIsSavingAvaliacao(false);
+    }
+  };
+
+  const handleSaveQuickDates = async () => {
+    if (!selectedColabForQuickUpdate) return;
+    setIsSavingQuickDates(true);
+    try {
+      const updateData = {
+        data_aso_vencimento: quickAsoDate || null,
+        data_ferias_vencimento: quickFeriasDate || null
+      };
+
+      const { error } = await supabase
+        .from('colaboradores')
+        .update(updateData)
+        .eq('id', selectedColabForQuickUpdate.id);
+
+      if (error) throw error;
+
+      await logAuditoria('EDICAO_FICHA_COLABORADOR', { 
+        colaborador_id: selectedColabForQuickUpdate.id, 
+        campos: Object.keys(updateData) 
+      });
+
+      // Update local state list
+      setColaboradoresList(prev => prev.map(c => 
+        c.id === selectedColabForQuickUpdate.id ? { ...c, ...updateData } : c
+      ));
+
+      alert('Datas atualizadas com sucesso!');
+      setSelectedColabForQuickUpdate(null);
+      fetchDashboardKpis();
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao salvar datas: ' + err.message);
+    } finally {
+      setIsSavingQuickDates(false);
+    }
+  };
+
   const fetchAnalyticsData = async () => {
     try {
-      const [logsRes, colabsRes, ocorrenciasRes, indicadoresRes] = await Promise.all([
+      const [logsRes, colabsRes, ocorrenciasRes, indicadoresRes, benefitsRes, assocRes] = await Promise.all([
         supabase.from('logs_auditoria').select('*').order('criado_em', { ascending: false }).limit(8),
         supabase.from('colaboradores').select('*'),
         supabase.from('ocorrencias_jornada').select('*, colaboradores(nome, setor)'),
-        supabase.from('indicadores_trabalhistas').select('*')
+        supabase.from('indicadores_trabalhistas').select('*'),
+        supabase.from('beneficios').select('*'),
+        supabase.from('colaborador_beneficios').select('*')
       ]);
 
       if (logsRes.data) setLogsAuditoria(logsRes.data);
       if (colabsRes.data) setColaboradoresList(colabsRes.data);
       if (ocorrenciasRes.data) setOcorrenciasAnalytics(ocorrenciasRes.data);
       if (indicadoresRes.data) setIndicadoresTrabalhistas(indicadoresRes.data);
+      if (benefitsRes.data) setDbBenefits(benefitsRes.data);
+      if (assocRes.data) setDbColaboradorBeneficios(assocRes.data);
     } catch (err) {
       console.error("Error fetching analytics data:", err);
     }
@@ -1273,6 +1523,68 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     }
   };
 
+  const handleUploadColaboradorFile = async () => {
+    if (!activeColaboradorForDrawer || !uploadFile) return;
+    setIsUploadingFile(true);
+    try {
+      const fileExt = uploadFile.name.split('.').pop();
+      const cleanCpf = activeColaboradorForDrawer.cpf.replace(/\D/g, '');
+      const storagePath = `colaborador-uploads/${cleanCpf}/${Date.now()}.${fileExt}`;
+
+      // 1. Upload to Supabase Storage
+      const { error: uploadErr } = await supabase.storage
+        .from('documentos-envios')
+        .upload(storagePath, uploadFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
+
+      if (uploadErr) throw uploadErr;
+
+      // 2. Fetch current documentos_anexos from colaborador
+      const currentAnexos = activeColaboradorForDrawer.documentos_anexos || {};
+      const updatedAnexos = {
+        ...currentAnexos,
+        [uploadFileType]: storagePath
+      };
+
+      // 3. Update public.colaboradores database
+      const { error: updateErr } = await supabase
+        .from('colaboradores')
+        .update({ documentos_anexos: updatedAnexos })
+        .eq('id', activeColaboradorForDrawer.id);
+
+      if (updateErr) throw updateErr;
+
+      // 4. Update local state for immediate visual feedback
+      const updatedColaborador = {
+        ...activeColaboradorForDrawer,
+        documentos_anexos: updatedAnexos
+      };
+      setActiveColaboradorForDrawer(updatedColaborador);
+      setColaboradoresList(prev => prev.map(c => 
+        c.id === activeColaboradorForDrawer.id ? updatedColaborador : c
+      ));
+
+      await logAuditoria('UPLOAD_DOCUMENTO_COLABORADOR', { 
+        colaborador: activeColaboradorForDrawer.nome, 
+        tipo: uploadFileType,
+        caminho: storagePath
+      });
+
+      alert('Documento enviado com sucesso para a ficha!');
+      setUploadFile(null);
+      
+      const fileInput = document.getElementById('drawer-file-upload-input') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+
+    } catch (err: any) {
+      alert('Erro ao enviar documento: ' + err.message);
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
   const getSalarioLiquido = (colab: any) => {
     const baseStr = colab.salario || 'R$ 0,00';
     const cleanStr = baseStr.replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
@@ -1285,7 +1597,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     colabAssocs.forEach(assoc => {
       const benefit = dbBenefits.find(b => b.id === assoc.beneficio_id);
       if (benefit) {
-        const val = assoc.valor_customizado ?? benefit.valor_padrao;
+        let val = assoc.valor_customizado;
+        if (val === null || val === undefined) {
+          if (benefit.nome.toLowerCase().includes('vale transporte') || benefit.valor_padrao < 1) {
+            val = baseValue * (benefit.valor_padrao < 1 ? benefit.valor_padrao : 0.06);
+          } else {
+            val = benefit.valor_padrao;
+          }
+        }
         if (benefit.tipo === 'adicional') {
           totalAdicionais += val;
         } else if (benefit.tipo === 'desconto') {
@@ -1305,7 +1624,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   };
 
   useEffect(() => {
-    if (activePath === '/app/analytics') {
+    if (activePath === '/app/analytics' || activePath === '/app/avaliacoes') {
       fetchAnalyticsData();
     }
   }, [activePath]);
@@ -1343,7 +1662,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       { path: '/app/colaboradores', label: 'Colaboradores', icon: <Users size={16} /> },
       { path: '/app/onboarding', label: 'Onboarding', icon: <ClipboardCheck size={16} /> },
       { path: '/app/documentos', label: 'Documentos', icon: <FileText size={16} /> },
-      { path: '/app/beneficios', label: 'Benefícios', icon: <Gift size={16} /> }
+      { path: '/app/beneficios', label: 'Benefícios', icon: <Gift size={16} /> },
+      { path: '/app/ferias-aso', label: 'Férias & ASO', icon: <Calendar size={16} /> },
+      { path: '/app/avaliacoes', label: 'Avaliações', icon: <Award size={16} /> }
     ] : []),
     { path: '/app/analytics', label: 'Analytics', icon: <TrendingUp size={16} /> }
   ];
@@ -1505,122 +1826,281 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             {/* MÓDULO 5: DASHBOARD OVERVIEW */}
             {activePath === '/app/dashboard' && hasFullAccess && (
               <div className="space-y-8 animate-fadeIn">
-                <div className="pb-6 border-b border-white/10">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">VISÃO GERAL</span>
-                    <h3 className="text-xl font-bold">Painel de Controle Omni</h3>
+
+                {/* ── Header ── */}
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 pb-6 border-b border-white/8">
+                  <div>
+                    <p className={`text-[10px] font-bold tracking-[0.2em] uppercase mb-1.5 ${theme === 'dark' ? 'text-[#E5DFD3]/40' : 'text-black/35'}`}>
+                      Instituto Thiago Omena · Omni RH
+                    </p>
+                    <h2 className="text-2xl font-extrabold tracking-tight leading-none">Painel de Controle</h2>
+                    <p className={`text-xs mt-1.5 ${theme === 'dark' ? 'text-[#E5DFD3]/45' : 'text-black/40'}`}>
+                      Centro operacional · {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </p>
                   </div>
-                  <p className="text-xs opacity-65 mt-1">Bem-vindo ao centro operacional do Instituto Thiago Omena.</p>
+                  <div className={`text-[9px] font-mono px-3 py-1.5 rounded-full border flex items-center gap-1.5 self-start md:self-auto ${
+                    theme === 'dark' ? 'border-emerald-500/20 text-emerald-400 bg-emerald-500/8' : 'border-emerald-500/30 text-emerald-600 bg-emerald-50'
+                  }`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" />
+                    Sistema Operacional
+                  </div>
                 </div>
 
+                {/* ── KPI Cards ── */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   {[
-                    { label: 'Colaboradores Ativos', value: kpiAtivos, color: 'text-emerald-500', sub: 'na folha' },
-                    { label: 'Contratos Finalizados', value: kpiContratos, color: 'text-sky-400', sub: 'assinados bilateralmente' },
-                    { label: 'Admissões em Andamento', value: kpiAdmissoesP, color: 'text-amber-500', sub: 'aguardando conclusão' },
-                    { label: 'Alertas (30 dias)', value: kpiAsoVencer.length + kpiFeriasVencer.length, color: kpiAsoVencer.length + kpiFeriasVencer.length > 0 ? 'text-rose-400' : 'text-emerald-500', sub: 'ASO + férias a vencer' }
+                    {
+                      label: 'Total de Colaboradores',
+                      value: kpiAtivos,
+                      sub: 'ativos e em onboarding',
+                      color: 'emerald',
+                      accent: theme === 'dark' ? 'border-t-emerald-500/60' : 'border-t-emerald-500/40',
+                      glow: 'shadow-[0_0_24px_-8px_rgba(52,211,153,0.18)]',
+                      icon: '👥'
+                    },
+                    {
+                      label: 'Colaboradores Efetivados',
+                      value: kpiEfetivados,
+                      sub: 'acima de 3 meses de casa',
+                      color: 'sky',
+                      accent: theme === 'dark' ? 'border-t-sky-400/60' : 'border-t-sky-400/40',
+                      glow: 'shadow-[0_0_24px_-8px_rgba(56,189,248,0.18)]',
+                      icon: '🛡️'
+                    },
+                    {
+                      label: 'Contratos Finalizados',
+                      value: kpiContratos,
+                      sub: 'assinados bilateralmente',
+                      color: 'amber',
+                      accent: theme === 'dark' ? 'border-t-amber-400/60' : 'border-t-amber-400/40',
+                      glow: 'shadow-[0_0_24px_-8px_rgba(251,191,36,0.18)]',
+                      icon: '📄'
+                    },
+                    {
+                      label: 'Alertas (30 dias)',
+                      value: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length,
+                      sub: 'ASO, férias e exp. a vencer',
+                      color: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length > 0 ? 'rose' : 'emerald',
+                      accent: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length > 0
+                        ? (theme === 'dark' ? 'border-t-rose-400/60' : 'border-t-rose-400/40')
+                        : (theme === 'dark' ? 'border-t-emerald-500/60' : 'border-t-emerald-500/40'),
+                      glow: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length > 0
+                        ? 'shadow-[0_0_24px_-8px_rgba(251,113,133,0.22)]'
+                        : 'shadow-[0_0_24px_-8px_rgba(52,211,153,0.18)]',
+                      icon: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length > 0 ? '⚠️' : '✅'
+                    },
                   ].map((k, i) => (
-                    <div key={i} className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-                      theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                    <div key={i} className={`relative p-5 rounded-2xl border-t-2 flex flex-col justify-between h-32 transition-all duration-200 hover:scale-[1.02] ${k.accent} ${k.glow} ${
+                      theme === 'dark' ? 'bg-[#111110] border border-white/6 border-t-2' : 'bg-white border border-black/6 border-t-2'
                     }`}>
-                      <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">{k.label}</span>
-                      <div className="flex items-baseline gap-2">
-                        <span className={`text-3xl font-extrabold font-mono ${k.color}`}>{k.value}</span>
-                        <span className="text-[10px] opacity-50">{k.sub}</span>
+                      <div className="flex items-start justify-between">
+                        <span className={`text-[9px] font-bold tracking-[0.15em] uppercase leading-tight ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>
+                          {k.label}
+                        </span>
+                        <span className="text-base leading-none opacity-60">{k.icon}</span>
+                      </div>
+                      <div>
+                        <span className={`text-4xl font-black font-mono leading-none ${
+                          k.color === 'emerald' ? 'text-emerald-400' :
+                          k.color === 'sky' ? 'text-sky-400' :
+                          k.color === 'amber' ? 'text-amber-400' : 'text-rose-400'
+                        }`}>{k.value}</span>
+                        <p className={`text-[9px] mt-1.5 ${theme === 'dark' ? 'text-white/35' : 'text-black/35'}`}>{k.sub}</p>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                {/* Alertas Reais: ASO + Férias */}
-                {(kpiAsoVencer.length > 0 || kpiFeriasVencer.length > 0) && (
-                  <div className={`rounded-2xl border p-5 ${
-                    theme === 'dark' ? 'bg-rose-500/5 border-rose-500/20' : 'bg-rose-50 border-rose-200'
+                {/* ── Alertas Reais ── */}
+                {(kpiAsoVencer.length > 0 || kpiFeriasVencer.length > 0 || kpiExperienciaVencer.length > 0) && (
+                  <div className={`rounded-2xl border overflow-hidden ${
+                    theme === 'dark' ? 'border-rose-500/15 bg-[#111110]' : 'border-rose-200 bg-white'
                   }`}>
-                    <div className="flex items-center gap-2 text-rose-500 mb-4">
-                      <AlertTriangle size={16} />
-                      <span className="text-[10px] font-bold tracking-wider uppercase">Alertas — Próximos 30 dias</span>
+                    {/* Alert Header Bar */}
+                    <div className={`px-5 py-3.5 border-b flex items-center justify-between ${
+                      theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-200'
+                    }`}>
+                      <div className="flex items-center gap-2.5">
+                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
+                          theme === 'dark' ? 'bg-rose-500/15' : 'bg-rose-100'
+                        }`}>
+                          <AlertTriangle size={13} className="text-rose-400" />
+                        </div>
+                        <span className="text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">Alertas — Próximos 30 dias</span>
+                      </div>
+                      <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${
+                        theme === 'dark' ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-100 text-rose-500'
+                      }`}>
+                        {kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length} pendências
+                      </span>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                    {/* Alert Content */}
+                    <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
                       {kpiAsoVencer.length > 0 && (
                         <div className="space-y-2">
-                          <h4 className="text-xs font-bold opacity-60 uppercase tracking-wider">ASO a Vencer</h4>
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className={`w-2 h-2 rounded-full bg-rose-400`} />
+                            <h4 className={`text-[9px] font-black tracking-[0.15em] uppercase ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>ASO a Vencer</h4>
+                          </div>
                           {kpiAsoVencer.map((c: any) => (
-                            <div key={c.id} className={`p-2.5 rounded-lg border text-xs flex justify-between ${
-                              theme === 'dark' ? 'bg-rose-500/10 border-rose-500/20' : 'bg-rose-100 border-rose-200'
-                            }`}>
-                              <span className="font-semibold truncate">{c.nome.split(' ').slice(0,2).join(' ')}</span>
-                              <span className="font-mono opacity-70">{new Date(c.data_aso_vencimento).toLocaleDateString('pt-BR')}</span>
+                            <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${
+                              theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15 hover:bg-rose-500/12' : 'bg-rose-50 border-rose-100'
+                            } transition-colors`}>
+                              <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
+                              <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${
+                                theme === 'dark' ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-100 text-rose-600'
+                              }`}>{new Date(c.data_aso_vencimento).toLocaleDateString('pt-BR')}</span>
                             </div>
                           ))}
                         </div>
                       )}
                       {kpiFeriasVencer.length > 0 && (
                         <div className="space-y-2">
-                          <h4 className="text-xs font-bold opacity-60 uppercase tracking-wider">Férias a Vencer</h4>
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className={`w-2 h-2 rounded-full bg-amber-400`} />
+                            <h4 className={`text-[9px] font-black tracking-[0.15em] uppercase ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Férias a Vencer</h4>
+                          </div>
                           {kpiFeriasVencer.map((c: any) => (
-                            <div key={c.id} className={`p-2.5 rounded-lg border text-xs flex justify-between ${
-                              theme === 'dark' ? 'bg-amber-500/10 border-amber-500/20' : 'bg-amber-100 border-amber-200'
-                            }`}>
-                              <span className="font-semibold truncate">{c.nome.split(' ').slice(0,2).join(' ')}</span>
-                              <span className="font-mono opacity-70">{new Date(c.data_ferias_vencimento).toLocaleDateString('pt-BR')}</span>
+                            <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${
+                              theme === 'dark' ? 'bg-amber-500/8 border-amber-500/15 hover:bg-amber-500/12' : 'bg-amber-50 border-amber-100'
+                            } transition-colors`}>
+                              <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
+                              <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${
+                                theme === 'dark' ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-600'
+                              }`}>{new Date(c.data_ferias_vencimento).toLocaleDateString('pt-BR')}</span>
                             </div>
                           ))}
+                        </div>
+                      )}
+                      {kpiExperienciaVencer.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className={`w-2 h-2 rounded-full bg-sky-400`} />
+                            <h4 className={`text-[9px] font-black tracking-[0.15em] uppercase ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Fim de Experiência</h4>
+                          </div>
+                          {kpiExperienciaVencer.map((c: any) => {
+                            const dateFim = new Date(new Date(c.data_admissao).getTime() + 90 * 86400000);
+                            return (
+                              <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${
+                                theme === 'dark' ? 'bg-sky-500/8 border-sky-500/15 hover:bg-sky-500/12' : 'bg-sky-50 border-sky-100'
+                              } transition-colors`}>
+                                <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
+                                <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${
+                                  theme === 'dark' ? 'bg-sky-500/15 text-sky-300' : 'bg-sky-100 text-sky-600'
+                                }`}>{dateFim.toLocaleDateString('pt-BR')}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2">
-                  <div className="lg:col-span-2 space-y-4">
-                    <h4 className="text-xs font-bold tracking-widest uppercase opacity-65">Ações Rápidas</h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {/* ── Quick Actions + Recent Activity ── */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+
+                  {/* Quick Actions */}
+                  <div className="lg:col-span-2 space-y-3">
+                    <p className={`text-[9px] font-black tracking-[0.2em] uppercase ${theme === 'dark' ? 'text-white/35' : 'text-black/35'}`}>Ações Rápidas</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
-                        { icon: <Users size={18} />, label: 'Novo Colaborador', desc: 'Cadastrar funcionário direto.', action: () => { navigate('/app/colaboradores'); setColabSubTab('cadastrar'); } },
-                        { icon: <ClipboardCheck size={18} />, label: 'Registrar Ocorrência', desc: 'Atraso, falta ou descumprimento.', action: () => navigate('/app/colaboradores') },
-                        { icon: <FileText size={18} />, label: 'Emitir Contrato', desc: 'Gerar termo de imagem ou contrato.', action: () => navigate('/app/documentos') },
-                        { icon: <Zap size={18} className="text-amber-500" />, label: 'Pendência Folha', desc: 'Verificar divergências de pagamento.', action: () => navigate('/app/analytics') }
+                        {
+                          icon: <Users size={16} />,
+                          label: 'Novo Colaborador',
+                          desc: 'Cadastrar funcionário direto no sistema.',
+                          action: () => { navigate('/app/colaboradores'); setColabSubTab('cadastrar'); },
+                          accent: 'emerald'
+                        },
+                        {
+                          icon: <ClipboardCheck size={16} />,
+                          label: 'Registrar Ocorrência',
+                          desc: 'Atraso, falta ou descumprimento de jornada.',
+                          action: () => navigate('/app/colaboradores'),
+                          accent: 'amber'
+                        },
+                        {
+                          icon: <FileText size={16} />,
+                          label: 'Emitir Contrato',
+                          desc: 'Gerar e enviar modelo de documento assinável.',
+                          action: () => navigate('/app/documentos'),
+                          accent: 'sky'
+                        },
+                        {
+                          icon: <TrendingUp size={16} />,
+                          label: 'Ver Analytics',
+                          desc: 'Acessar indicadores e métricas de RH.',
+                          action: () => navigate('/app/analytics'),
+                          accent: 'violet'
+                        }
                       ].map((item, i) => (
                         <button
                           key={i}
                           onClick={item.action}
-                          className={`p-4 rounded-xl border text-left flex items-start gap-3 transition-colors ${
-                            theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-[#121211]' : 'border-black/10 hover:bg-black/5 bg-black/[0.01]'
+                          className={`group p-4 rounded-2xl border text-left flex items-start gap-3.5 transition-all duration-200 hover:scale-[1.015] ${
+                            theme === 'dark'
+                              ? 'border-white/7 bg-[#111110] hover:border-white/12 hover:bg-[#161615]'
+                              : 'border-black/7 bg-white hover:border-black/12 hover:bg-gray-50/80'
                           }`}
                         >
-                          <span className="mt-0.5 opacity-80">{item.icon}</span>
-                          <div>
-                            <span className="block font-bold">{item.label}</span>
-                            <span className="text-[10px] opacity-60 block mt-0.5">{item.desc}</span>
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
+                            item.accent === 'emerald' ? (theme === 'dark' ? 'bg-emerald-500/12 text-emerald-400 group-hover:bg-emerald-500/20' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100') :
+                            item.accent === 'amber'   ? (theme === 'dark' ? 'bg-amber-500/12 text-amber-400 group-hover:bg-amber-500/20'   : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100') :
+                            item.accent === 'sky'     ? (theme === 'dark' ? 'bg-sky-500/12 text-sky-400 group-hover:bg-sky-500/20'         : 'bg-sky-50 text-sky-600 group-hover:bg-sky-100') :
+                                                        (theme === 'dark' ? 'bg-violet-500/12 text-violet-400 group-hover:bg-violet-500/20' : 'bg-violet-50 text-violet-600 group-hover:bg-violet-100')
+                          }`}>
+                            {item.icon}
+                          </div>
+                          <div className="min-w-0">
+                            <span className="block text-xs font-bold leading-tight">{item.label}</span>
+                            <span className={`text-[9px] block mt-1 leading-relaxed ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>{item.desc}</span>
                           </div>
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className={`p-5 rounded-xl border space-y-4 ${
-                    theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                  {/* Recent Activity Feed */}
+                  <div className={`rounded-2xl border p-5 flex flex-col gap-4 ${
+                    theme === 'dark' ? 'bg-[#111110] border-white/6' : 'bg-white border-black/7'
                   }`}>
-                    <h4 className="text-xs font-bold tracking-widest uppercase opacity-65 flex items-center gap-1.5">
-                      <History size={14} className="text-emerald-500" /> Atividades Recentes
-                    </h4>
-                    <div className="space-y-3 text-[11px]">
+                    <div className="flex items-center gap-2">
+                      <History size={13} className="text-emerald-500" />
+                      <p className={`text-[9px] font-black tracking-[0.2em] uppercase ${theme === 'dark' ? 'text-white/35' : 'text-black/35'}`}>Atividades Recentes</p>
+                    </div>
+                    <div className="space-y-1 flex-1">
                       {recentLogs.length > 0 ? recentLogs.map((log: any, i: number) => (
-                        <div key={i} className="flex justify-between border-b border-white/5 pb-2 last:border-0 last:pb-0">
-                          <span className="opacity-70 truncate max-w-[160px]">{log.acao?.replace(/_/g,' ')}</span>
-                          <span className="font-mono opacity-50 text-[10px] ml-2 shrink-0">
+                        <div key={i} className={`flex justify-between items-center py-2.5 border-b last:border-0 ${
+                          theme === 'dark' ? 'border-white/5' : 'border-black/5'
+                        }`}>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                              log.acao?.includes('LOGIN') ? 'bg-emerald-400' :
+                              log.acao?.includes('LOGOUT') ? 'bg-rose-400' :
+                              log.acao?.includes('CADASTRO') ? 'bg-sky-400' :
+                              log.acao?.includes('EDICAO') ? 'bg-amber-400' : 'bg-white/30'
+                            }`} />
+                            <span className={`text-[10px] truncate ${theme === 'dark' ? 'text-white/60' : 'text-black/60'}`}>
+                              {log.acao?.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c: string) => c.toUpperCase())}
+                            </span>
+                          </div>
+                          <span className={`font-mono text-[9px] shrink-0 ml-2 ${theme === 'dark' ? 'text-white/30' : 'text-black/30'}`}>
                             {new Date(log.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
                       )) : (
-                        <p className="opacity-40 italic text-[10px]">Sem atividade registrada.</p>
+                        <div className={`flex flex-col items-center justify-center h-24 gap-2 ${theme === 'dark' ? 'text-white/20' : 'text-black/20'}`}>
+                          <History size={20} />
+                          <p className="text-[10px]">Sem atividade registrada</p>
+                        </div>
                       )}
                     </div>
                   </div>
                 </div>
               </div>
             )}
+
 
             {/* Módulo 1: Documentos */}
             {activePath === '/app/documentos' && hasFullAccess && (
@@ -1734,19 +2214,199 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             className={`w-full text-xs p-2.5 rounded-lg border bg-transparent resize-none focus:outline-none font-mono ${ theme==='dark' ? 'border-white/15' : 'border-black/15' }`} />
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Ou importar PDF base</label>
-                          <input type="file" accept="application/pdf" onChange={handlePdfUpload}
+                          <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Ou importar PDF/DOCX base</label>
+                          <input type="file" accept="application/pdf,.docx,.doc" onChange={handlePdfUpload}
                             className={`w-full text-[10px] p-1.5 rounded-lg border ${ theme==='dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10' }`} />
-                          {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1">✓ PDF importado: {uploadedPdfName}</p>}
+                          {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1">✓ Arquivo importado ({modelFileType.toUpperCase()}): {uploadedPdfName}</p>}
                         </div>
+
+                        {uploadedPdfBase64 && (
+                          <div className="space-y-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] mt-3">
+                            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                              <div>
+                                <h6 className="text-[11px] font-bold uppercase tracking-wider opacity-75">📍 Posicionamento das Assinaturas (Prévia)</h6>
+                                <p className="text-[9px] opacity-50 mt-0.5">Clique em qualquer lugar da folha para definir a posição do campo ativo.</p>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setActivePositioningRole('colaborador')}
+                                  className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                    activePositioningRole === 'colaborador'
+                                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                                      : 'border-white/10 opacity-60'
+                                  }`}
+                                >
+                                  ✍️ Colaborador
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setActivePositioningRole('representante')}
+                                  className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                    activePositioningRole === 'representante'
+                                      ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
+                                      : 'border-white/10 opacity-60'
+                                  }`}
+                                >
+                                  🏛️ Representante (RH)
+                                </button>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col md:flex-row gap-6 items-center md:items-start justify-center">
+                              {/* Virtual A4 Canvas */}
+                              <div 
+                                onClick={(e) => {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  const clickX = e.clientX - rect.left;
+                                  const clickY = e.clientY - rect.top;
+                                  const pctX = clickX / rect.width;
+                                  const pctY = clickY / rect.height;
+                                  const pdfX = Math.round(pctX * 600);
+                                  const pdfY = Math.round((1 - pctY) * 800);
+                                  
+                                  if (activePositioningRole === 'colaborador') {
+                                    setColabSigPos({ x: pdfX, y: pdfY, page: activePreviewPage });
+                                  } else {
+                                    setRepSigPos({ x: pdfX, y: pdfY, page: activePreviewPage });
+                                  }
+                                }}
+                                className="w-full max-w-[210px] aspect-[1/1.414] relative bg-white border border-black/10 rounded shadow-md cursor-crosshair overflow-hidden select-none"
+                              >
+                                <div className="absolute inset-0 p-3 flex flex-col justify-between pointer-events-none">
+                                  <div className="border-b border-black/5 pb-1 text-[6px] text-black/40 font-bold uppercase tracking-wider flex justify-between">
+                                    <span>OMNI ITO - PREVIEW</span>
+                                    <span>{modelFileType.toUpperCase()}</span>
+                                  </div>
+                                  <div className="flex-1 flex flex-col justify-center items-center gap-1 opacity-[0.08]">
+                                    <div className="w-12 h-1 bg-black rounded" />
+                                    <div className="w-16 h-1 bg-black rounded" />
+                                    <div className="w-14 h-1 bg-black rounded" />
+                                    <div className="w-20 h-1 bg-black rounded" />
+                                  </div>
+                                  <div className="border-t border-black/5 pt-1 text-[5px] text-black/30 text-center font-mono uppercase">
+                                    PÁGINA {activePreviewPage}
+                                  </div>
+                                </div>
+
+                                {colabSigPos && colabSigPos.page === activePreviewPage && (
+                                  <div 
+                                    style={{
+                                      left: `${(colabSigPos.x / 600) * 100}%`,
+                                      top: `${(1 - (colabSigPos.y / 800)) * 100}%`,
+                                      transform: 'translate(-50%, -100%)'
+                                    }}
+                                    className="absolute px-1.5 py-0.5 rounded text-[7px] font-bold bg-amber-500 text-black shadow border border-amber-600 pointer-events-none flex items-center gap-0.5 whitespace-nowrap"
+                                  >
+                                    <span>Colaborador ✍️</span>
+                                  </div>
+                                )}
+
+                                {repSigPos && repSigPos.page === activePreviewPage && (
+                                  <div 
+                                    style={{
+                                      left: `${(repSigPos.x / 600) * 100}%`,
+                                      top: `${(1 - (repSigPos.y / 800)) * 100}%`,
+                                      transform: 'translate(-50%, -100%)'
+                                    }}
+                                    className="absolute px-1.5 py-0.5 rounded text-[7px] font-bold bg-sky-500 text-white shadow border border-sky-600 pointer-events-none flex items-center gap-0.5 whitespace-nowrap"
+                                  >
+                                    <span>RH 🏛️</span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Controls */}
+                              <div className="flex-1 w-full space-y-3">
+                                <div>
+                                  <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Página do Modelo</label>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => setActivePreviewPage(p => Math.max(1, p - 1))}
+                                      className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] font-bold"
+                                    >
+                                      -
+                                    </button>
+                                    <span className="text-[10px] font-mono font-bold">Pág. {activePreviewPage}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => setActivePreviewPage(p => p + 1)}
+                                      className="px-2 py-0.5 bg-white/5 border border-white/10 rounded text-[10px] font-bold"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-2 p-2 rounded bg-white/5 border border-white/10">
+                                  <span className="text-[9px] font-bold uppercase tracking-wider block text-sky-400">
+                                    {activePositioningRole === 'colaborador' ? 'Ajuste: Colaborador' : 'Ajuste: Representante'}
+                                  </span>
+                                  <div>
+                                    <div className="flex justify-between text-[8px] opacity-60 mb-0.5">
+                                      <span>X (Horizontal)</span>
+                                      <span className="font-mono font-bold">{activePositioningRole === 'colaborador' ? colabSigPos?.x : repSigPos?.x} pt</span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max="600"
+                                      value={activePositioningRole === 'colaborador' ? (colabSigPos?.x || 80) : (repSigPos?.x || 380)}
+                                      onChange={(e) => {
+                                        const val = Number(e.target.value);
+                                        if (activePositioningRole === 'colaborador') {
+                                          setColabSigPos(prev => ({ x: val, y: prev?.y || 150, page: activePreviewPage }));
+                                        } else {
+                                          setRepSigPos(prev => ({ x: val, y: prev?.y || 150, page: activePreviewPage }));
+                                        }
+                                      }}
+                                      className="w-full h-1 bg-white/10 rounded appearance-none cursor-pointer accent-sky-400"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <div className="flex justify-between text-[8px] opacity-60 mb-0.5">
+                                      <span>Y (Vertical)</span>
+                                      <span className="font-mono font-bold">{activePositioningRole === 'colaborador' ? colabSigPos?.y : repSigPos?.y} pt</span>
+                                    </div>
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max="800"
+                                      value={activePositioningRole === 'colaborador' ? (colabSigPos?.y || 150) : (repSigPos?.y || 150)}
+                                      onChange={(e) => {
+                                        const val = Number(e.target.value);
+                                        if (activePositioningRole === 'colaborador') {
+                                          setColabSigPos(prev => ({ x: prev?.x || 80, y: val, page: activePreviewPage }));
+                                        } else {
+                                          setRepSigPos(prev => ({ x: prev?.x || 380, y: val, page: activePreviewPage }));
+                                        }
+                                      }}
+                                      className="w-full h-1 bg-white/10 rounded appearance-none cursor-pointer accent-sky-400"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <button
                           disabled={isSavingModelo || !newModeloTitulo.trim()}
                           onClick={async () => {
                             setIsSavingModelo(true);
                             try {
-                              await supabase.from('modelos_documentos').insert({ titulo: newModeloTitulo.trim(), conteudo: newModeloConteudo.trim() || uploadedPdfBase64 });
+                              await supabase.from('modelos_documentos').insert({ 
+                                titulo: newModeloTitulo.trim(), 
+                                conteudo: newModeloConteudo.trim() || uploadedPdfBase64,
+                                tipo_arquivo: uploadedPdfBase64 ? modelFileType : 'texto',
+                                assinatura_coordenadas: uploadedPdfBase64 ? colabSigPos : null,
+                                assinatura_rep_coordenadas: uploadedPdfBase64 ? repSigPos : null
+                              });
                               await logAuditoria('CRIACAO_MODELO_DOCUMENTO', { titulo: newModeloTitulo });
                               setShowNewModeloForm(false); setNewModeloTitulo(''); setNewModeloConteudo('');
+                              setUploadedPdfBase64(''); setUploadedPdfName('');
                               fetchModelos();
                             } catch(e: any) { alert('Erro: ' + e.message); }
                             finally { setIsSavingModelo(false); }
@@ -2067,34 +2727,54 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/15 text-black bg-white'
                           }`}
                         >
-                          <option value="Todos">Todos os Setores</option>
-                          <option value="Call Center">Call Center</option>
-                          <option value="Recepção">Recepção</option>
-                          <option value="Financeiro">Financeiro</option>
-                          <option value="Smartshape">Smartshape</option>
-                          <option value="Biomedicina">Biomedicina</option>
-                          <option value="Enfermagem">Enfermagem</option>
-                          <option value="Farmácia">Farmácia</option>
-                          <option value="Serviços Gerais">Serviços Gerais</option>
-                          <option value="Nutrição">Nutrição</option>
-                        </select>
-                      </div>
+                            {[
+                              { value: 'Todos', label: 'Todos os Setores' },
+                              { value: 'Call Center', label: 'Call Center' },
+                              { value: 'Recepção', label: 'Recepção' },
+                              { value: 'Financeiro', label: 'Financeiro' },
+                              { value: 'Smartshape', label: 'Smartshape' },
+                              { value: 'Biomedicina', label: 'Biomedicina' },
+                              { value: 'Enfermagem', label: 'Enfermagem' },
+                              { value: 'Farmácia', label: 'Farmácia' },
+                              { value: 'Serviços Gerais', label: 'Serviços Gerais' },
+                              { value: 'Nutrição', label: 'Nutrição' }
+                            ].map((opt) => (
+                              <option
+                                key={opt.value}
+                                value={opt.value}
+                                className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}
+                              >
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                      {/* Dropdown Status */}
-                      <div>
-                        <label className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Status</label>
-                        <select
-                          value={filterStatus}
-                          onChange={(e) => setFilterStatus(e.target.value)}
-                          className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${
-                            theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/15 text-black bg-white'
-                          }`}
-                        >
-                          <option value="Todos">Todos os Status</option>
-                          <option value="Ativo">Ativo</option>
-                          <option value="Onboarding">Onboarding</option>
-                        </select>
-                      </div>
+                        {/* Dropdown Status */}
+                        <div>
+                          <label className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Status</label>
+                          <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${
+                              theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/15 text-black bg-white'
+                            }`}
+                          >
+                            {[
+                              { value: 'Todos', label: 'Todos os Status' },
+                              { value: 'Ativo', label: 'Ativo' },
+                              { value: 'Onboarding', label: 'Onboarding' }
+                            ].map((opt) => (
+                              <option
+                                key={opt.value}
+                                value={opt.value}
+                                className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}
+                              >
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
                       {/* Sorting Tenure Toggle */}
                       <div>
@@ -2701,23 +3381,36 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   <div className="space-y-4">
                     <h4 className="text-sm font-bold opacity-80 border-b border-white/10 pb-2">Benefícios e Kits</h4>
                     <div className="space-y-2 text-xs">
-                      {Object.entries(benefits).map(([key, value]) => (
-                        <label 
-                          key={key} 
-                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer ${
-                            theme === 'dark' ? 'border-white/5 bg-[#121211] hover:bg-white/[0.02]' : 'border-black/5 bg-black/[0.02] hover:bg-black/[0.04]'
-                          }`}
-                        >
-                          <span className="capitalize opacity-80">{key.replace(/([A-Z])/g, ' $1')}</span>
-                          <input
-                            type="checkbox"
-                            checked={value}
-                            disabled={!selectedColaboradorId}
-                            onChange={(e) => handleCheckboxChange('benefit', key, e.target.checked)}
-                            className="accent-[#E5DFD3] cursor-pointer"
-                          />
-                        </label>
-                      ))}
+                      {Object.entries(benefits).map(([key, value]) => {
+                        const activeCol = colaboradoresList.find(c => c.id === selectedColaboradorId);
+                        const isRestricted = ['valeAlimentacao', 'planoSaude', 'kitOnboarding', 'uniformeSapato'].includes(key);
+                        const isLocked = isRestricted && activeCol && isUnderExperience(activeCol.data_admissao);
+                        
+                        return (
+                          <label 
+                            key={key} 
+                            className={`flex items-center justify-between p-3 rounded-lg border ${
+                              isLocked ? 'opacity-40 cursor-not-allowed bg-black/10' : 'cursor-pointer'
+                            } ${
+                              theme === 'dark' ? 'border-white/5 bg-[#121211] hover:bg-white/[0.02]' : 'border-black/5 bg-black/[0.02] hover:bg-black/[0.04]'
+                            }`}
+                          >
+                            <div className="flex flex-col">
+                              <span className="capitalize opacity-80">{key.replace(/([A-Z])/g, ' $1')}</span>
+                              {isLocked && (
+                                <span className="text-[9px] text-amber-500 font-semibold mt-0.5">Bloqueado (Experiência)</span>
+                              )}
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={value}
+                              disabled={!selectedColaboradorId || isLocked}
+                              onChange={(e) => handleCheckboxChange('benefit', key, e.target.checked)}
+                              className="accent-[#E5DFD3] cursor-pointer"
+                            />
+                          </label>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -2819,7 +3512,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       theme={theme} 
                       colaboradoresList={colaboradoresList} 
                       ocorrenciasList={ocorrenciasAnalytics} 
-                      indicadoresList={indicadoresTrabalhistas} 
+                      indicadoresList={indicadoresTrabalhistas}
+                      benefitsList={dbBenefits}
+                      associationsList={dbColaboradorBeneficios}
                     />
                     
                     <div className={`p-5 rounded-xl border space-y-4 ${
@@ -2888,7 +3583,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   <CompensationsPanel 
                     theme={theme} 
                     colaboradoresList={colaboradoresList} 
-                    indicadoresList={indicadoresTrabalhistas} 
+                    indicadoresList={indicadoresTrabalhistas}
+                    benefitsList={dbBenefits}
+                    associationsList={dbColaboradorBeneficios}
                   />
                 )}
 
@@ -2904,6 +3601,701 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             {/* Módulo 6: Benefícios */}
             {activePath === '/app/beneficios' && hasFullAccess && (
               <BenefitsManager theme={theme} />
+            )}
+
+            {/* Módulo 7: Férias & ASO */}
+            {activePath === '/app/ferias-aso' && hasFullAccess && (
+              <div className="space-y-6 animate-fadeIn">
+                {(() => {
+                  // Local Helper functions inside block
+                  const getDaysRemaining = (dateStr: string) => {
+                    if (!dateStr) return null;
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const target = new Date(dateStr + 'T12:00:00');
+                    target.setHours(0, 0, 0, 0);
+                    const diffTime = target.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays;
+                  };
+
+                  const getAsoStatus = (colab: any) => {
+                    if (!colab.data_aso_vencimento) return { label: 'Não Cadastrado', color: 'gray', days: null };
+                    const days = getDaysRemaining(colab.data_aso_vencimento);
+                    if (days === null) return { label: 'Não Cadastrado', color: 'gray', days: null };
+                    if (days < 0) return { label: 'Vencido', color: 'red', days };
+                    if (days <= 30) return { label: 'A Vencer', color: 'amber', days };
+                    return { label: 'Em Dia', color: 'emerald', days };
+                  };
+
+                  const getFeriasStatus = (colab: any) => {
+                    if (!colab.data_ferias_vencimento) return { label: 'Não Cadastrado', color: 'gray', days: null };
+                    const days = getDaysRemaining(colab.data_ferias_vencimento);
+                    if (days === null) return { label: 'Não Cadastrado', color: 'gray', days: null };
+                    if (days < 0) return { label: 'Vencido', color: 'red', days };
+                    if (days <= 30) return { label: 'A Vencer', color: 'amber', days };
+                    return { label: 'Em Dia', color: 'emerald', days };
+                  };
+
+                  const activeColabs = colaboradoresList.filter(c => c.status === 'ativo');
+                  
+                  let asoVencido = 0;
+                  let asoAVencer = 0;
+                  let feriasAlert = 0;
+                  let totalColabs = activeColabs.length;
+                  
+                  activeColabs.forEach(c => {
+                    const aso = getAsoStatus(c);
+                    const fer = getFeriasStatus(c);
+                    if (aso.label === 'Vencido') asoVencido++;
+                    if (aso.label === 'A Vencer') asoAVencer++;
+                    if (fer.label === 'Vencido' || fer.label === 'A Vencer') feriasAlert++;
+                  });
+
+                  const filtered = activeColabs.filter(c => {
+                    // Search name
+                    if (searchQueryFeriasAso && !c.nome.toLowerCase().includes(searchQueryFeriasAso.toLowerCase())) return false;
+                    
+                    // Sector
+                    if (filterSetorFeriasAso !== 'Todos' && c.setor !== filterSetorFeriasAso) return false;
+                    
+                    // ASO Status
+                    if (filterStatusAso !== 'Todos') {
+                      const aso = getAsoStatus(c);
+                      if (aso.label !== filterStatusAso) return false;
+                    }
+                    
+                    // Vacation Status
+                    if (filterStatusFerias !== 'Todos') {
+                      const fer = getFeriasStatus(c);
+                      if (fer.label !== filterStatusFerias) return false;
+                    }
+                    
+                    return true;
+                  });
+
+                  return (
+                    <>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-white/10 gap-3">
+                        <div>
+                          <h2 className="text-xl font-bold tracking-tight">Férias & ASO</h2>
+                          <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-[#E5DFD3]/45' : 'text-black/45'}`}>
+                            Controle ocupacional, exames médicos e vencimentos de períodos de férias.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* KPIs Row */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${
+                          theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        }`}>
+                          <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">ASO Vencido</span>
+                          <div className="flex items-baseline justify-between mt-1">
+                            <span className={`text-3xl font-black font-mono ${asoVencido > 0 ? 'text-rose-500' : 'text-emerald-500'}`}>{asoVencido}</span>
+                            <span className="text-xs">exames</span>
+                          </div>
+                        </div>
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${
+                          theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        }`}>
+                          <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">ASO a Vencer (30d)</span>
+                          <div className="flex items-baseline justify-between mt-1">
+                            <span className={`text-3xl font-black font-mono ${asoAVencer > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>{asoAVencer}</span>
+                            <span className="text-xs">exames</span>
+                          </div>
+                        </div>
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${
+                          theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        }`}>
+                          <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Férias Limite/Vencidas</span>
+                          <div className="flex items-baseline justify-between mt-1">
+                            <span className={`text-3xl font-black font-mono ${feriasAlert > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>{feriasAlert}</span>
+                            <span className="text-xs">alertas</span>
+                          </div>
+                        </div>
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${
+                          theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        }`}>
+                          <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Total Colaboradores</span>
+                          <div className="flex items-baseline justify-between mt-1">
+                            <span className="text-3xl font-black font-mono">{totalColabs}</span>
+                            <span className="text-xs">ativos</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Filter Controls Row */}
+                      <div className={`p-4 rounded-xl border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 ${
+                        theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+                      }`}>
+                        <div>
+                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Buscar Colaborador</label>
+                          <input 
+                            type="text" 
+                            placeholder="Nome do colaborador..."
+                            value={searchQueryFeriasAso}
+                            onChange={e => setSearchQueryFeriasAso(e.target.value)}
+                            className={`w-full text-xs p-2 rounded border bg-transparent ${
+                              theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            }`}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Filtrar por Setor</label>
+                          <select
+                            value={filterSetorFeriasAso}
+                            onChange={e => setFilterSetorFeriasAso(e.target.value)}
+                            className={`w-full text-xs p-2 rounded border bg-transparent ${
+                              theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            }`}
+                          >
+                            <option value="Todos">Todos os Setores</option>
+                            {Array.from(new Set(activeColabs.map(c => c.setor).filter(Boolean))).map(setor => (
+                              <option key={setor} value={setor}>{setor}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Status ASO</label>
+                          <select
+                            value={filterStatusAso}
+                            onChange={e => setFilterStatusAso(e.target.value)}
+                            className={`w-full text-xs p-2 rounded border bg-transparent ${
+                              theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            }`}
+                          >
+                            <option value="Todos">Todos ASO</option>
+                            <option value="Em Dia">Em Dia</option>
+                            <option value="A Vencer">A Vencer (30d)</option>
+                            <option value="Vencido">Vencido</option>
+                            <option value="Não Cadastrado">Não Cadastrado</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Status Férias</label>
+                          <select
+                            value={filterStatusFerias}
+                            onChange={e => setFilterStatusFerias(e.target.value)}
+                            className={`w-full text-xs p-2 rounded border bg-transparent ${
+                              theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            }`}
+                          >
+                            <option value="Todos">Todas as Férias</option>
+                            <option value="Em Dia">Em Dia</option>
+                            <option value="A Vencer">A Vencer (30d)</option>
+                            <option value="Vencido">Vencido</option>
+                            <option value="Não Cadastrado">Não Cadastrado</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Table View */}
+                      <div className={`border rounded-xl overflow-hidden ${
+                        theme === 'dark' ? 'border-white/5 bg-[#121211]' : 'border-black/5 bg-white'
+                      }`}>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs border-collapse">
+                            <thead>
+                              <tr className={`border-b text-[10px] font-bold uppercase tracking-wider opacity-60 ${
+                                theme === 'dark' ? 'border-white/5 bg-white/2' : 'border-black/5 bg-black/2'
+                              }`}>
+                                <th className="p-4">Colaborador</th>
+                                <th className="p-4">Admissão & Tempo</th>
+                                <th className="p-4">Exame ASO (Vencimento)</th>
+                                <th className="p-4">Limite de Férias</th>
+                                <th className="p-4 text-center">Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filtered.length === 0 ? (
+                                <tr>
+                                  <td colSpan={5} className="p-8 text-center opacity-40 italic">
+                                    Nenhum colaborador encontrado com os filtros selecionados.
+                                  </td>
+                                </tr>
+                              ) : (
+                                filtered.map(c => {
+                                  const aso = getAsoStatus(c);
+                                  const fer = getFeriasStatus(c);
+                                  const initials = c.nome.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
+
+                                  return (
+                                    <tr key={c.id} className={`border-b transition-colors ${
+                                      theme === 'dark' ? 'border-white/5 hover:bg-white/[0.01]' : 'border-black/5 hover:bg-black/[0.01]'
+                                    }`}>
+                                      <td className="p-4">
+                                        <div className="flex items-center gap-3">
+                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
+                                            theme === 'dark' ? 'bg-[#E5DFD3]/10 text-[#E5DFD3]' : 'bg-[#0A0A0A]/5 text-[#0A0A0A]'
+                                          }`}>
+                                            {initials}
+                                          </div>
+                                          <div className="truncate max-w-[180px]">
+                                            <span className="font-semibold block truncate">{c.nome}</span>
+                                            <span className="text-[10px] opacity-50 block truncate">{c.cargo} • {c.setor}</span>
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="p-4 font-mono text-[11px]">
+                                        <span>{new Date(c.data_admissao + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                                        <span className="block text-[9px] font-sans opacity-55 mt-0.5">{calculateTenure(c.data_admissao)}</span>
+                                      </td>
+                                      <td className="p-4">
+                                        {c.data_aso_vencimento ? (
+                                          <div className="space-y-1">
+                                            <span className="font-mono">{new Date(c.data_aso_vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                                            <span className={`block text-[9px] font-bold font-mono rounded-full px-2 py-0.5 w-fit ${
+                                              aso.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10' :
+                                              aso.color === 'amber' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/10' :
+                                              'bg-rose-500/10 text-rose-400 border border-rose-500/10'
+                                            }`}>
+                                              {aso.label} {aso.days !== null && (
+                                                aso.days < 0 ? `(atrasado ${Math.abs(aso.days)}d)` : `(vence em ${aso.days}d)`
+                                              )}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <span className="opacity-30 italic text-[10px]">Não Cadastrado</span>
+                                        )}
+                                      </td>
+                                      <td className="p-4">
+                                        {c.data_ferias_vencimento ? (
+                                          <div className="space-y-1">
+                                            <span className="font-mono">{new Date(c.data_ferias_vencimento + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                                            <span className={`block text-[9px] font-bold font-mono rounded-full px-2 py-0.5 w-fit ${
+                                              fer.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/10' :
+                                              fer.color === 'amber' ? 'bg-amber-500/10 text-amber-400 border border-amber-500/10' :
+                                              'bg-rose-500/10 text-rose-400 border border-rose-500/10'
+                                            }`}>
+                                              {fer.label} {fer.days !== null && (
+                                                fer.days < 0 ? `(vencido ${Math.abs(fer.days)}d)` : `(limite em ${fer.days}d)`
+                                              )}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <span className="opacity-30 italic text-[10px]">Não Cadastrado</span>
+                                        )}
+                                      </td>
+                                      <td className="p-4">
+                                        <div className="flex items-center justify-center gap-2">
+                                          <button
+                                            onClick={() => {
+                                              setSelectedColabForQuickUpdate(c);
+                                              setQuickAsoDate(c.data_aso_vencimento || '');
+                                              setQuickFeriasDate(c.data_ferias_vencimento || '');
+                                            }}
+                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                              theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-[#E5DFD3]' : 'border-black/10 hover:bg-black/5 text-[#0A0A0A]'
+                                            }`}
+                                            title="Atualizar vencimentos diretamente"
+                                          >
+                                            ✏️ Datas
+                                          </button>
+                                          <button
+                                            onClick={() => setActiveColaboradorForDrawer(c)}
+                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${
+                                              theme === 'dark' ? 'border-[#E5DFD3]/30 bg-white/5 hover:bg-white/10 text-[#E5DFD3]' : 'border-[#0A0A0A]/30 bg-black/5 hover:bg-black/10 text-[#0A0A0A]'
+                                            }`}
+                                            title="Ver prontuário do colaborador"
+                                          >
+                                            📄 Dossiê
+                                          </button>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
+                      {/* Modal de vidro para Edição Rápida */}
+                      {selectedColabForQuickUpdate && (
+                        <>
+                          <div 
+                            onClick={() => setSelectedColabForQuickUpdate(null)}
+                            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
+                          />
+                          <div className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm p-6 rounded-2xl border z-50 space-y-4 ${
+                            theme === 'dark' 
+                              ? 'bg-[#0D0D0C]/90 border-white/10 text-white glass-card-dark' 
+                              : 'bg-white/90 border-black/10 text-black glass-card-light shadow-xl'
+                          }`}>
+                            <div>
+                              <span className="text-[9px] font-bold uppercase tracking-wider opacity-55">Edição de Prazos</span>
+                              <h4 className="text-sm font-bold truncate mt-0.5">{selectedColabForQuickUpdate.nome}</h4>
+                              <p className="text-[10px] opacity-45">{selectedColabForQuickUpdate.cargo}</p>
+                            </div>
+
+                            <div className="space-y-3.5 text-xs">
+                              <div>
+                                <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Vencimento do Exame ASO</label>
+                                <input 
+                                  type="date"
+                                  value={quickAsoDate}
+                                  onChange={e => setQuickAsoDate(e.target.value)}
+                                  className={`w-full p-2.5 rounded border bg-transparent ${
+                                    theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  }`}
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data Limite de Férias</label>
+                                <input 
+                                  type="date"
+                                  value={quickFeriasDate}
+                                  onChange={e => setQuickFeriasDate(e.target.value)}
+                                  className={`w-full p-2.5 rounded border bg-transparent ${
+                                    theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  }`}
+                                />
+                              </div>
+
+                              <div className="flex gap-2 pt-2">
+                                <button
+                                  onClick={handleSaveQuickDates}
+                                  disabled={isSavingQuickDates}
+                                  className={`flex-1 py-2 rounded font-bold text-xs transition-colors ${
+                                    theme === 'dark' ? 'bg-[#E5DFD3] text-[#0d0d0c] hover:bg-[#c4beb1]' : 'bg-[#0A0A0A] text-white hover:bg-black/90'
+                                  } disabled:opacity-50`}
+                                >
+                                  {isSavingQuickDates ? 'Salvando...' : '✓ Salvar Alterações'}
+                                </button>
+                                <button
+                                  onClick={() => setSelectedColabForQuickUpdate(null)}
+                                  className={`px-3 py-2 rounded border text-xs font-semibold transition-colors ${
+                                    theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
+                                  }`}
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            )}
+
+            {/* Módulo 8: Avaliações de Desempenho */}
+            {activePath === '/app/avaliacoes' && hasFullAccess && (
+              <div className="space-y-6 animate-fadeIn">
+                {(() => {
+                  const getMonthsElapsed = (dateStr: string) => {
+                    if (!dateStr) return 0;
+                    const start = new Date(dateStr + 'T12:00:00');
+                    const end = new Date();
+                    return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+                  };
+
+                  // Exclude coordinators as per instructions
+                  const activeColabs = colaboradoresList.filter(c => 
+                    c.status === 'ativo' && 
+                    !(c.cargo?.toLowerCase().includes('coordenador') || c.cargo?.toLowerCase().includes('coordenadora'))
+                  );
+
+                  const totalRatings = dbAvaliacoesDesempenho.length;
+                  const notasValidas = dbAvaliacoesDesempenho.map(a => Number(a.nota)).filter(n => !isNaN(n));
+                  const mediaGeral = notasValidas.length > 0 ? (notasValidas.reduce((a, b) => a + b, 0) / notasValidas.length).toFixed(1) : '0.0';
+
+                  let countAptos = 0;
+                  let countPendentes = 0;
+                  const date180Ago = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
+                  const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+
+                  // Precompute career statuses for activeColabs
+                  const colabsCalculados = activeColabs.map(colab => {
+                    const plano = dbPlanosCarreira.find(p => p.cargo_atual === colab.cargo);
+                    const monthsElapsed = getMonthsElapsed(colab.data_admissao);
+                    const requiredMonths = plano?.requisito_tempo_meses ?? 12;
+                    const isTempoOk = monthsElapsed >= requiredMonths;
+
+                    const colabOcorrencias = ocorrenciasAnalytics.filter(o => o.colaborador_id === colab.id);
+                    const recentOcorrencias = colabOcorrencias.filter(o => {
+                      if (!o.data_ocorrencia) return false;
+                      return new Date(o.data_ocorrencia + 'T12:00:00') >= date180Ago;
+                    });
+                    const isOcorrenciasOk = recentOcorrencias.length === 0;
+
+                    const colabAvals = dbAvaliacoesDesempenho.filter(a => a.colaborador_id === colab.id);
+                    const latestAval = colabAvals[0]; // ordered desc, so first is latest
+                    const requiredNota = plano?.requisito_nota_avaliacao ?? 4.0;
+                    const isNotaOk = latestAval ? Number(latestAval.nota) >= requiredNota : false;
+
+                    const isApto = !!plano && isTempoOk && isOcorrenciasOk && isNotaOk;
+                    if (isApto) countAptos++;
+
+                    const isPendente = !latestAval || new Date(latestAval.data_avaliacao + 'T12:00:00') < oneYearAgo;
+                    if (isPendente) countPendentes++;
+
+                    return {
+                      ...colab,
+                      plano,
+                      latestAval,
+                      monthsElapsed,
+                      requiredMonths,
+                      isTempoOk,
+                      isOcorrenciasOk,
+                      recentOcorrenciasCount: recentOcorrencias.length,
+                      isNotaOk,
+                      isApto
+                    };
+                  });
+
+                  // Filter the list
+                  const filteredColabs = colabsCalculados.filter(item => {
+                    if (searchQueryAvaliacoes && !item.nome.toLowerCase().includes(searchQueryAvaliacoes.toLowerCase())) return false;
+                    if (filterSetorAvaliacoes !== 'Todos' && item.setor !== filterSetorAvaliacoes) return false;
+                    if (filterStatusPromo !== 'Todos') {
+                      if (filterStatusPromo === 'Apto' && !item.isApto) return false;
+                      if (filterStatusPromo === 'Em Desenvolvimento' && item.isApto) return false;
+                    }
+                    return true;
+                  });
+
+                  const getNotaColor = (nota: number) => {
+                    if (nota >= 4.0) return 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                    if (nota >= 3.0) return 'bg-amber-500/10 text-amber-500 border border-amber-500/20';
+                    return 'bg-rose-500/10 text-rose-500 border border-rose-500/20';
+                  };
+
+                  return (
+                    <>
+                      <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-white/10 gap-3">
+                        <div>
+                          <h2 className="text-xl font-bold tracking-tight">Avaliações de Desempenho & Carreira</h2>
+                          <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-[#E5DFD3]/45' : 'text-black/45'}`}>
+                            Acompanhamento de planos de carreira, trilhas de progressão e avaliações dos colaboradores.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* KPIs Row */}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${
+                          theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        }`}>
+                          <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Média Geral de Notas</span>
+                          <div className="flex items-baseline justify-between mt-1">
+                            <span className="text-3xl font-black font-mono text-sky-400">{mediaGeral}</span>
+                            <span className="text-xs opacity-50">/ 5.0</span>
+                          </div>
+                        </div>
+
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${
+                          theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        }`}>
+                          <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Avaliações Lançadas</span>
+                          <div className="flex items-baseline justify-between mt-1">
+                            <span className="text-3xl font-black font-mono text-emerald-400">{totalRatings}</span>
+                            <span className="text-xs opacity-50">total</span>
+                          </div>
+                        </div>
+
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${
+                          theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        }`}>
+                          <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Aptos para Promoção</span>
+                          <div className="flex items-baseline justify-between mt-1">
+                            <span className={`text-3xl font-black font-mono ${countAptos > 0 ? 'text-emerald-400' : 'opacity-40'}`}>{countAptos}</span>
+                            <span className="text-xs opacity-50">elegíveis</span>
+                          </div>
+                        </div>
+
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${
+                          theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        }`}>
+                          <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Avaliações Pendentes</span>
+                          <div className="flex items-baseline justify-between mt-1">
+                            <span className={`text-3xl font-black font-mono ${countPendentes > 0 ? 'text-amber-500' : 'text-emerald-500'}`}>{countPendentes}</span>
+                            <span className="text-xs opacity-50">sem aval.</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Filters and Search */}
+                      <div className={`p-4 rounded-xl border ${
+                        theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                      }`}>
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                          {/* Search */}
+                          <div className="md:col-span-2">
+                            <label className="block text-[9px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Pesquisar Colaborador</label>
+                            <input
+                              type="text"
+                              placeholder="Nome do colaborador..."
+                              value={searchQueryAvaliacoes}
+                              onChange={(e) => setSearchQueryAvaliacoes(e.target.value)}
+                              className={`w-full text-xs p-2.5 rounded border bg-transparent focus:outline-none transition-colors ${
+                                theme === 'dark' ? 'border-white/10 text-white focus:border-white/30' : 'border-black/10 text-black focus:border-black/30'
+                              }`}
+                            />
+                          </div>
+
+                          {/* Sector */}
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Filtrar por Setor</label>
+                            <select
+                              value={filterSetorAvaliacoes}
+                              onChange={(e) => setFilterSetorAvaliacoes(e.target.value)}
+                              className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent transition-colors ${
+                                theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              }`}
+                            >
+                              <option value="Todos">Todos os Setores</option>
+                              <option value="Biomedicina">Biomedicina</option>
+                              <option value="Recepção">Recepção</option>
+                              <option value="Financeiro">Financeiro</option>
+                              <option value="Call Center">Call Center</option>
+                              <option value="Smartshape">Smartshape</option>
+                              <option value="Enfermagem">Enfermagem</option>
+                              <option value="Farmácia">Farmácia</option>
+                              <option value="Serviços Gerais">Serviços Gerais</option>
+                              <option value="Nutrição">Nutrição</option>
+                              <option value="Administrativo">Administrativo</option>
+                            </select>
+                          </div>
+
+                          {/* Promotion Status */}
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Status Elegibilidade</label>
+                            <select
+                              value={filterStatusPromo}
+                              onChange={(e) => setFilterStatusPromo(e.target.value)}
+                              className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent transition-colors ${
+                                theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              }`}
+                            >
+                              <option value="Todos">Todos</option>
+                              <option value="Apto">🛡️ Apto para Promoção</option>
+                              <option value="Em Desenvolvimento">⚙️ Em Desenvolvimento</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Main Table */}
+                      <div className={`border rounded-xl overflow-hidden ${
+                        theme === 'dark' ? 'border-white/5 bg-[#0D0D0C]' : 'border-black/5 bg-white shadow-sm'
+                      }`}>
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse">
+                            <thead>
+                              <tr className={`border-b text-[9px] font-bold uppercase tracking-wider ${
+                                theme === 'dark' ? 'border-white/5 bg-white/2 text-[#E5DFD3]/60' : 'border-black/5 bg-black/[0.01] text-black/50'
+                              }`}>
+                                <th className="p-4">Colaborador</th>
+                                <th className="p-4">Setor</th>
+                                <th className="p-4">Tempo de Casa</th>
+                                <th className="p-4">Última Avaliação</th>
+                                <th className="p-4">Ocorrências (6m)</th>
+                                <th className="p-4">Status Carreira</th>
+                                <th className="p-4 text-center">Ações</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                              {filteredColabs.length > 0 ? (
+                                filteredColabs.map((item) => {
+                                  const nota = item.latestAval ? Number(item.latestAval.nota) : null;
+                                  
+                                  return (
+                                    <tr 
+                                      key={item.id} 
+                                      className={`text-xs transition-colors ${
+                                        theme === 'dark' ? 'hover:bg-white/[0.02]' : 'hover:bg-black/[0.01]'
+                                      }`}
+                                    >
+                                      {/* Colaborador */}
+                                      <td className="p-4">
+                                        <div className="font-bold">{item.nome}</div>
+                                        <div className="text-[10px] opacity-50 mt-0.5">{item.cargo}</div>
+                                      </td>
+                                      
+                                      {/* Setor */}
+                                      <td className="p-4 opacity-75">{item.setor}</td>
+                                      
+                                      {/* Tempo de Casa */}
+                                      <td className="p-4">
+                                        <div className="font-semibold">{item.monthsElapsed} meses</div>
+                                        <div className="text-[9px] opacity-45">Req: {item.requiredMonths} meses</div>
+                                      </td>
+                                      
+                                      {/* Última Avaliação */}
+                                      <td className="p-4">
+                                        {nota ? (
+                                          <div className="flex flex-col gap-1">
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold w-fit ${getNotaColor(nota)}`}>
+                                              Nota {nota.toFixed(1)}
+                                            </span>
+                                            <span className="text-[9px] opacity-40 font-mono">
+                                              {new Date(item.latestAval.data_avaliacao + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <span className="opacity-40 italic text-[11px]">Não avaliado</span>
+                                        )}
+                                      </td>
+                                      
+                                      {/* Ocorrências */}
+                                      <td className="p-4">
+                                        <span className={`font-semibold ${item.recentOcorrenciasCount > 0 ? 'text-rose-400 font-bold' : 'opacity-70'}`}>
+                                          {item.recentOcorrenciasCount} ocor.
+                                        </span>
+                                      </td>
+                                      
+                                      {/* Status Carreira */}
+                                      <td className="p-4">
+                                        {item.isApto ? (
+                                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                            🛡️ Apto
+                                          </span>
+                                        ) : (
+                                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-white/50 border border-white/5">
+                                            ⚙️ Em Desenv.
+                                          </span>
+                                        )}
+                                      </td>
+                                      
+                                      {/* Ações */}
+                                      <td className="p-4 text-center">
+                                        <button
+                                          onClick={() => {
+                                            setActiveColaboradorForDrawer(item);
+                                            setDrawerTab('carreira');
+                                          }}
+                                          className={`px-3 py-1.5 rounded font-bold text-[10px] uppercase transition-colors ${
+                                            theme === 'dark' 
+                                              ? 'bg-white/5 hover:bg-white/10 text-white' 
+                                              : 'bg-black/5 hover:bg-black/10 text-black'
+                                          }`}
+                                        >
+                                          ✏️ Avaliar / Trilha
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
+                              ) : (
+                                <tr>
+                                  <td colSpan={7} className="p-8 text-center opacity-50 italic">
+                                    Nenhum colaborador encontrado com os filtros selecionados.
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
             )}
 
           </div>
@@ -2956,8 +4348,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
               {/* Tab Selector — scrollable horizontal */}
               <div className="flex border-b border-white/10 mb-5 overflow-x-auto gap-0 scrollbar-hide">
-                {(['pessoal','admissao','ocorrencias'] as const).map((tab, i) => {
-                  const labels = ['Pessoal','Ficha Admissão','Ocorrências'];
+                {([
+                  'pessoal',
+                  'admissao',
+                  'ocorrencias',
+                  ...(!(activeColaboradorForDrawer?.cargo?.toLowerCase().includes('coordenador') || activeColaboradorForDrawer?.cargo?.toLowerCase().includes('coordenadora')) ? ['carreira'] : [])
+                ] as const).map((tab) => {
+                  const labels: Record<string, string> = {
+                    pessoal: 'Pessoal',
+                    admissao: 'Ficha Admissão',
+                    ocorrencias: 'Ocorrências',
+                    carreira: 'Plano Carreira'
+                  };
                   return (
                     <button
                       key={tab}
@@ -2968,7 +4370,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           : 'border-transparent opacity-45 hover:opacity-80'
                       }`}
                     >
-                      {labels[i]}
+                      {labels[tab]}
                     </button>
                   );
                 })}
@@ -3027,6 +4429,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     { label: 'Bairro', field: 'bairro' },
                     { label: 'Cidade', field: 'cidade' },
                     { label: 'UF', field: 'uf' },
+                    { label: 'Vencimento ASO', field: 'data_aso_vencimento', type: 'date' },
+                    { label: 'Limite de Férias', field: 'data_ferias_vencimento', type: 'date' },
                   ] as any[]).map(({ label, field, span, type, opts }: any) => {
                     const val = isEditingDrawer
                       ? (drawerEditData[field] !== undefined ? drawerEditData[field] : activeColaboradorForDrawer[field])
@@ -3046,7 +4450,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               className={`w-full text-xs p-1.5 rounded border bg-transparent ${ theme==='dark' ? 'border-white/10' : 'border-black/10' }`} />
                           )
                         ) : (
-                          <p className="text-xs font-semibold py-0.5">{val || <span className="opacity-30 italic">—</span>}</p>
+                          <p className="text-xs font-semibold py-0.5">
+                            {type === 'date' && val 
+                              ? new Date(val + 'T12:00:00').toLocaleDateString('pt-BR') 
+                              : (val || <span className="opacity-30 italic">—</span>)}
+                          </p>
                         )}
                       </div>
                     );
@@ -3076,7 +4484,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <div key={doc.id} className="p-2.5 rounded-lg border border-white/5 bg-white/5 flex items-center justify-between text-xs">
                             <div>
                               <span className="font-semibold block truncate max-w-[180px]">
-                                {doc.documento_id === '1' ? 'Termo de Imagem' : (doc.documento_id === '2' ? 'Contrato Experiência' : 'Documento')}
+                                {doc.titulo || (doc.documento_id === '1' ? 'Termo de Imagem' : (doc.documento_id === '2' ? 'Contrato Experiência' : 'Documento'))}
                               </span>
                               <span className="text-[10px] opacity-45">Assinado {new Date(doc.assinado_em || '').toLocaleDateString('pt-BR')}</span>
                             </div>
@@ -3089,6 +4497,109 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
                     ) : (
                       <p className="text-xs opacity-40 italic">Nenhum documento assinado.</p>
+                    )}
+                  </div>
+
+                  {/* Seção de Desligamento */}
+                  <div className="pt-4 border-t border-white/10 space-y-4">
+                    {activeColaboradorForDrawer.status === 'desligado' ? (
+                      <div className={`p-4 rounded-xl border text-xs space-y-2 ${
+                        theme === 'dark' ? 'bg-rose-500/5 border-rose-500/10 text-[#E5DFD3]' : 'bg-rose-500/5 border-rose-500/10 text-rose-800'
+                      }`}>
+                        <div className="flex items-center gap-1.5 text-rose-500 font-bold uppercase tracking-wider text-[10px]">
+                          <AlertTriangle size={12} /> Colaborador Desligado
+                        </div>
+                        <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[10px]">
+                          <div>
+                            <span className="opacity-50 block uppercase text-[9px] font-sans">Data Desligamento</span>
+                            <span className="font-semibold">{activeColaboradorForDrawer.data_desligamento ? new Date(activeColaboradorForDrawer.data_desligamento).toLocaleDateString('pt-BR') : '—'}</span>
+                          </div>
+                          <div>
+                            <span className="opacity-50 block uppercase text-[9px] font-sans">Tipo Desligamento</span>
+                            <span className="font-semibold">{activeColaboradorForDrawer.tipo_desligamento || '—'}</span>
+                          </div>
+                          {activeColaboradorForDrawer.motivo_desligamento && (
+                            <div className="col-span-2 pt-1">
+                              <span className="opacity-50 block uppercase text-[9px] font-sans">Motivo</span>
+                              <p className="font-sans leading-relaxed text-xs italic opacity-95">"{activeColaboradorForDrawer.motivo_desligamento}"</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : isOffboardingMode ? (
+                      <div className={`p-4 rounded-xl border space-y-3.5 ${
+                        theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                      }`}>
+                        <h5 className="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1">
+                          ⚠️ Formulário de Desligamento
+                        </h5>
+                        <div className="space-y-3 text-xs">
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data do Desligamento *</label>
+                            <input 
+                              type="date" 
+                              required 
+                              value={offboardDate}
+                              onChange={e => setOffboardDate(e.target.value)}
+                              className={`w-full p-2.5 rounded border bg-transparent ${
+                                theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              }`}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tipo de Desligamento *</label>
+                            <select
+                              value={offboardType}
+                              onChange={e => setOffboardType(e.target.value as any)}
+                              className={`w-full p-2.5 rounded border bg-transparent ${
+                                theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              }`}
+                            >
+                              <option value="Voluntario" className={theme==='dark'?'bg-[#0D0D0C] text-white':'bg-white text-black'}>Voluntário (Pedido de Demissão)</option>
+                              <option value="Involuntario" className={theme==='dark'?'bg-[#0D0D0C] text-white':'bg-white text-black'}>Involuntário (Demissão pela Empresa)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Motivo do Desligamento</label>
+                            <textarea
+                              rows={2.5}
+                              placeholder="Descreva brevemente o motivo..."
+                              value={offboardReason}
+                              onChange={e => setOffboardReason(e.target.value)}
+                              className={`w-full p-2.5 rounded border bg-transparent resize-none focus:outline-none ${
+                                theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              }`}
+                            />
+                          </div>
+                          <div className="flex gap-2 pt-1.5">
+                            <button
+                              type="button"
+                              onClick={handleOffboardColaborador}
+                              disabled={isSavingOffboard || !offboardDate}
+                              className="flex-1 py-2 rounded-lg font-bold text-xs bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 transition-colors"
+                            >
+                              {isSavingOffboard ? 'Processando...' : '✓ Confirmar Desligamento'}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setIsOffboardingMode(false)}
+                              className={`px-3 py-2 rounded-lg border text-xs font-semibold transition-colors ${
+                                theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
+                              }`}
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsOffboardingMode(true)}
+                        className="w-full py-2.5 rounded-lg border border-rose-500/25 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        ⚠️ Desligar Colaborador
+                      </button>
                     )}
                   </div>
                 </div>
@@ -3202,41 +4713,93 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </div>
                         </div>
                       </div>
-
-                      {/* Section 4 */}
-                      <div className="space-y-2">
-                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-40 block">Documentos & Fotos Anexados</span>
-                        <div className="space-y-2">
-                          {activeColaboradorForDrawer.documentos_anexos &&
-                            Object.entries(activeColaboradorForDrawer.documentos_anexos).map(([docType, path]: [string, any]) => {
-                              const labels: Record<string, string> = {
-                                identidade: 'Documento de Identidade (RG/CNH)',
-                                residencia: 'Comprovante de Residência',
-                                aso: 'Atestado de Saúde Ocupacional (ASO)',
-                                foto: 'Foto / Selfie Cadastral'
-                              };
-                              return (
-                                <div key={docType} className="p-2.5 rounded-lg border border-white/5 bg-white/5 flex items-center justify-between text-xs animate-fadeIn">
-                                  <div>
-                                    <span className="font-semibold block">{labels[docType] || docType}</span>
-                                    <span className="text-[9px] opacity-45 font-mono truncate block max-w-[200px]">{path}</span>
-                                  </div>
-                                  <button
-                                    onClick={() => handleDownloadAttachment(path)}
-                                    className={`p-1.5 rounded hover:bg-white/10 ${theme==='dark'?'text-[#E5DFD3]':'text-[#0A0A0A]'}`}
-                                    title="Visualizar documento privado"
-                                  >
-                                    <ExternalLink size={13} />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                        </div>
-                      </div>
                     </div>
                   ) : (
                     <div className="p-5 rounded-lg border border-white/5 bg-white/5 text-center opacity-50 italic">
                       Colaborador legado ou sem ficha cadastral digital preenchida.
+                    </div>
+                  )}
+
+                  {/* Documentos & Fotos Anexados (renderizado para todos!) */}
+                  <div className="space-y-3 pt-4 border-t border-white/10">
+                    <span className="text-[10px] font-bold uppercase tracking-wider opacity-40 block">Documentos & Fotos Anexados</span>
+                    {activeColaboradorForDrawer.documentos_anexos && Object.keys(activeColaboradorForDrawer.documentos_anexos).length > 0 ? (
+                      <div className="space-y-2">
+                        {Object.entries(activeColaboradorForDrawer.documentos_anexos).map(([docType, path]: [string, any]) => {
+                          const labels: Record<string, string> = {
+                            identidade: 'Documento de Identidade (RG/CNH)',
+                            residencia: 'Comprovante de Residência',
+                            aso: 'Atestado de Saúde Ocupacional (ASO)',
+                            foto: 'Foto / Selfie Cadastral',
+                            outros: 'Outros Anexos'
+                          };
+                          return (
+                            <div key={docType} className="p-2.5 rounded-lg border border-white/5 bg-white/5 flex items-center justify-between text-xs animate-fadeIn">
+                              <div>
+                                <span className="font-semibold block">{labels[docType] || docType}</span>
+                                <span className="text-[9px] opacity-45 font-mono truncate block max-w-[200px]">{path}</span>
+                              </div>
+                              <button
+                                onClick={() => handleDownloadAttachment(path)}
+                                className={`p-1.5 rounded hover:bg-white/10 ${theme==='dark'?'text-[#E5DFD3]':'text-[#0A0A0A]'}`}
+                                title="Visualizar documento privado"
+                              >
+                                <ExternalLink size={13} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-xs opacity-40 italic">Nenhum documento ou foto anexada à ficha.</p>
+                    )}
+                  </div>
+
+                  {/* Área de Upload de Anexos */}
+                  {hasFullAccess && (
+                    <div className={`p-4 rounded-xl border space-y-3 mt-4 ${
+                      theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                    }`}>
+                      <h5 className="text-[10px] font-bold uppercase tracking-wider opacity-75">➕ Enviar Novo Documento ou Foto</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Tipo de Anexo</label>
+                          <select
+                            value={uploadFileType}
+                            onChange={(e) => setUploadFileType(e.target.value as any)}
+                            className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent ${
+                              theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            }`}
+                          >
+                            <option value="identidade" className={theme==='dark'?'bg-[#0D0D0C] text-white':'bg-white text-black'}>Identidade (RG/CNH)</option>
+                            <option value="residencia" className={theme==='dark'?'bg-[#0D0D0C] text-white':'bg-white text-black'}>Comprovante de Residência</option>
+                            <option value="aso" className={theme==='dark'?'bg-[#0D0D0C] text-white':'bg-white text-black'}>Atestado de Saúde Ocupacional (ASO)</option>
+                            <option value="foto" className={theme==='dark'?'bg-[#0D0D0C] text-white':'bg-white text-black'}>Foto de Perfil</option>
+                            <option value="outros" className={theme==='dark'?'bg-[#0D0D0C] text-white':'bg-white text-black'}>Outros Documentos</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Selecionar Arquivo</label>
+                          <input 
+                            id="drawer-file-upload-input"
+                            type="file"
+                            accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                            className={`w-full text-[10px] p-1.5 rounded border ${
+                              theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            }`}
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleUploadColaboradorFile}
+                        disabled={isUploadingFile || !uploadFile}
+                        className={`w-full py-2 rounded-lg font-bold text-xs transition-colors ${
+                          theme === 'dark' ? 'bg-[#E5DFD3] text-black' : 'bg-[#0A0A0A] text-white'
+                        } disabled:opacity-50`}
+                      >
+                        {isUploadingFile ? 'Enviando...' : '✓ Fazer Upload'}
+                      </button>
                     </div>
                   )}
                 </div>
@@ -3406,6 +4969,254 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   </div>
                 </div>
               )}
+
+              {drawerTab === 'carreira' && (() => {
+                const plano = dbPlanosCarreira.find(p => p.cargo_atual === activeColaboradorForDrawer.cargo);
+                
+                const getMonthsElapsed = (dateStr: string) => {
+                  if (!dateStr) return 0;
+                  const start = new Date(dateStr + 'T12:00:00');
+                  const end = new Date();
+                  return (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+                };
+                
+                const monthsElapsed = getMonthsElapsed(activeColaboradorForDrawer.data_admissao);
+                const requiredMonths = plano?.requisito_tempo_meses ?? 12;
+                const isTempoOk = monthsElapsed >= requiredMonths;
+
+                const date180Ago = new Date(Date.now() - 180 * 24 * 60 * 60 * 1000);
+                const recentOcorrencias = ocorrenciasList.filter(o => {
+                  if (!o.data_ocorrencia) return false;
+                  return new Date(o.data_ocorrencia + 'T12:00:00') >= date180Ago;
+                });
+                const isOcorrenciasOk = recentOcorrencias.length === 0;
+
+                const colabAvaliacoes = dbAvaliacoesDesempenho.filter(a => a.colaborador_id === activeColaboradorForDrawer.id);
+                const latestAvaliacao = colabAvaliacoes[0];
+                const requiredNota = plano?.requisito_nota_avaliacao ?? 4.0;
+                const isNotaOk = latestAvaliacao ? Number(latestAvaliacao.nota) >= requiredNota : false;
+
+                const isEligibleForPromotion = !!plano && isTempoOk && isOcorrenciasOk && isNotaOk;
+
+                return (
+                  <div className="space-y-6 animate-fadeIn">
+                    {/* Trilha de Progressão */}
+                    <div className={`p-4 rounded-xl border ${
+                      theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'
+                    }`}>
+                      <span className="text-[9px] font-bold uppercase tracking-wider opacity-50 block mb-3">Plano de Carreira Ativo</span>
+                      {plano ? (
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div className="text-left">
+                              <span className="text-[8px] uppercase tracking-wider opacity-50 block">Cargo Atual</span>
+                              <span className="text-xs font-bold">{plano.cargo_atual}</span>
+                            </div>
+                            <div className="px-2 py-1 rounded bg-[#E5DFD3]/10 text-xs">➔</div>
+                            <div className="text-right">
+                              <span className="text-[8px] uppercase tracking-wider opacity-50 block">Próximo Nível</span>
+                              <span className="text-xs font-bold text-emerald-400">{plano.proximo_cargo}</span>
+                            </div>
+                          </div>
+                          <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px]">
+                            <span className="opacity-60">Salário Projetado:</span>
+                            <strong className="font-mono text-emerald-400 text-xs">{plano.salario_projetado}</strong>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-xs opacity-50 italic text-center py-2">
+                          Nenhuma trilha padrão mapeada para o cargo: <strong>{activeColaboradorForDrawer.cargo}</strong>.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Status de Critérios */}
+                    <div className="space-y-3">
+                      <span className="text-[9px] font-bold uppercase tracking-wider opacity-50 block">Critérios para Promoção</span>
+                      
+                      {/* Critério: Tempo de Casa */}
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                        theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                      }`}>
+                        <div>
+                          <span className="text-[10px] font-bold block">Tempo de Casa</span>
+                          <span className="text-[9px] opacity-60 block mt-0.5">Mínimo necessário: {requiredMonths} meses</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-semibold">{monthsElapsed} meses</span>
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${
+                            isTempoOk ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                          }`}>
+                            {isTempoOk ? 'OK' : 'Falta tempo'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Critério: Ocorrências */}
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                        theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                      }`}>
+                        <div>
+                          <span className="text-[10px] font-bold block">Ocorrências (Últimos 6 meses)</span>
+                          <span className="text-[9px] opacity-60 block mt-0.5">Meta: Zero ocorrências</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-semibold">{recentOcorrencias.length} reg.</span>
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${
+                            isOcorrenciasOk ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                          }`}>
+                            {isOcorrenciasOk ? 'OK' : 'Pendente'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Critério: Avaliação Desempenho */}
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${
+                        theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                      }`}>
+                        <div>
+                          <span className="text-[10px] font-bold block">Avaliação Desempenho</span>
+                          <span className="text-[9px] opacity-60 block mt-0.5">Mínimo necessário: {requiredNota.toFixed(1)} / 5.0</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono font-semibold">
+                            {latestAvaliacao ? `${Number(latestAvaliacao.nota).toFixed(1)}` : '—'}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[8px] font-bold uppercase ${
+                            isNotaOk ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                          }`}>
+                            {isNotaOk ? 'OK' : 'Pendente'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Status Geral de Promoção */}
+                    <div className={`p-4 rounded-xl border text-center space-y-2 ${
+                      isEligibleForPromotion
+                        ? 'bg-emerald-500/5 border-emerald-500/20'
+                        : (theme==='dark'?'bg-white/5 border-white/5':'bg-black/5 border-black/5')
+                    }`}>
+                      <span className="text-[9px] uppercase tracking-wider opacity-60 block">Elegibilidade para Promoção</span>
+                      <div className="text-base font-extrabold flex items-center justify-center gap-1.5">
+                        {isEligibleForPromotion ? (
+                          <>
+                            <span className="text-emerald-400">🛡️ Apto para Promoção</span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="opacity-40">⚙️ Em Desenvolvimento</span>
+                          </>
+                        )}
+                      </div>
+                      <p className="text-[9px] opacity-50 max-w-xs mx-auto">
+                        {isEligibleForPromotion 
+                          ? 'O colaborador atinge todos os pré-requisitos objetivos de tempo, histórico disciplinar e desempenho.' 
+                          : 'Necessário atender a todos os critérios (tempo, zero ocorrências nos últimos 6 meses e nota mínima) para liberação de promoção.'
+                        }
+                      </p>
+                    </div>
+
+                    {/* Bloco de Avaliações / Lançamento */}
+                    <div className="space-y-4 pt-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[9px] font-bold uppercase tracking-wider opacity-60">Histórico de Avaliações</span>
+                        {hasFullAccess && (
+                          <button
+                            onClick={() => setIsRegisteringAvaliacao(!isRegisteringAvaliacao)}
+                            className={`text-[9px] px-2.5 py-1 rounded font-bold uppercase transition-all ${
+                              isRegisteringAvaliacao 
+                                ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500' 
+                                : (theme === 'dark' ? 'bg-white/5 border border-white/10 hover:bg-white/10 text-white' : 'bg-black/5 border-black/10 hover:bg-black/10 text-black')
+                            }`}
+                          >
+                            {isRegisteringAvaliacao ? 'Cancelar' : '✏️ Avaliar'}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Formulário de Nova Avaliação */}
+                      {isRegisteringAvaliacao && (
+                        <form onSubmit={handleCadastrarAvaliacao} className={`p-4 rounded-xl border space-y-4 ${
+                          theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                        }`}>
+                          <div>
+                            <div className="flex justify-between items-center mb-1.5">
+                              <label className="block text-[9px] font-bold uppercase opacity-65">Nota de Desempenho</label>
+                              <span className="text-xs font-mono font-bold text-emerald-400">{newAvaliacaoNota.toFixed(1)} / 5.0</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="1.0"
+                              max="5.0"
+                              step="0.5"
+                              value={newAvaliacaoNota}
+                              onChange={(e) => setNewAvaliacaoNota(parseFloat(e.target.value))}
+                              className="w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-white/15 accent-[#E5DFD3]"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1.5">Comentários & Feedbacks</label>
+                            <textarea
+                              required
+                              rows={3}
+                              placeholder="Foque nos pontos fortes e oportunidades de melhoria..."
+                              value={newAvaliacaoComentarios}
+                              onChange={(e) => setNewAvaliacaoComentarios(e.target.value)}
+                              className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none focus:outline-none ${
+                                theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              }`}
+                            />
+                          </div>
+
+                          <button
+                            type="submit"
+                            disabled={isSavingAvaliacao}
+                            className={`w-full py-2.5 rounded text-[10px] font-bold tracking-wider uppercase transition-colors ${
+                              theme === 'dark' 
+                                ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]' 
+                                : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+                            } disabled:opacity-50`}
+                          >
+                            {isSavingAvaliacao ? 'Gravando...' : 'Gravar Avaliação'}
+                          </button>
+                        </form>
+                      )}
+
+                      {/* Lista de Avaliações */}
+                      <div className="space-y-3">
+                        {colabAvaliacoes.length > 0 ? (
+                          colabAvaliacoes.map((a) => (
+                            <div key={a.id} className={`p-3 rounded-xl border space-y-2 ${
+                              theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                            }`}>
+                              <div className="flex items-center justify-between text-[10px]">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold text-[9px]">
+                                    Nota {Number(a.nota).toFixed(1)}
+                                  </span>
+                                  <span className="opacity-45">por {a.avaliador_email?.split('@')[0]}</span>
+                                </div>
+                                <span className="opacity-45 font-mono">
+                                  {new Date(a.data_avaliacao + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                </span>
+                              </div>
+                              {a.comentarios && (
+                                <p className="text-xs opacity-75 leading-relaxed bg-white/2 p-2 rounded-lg italic font-sans">
+                                  "{a.comentarios}"
+                                </p>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-xs opacity-50 italic text-center py-6">Nenhuma avaliação de desempenho registrada.</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Footer */}

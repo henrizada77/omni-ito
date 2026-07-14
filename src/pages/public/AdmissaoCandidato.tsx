@@ -235,7 +235,9 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
           signatureBase64,
           coordinatorEmail: tokenRow.criado_por || 'rh@thiagoomena.com.br',
           pdfTemplateBase64: details.pdf_template_base64 || null,
-          documentName: `contrato_${cpf.replace(/\D/g, '')}_assinado`
+          documentName: `contrato_${cpf.replace(/\D/g, '')}_assinado`,
+          colabSignaturePosition: details.colab_signature_position || null,
+          repSignaturePosition: details.rep_signature_position || null
         })
       });
 

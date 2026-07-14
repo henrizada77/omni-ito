@@ -65,6 +65,16 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
     descricao: ''
   });
 
+  const parseSalary = (salaryStr: string): number => {
+    if (!salaryStr) return 0;
+    const clean = salaryStr
+      .replace('R$', '')
+      .trim()
+      .replace(/\./g, '')
+      .replace(',', '.');
+    return parseFloat(clean) || 0;
+  };
+
   const fetchData = async () => {
     setLoading(true);
     setErrorMsg('');
@@ -119,7 +129,13 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
         initialValues[c.id] = match.valor_customizado.toString();
       } else {
         initialSelected[c.id] = false;
-        initialValues[c.id] = benefit.valor_padrao.toString();
+        
+        let defaultVal = benefit.valor_padrao;
+        if (benefit.nome.toLowerCase().includes('vale transporte') || benefit.valor_padrao < 1) {
+          const salary = parseSalary(c.salario);
+          defaultVal = salary * (benefit.valor_padrao < 1 ? benefit.valor_padrao : 0.06);
+        }
+        initialValues[c.id] = (Math.round(defaultVal * 100) / 100).toFixed(2);
       }
     });
 
@@ -262,10 +278,24 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
   };
 
   const handleToggleColaborador = (colabId: string) => {
-    setSelectedColaboradores(prev => ({
-      ...prev,
-      [colabId]: !prev[colabId]
-    }));
+    setSelectedColaboradores(prev => {
+      const nextChecked = !prev[colabId];
+      if (nextChecked && selectedBenefit) {
+        const c = colaboradores.find(col => col.id === colabId);
+        if (c && (selectedBenefit.nome.toLowerCase().includes('vale transporte') || selectedBenefit.valor_padrao < 1)) {
+          const salary = parseSalary(c.salario);
+          const val = salary * (selectedBenefit.valor_padrao < 1 ? selectedBenefit.valor_padrao : 0.06);
+          setCustomValues(v => ({
+            ...v,
+            [colabId]: (Math.round(val * 100) / 100).toFixed(2)
+          }));
+        }
+      }
+      return {
+        ...prev,
+        [colabId]: nextChecked
+      };
+    });
   };
 
   const handleCustomValueChange = (colabId: string, val: string) => {
@@ -343,8 +373,8 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
                 onChange={e => setNewBenefit(prev => ({ ...prev, tipo: e.target.value as any }))}
                 className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}
               >
-                <option value="adicional">Adicional (Soma ao Salário)</option>
-                <option value="desconto">Desconto (Subtrai da Folha)</option>
+                <option value="adicional" className={theme==='dark'?'bg-[#121211] text-white':'bg-white text-black'}>Adicional (Soma ao Salário)</option>
+                <option value="desconto" className={theme==='dark'?'bg-[#121211] text-white':'bg-white text-black'}>Desconto (Subtrai da Folha)</option>
               </select>
             </div>
             <div>
@@ -420,7 +450,9 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
                         {b.tipo === 'adicional' ? 'Adicional' : 'Desconto'}
                       </span>
                       <span className="text-[10px] font-mono opacity-70">
-                        R$ {b.valor_padrao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        {b.valor_padrao < 1 
+                          ? `${(b.valor_padrao * 100).toFixed(0)}%` 
+                          : `R$ ${b.valor_padrao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
                       </span>
                     </div>
                   </div>
@@ -461,7 +493,11 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
                     <h4 className="text-sm font-bold mt-0.5">{selectedBenefit.nome}</h4>
                   </div>
                   <div className="text-xs opacity-75 sm:text-right">
-                    Valor Padrão: <span className="font-mono font-bold">R$ {selectedBenefit.valor_padrao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    Valor Padrão: <span className="font-mono font-bold">
+                      {selectedBenefit.valor_padrao < 1 
+                        ? `${(selectedBenefit.valor_padrao * 100).toFixed(0)}%` 
+                        : `R$ ${selectedBenefit.valor_padrao.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
+                    </span>
                   </div>
                 </div>
 

@@ -1,0 +1,798 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260714-130900-215",
+  "strategy": "merge",
+  "toolkitVersion": "2026.7.12",
+  "createdAt": "2026-07-14T13:09:02.385Z",
+  "backupDir": "C:\\Users\\itoth\\Documents\\omni-ito\\.ag-kit-backups\\20260714-130900-215",
+  "summary": {
+    "actions": 0,
+    "conflicts": 0,
+    "preserved": 195,
+    "unchanged": 0
+  },
+  "actions": [],
+  "conflicts": [],
+  "preserved": [
+    {
+      "file": "ARCHITECTURE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "README.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "VERSION",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/backend-specialist.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/code-archaeologist.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/database-architect.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/debugger.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/devops-engineer.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/documentation-writer.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/explorer-agent.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/frontend-specialist.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/game-developer.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/mobile-developer.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/orchestrator.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/penetration-tester.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/performance-optimizer.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/product-manager.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/product-owner.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/project-planner.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/qa-automation-engineer.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/security-auditor.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/seo-specialist.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "agent/test-engineer.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "mcp_config.json",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "memory/MEMORY.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "memory/project-conventions.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "rules/code-rules.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "rules/core-protocol.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "rules/design-rules.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "rules/quick-reference.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "rules/request-routing.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "rules/universal-rules.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "scripts/README.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "scripts/auto_preview.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "scripts/checklist.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "scripts/session_manager.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "scripts/tests/test_toolkit.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "scripts/validate_kit.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "scripts/validation_runner.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "scripts/verify_all.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/api-style.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/auth.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/documentation.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/graphql.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/rate-limiting.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/response.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/rest.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/scripts/api_validator.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/security-testing.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/trpc.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/api-patterns/versioning.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/agent-coordination.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/feature-building.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/project-detection.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/scaffolding.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/tech-stack.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/astro-static/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/chrome-extension/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/cli-tool/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/electron-desktop/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/express-api/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/flutter-app/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/monorepo-turborepo/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/nextjs-fullstack/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/nextjs-saas/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/nextjs-static/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/nuxt-app/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/python-fastapi/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/app-builder/templates/react-native-app/TEMPLATE.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/architecture/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/architecture/context-discovery.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/architecture/examples.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/architecture/pattern-selection.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/architecture/patterns-reference.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/architecture/trade-off-analysis.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/bash-linux/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/batch-operations/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/behavioral-modes/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/brainstorming/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/brainstorming/dynamic-questioning.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/clean-code/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/code-review-checklist/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/code-review-graph/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/context-compression/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/coordinator-mode/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/database-design/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/database-design/database-selection.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/database-design/indexing.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/database-design/migrations.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/database-design/optimization.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/database-design/orm-selection.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/database-design/schema-design.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/database-design/scripts/schema_validator.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/deployment-procedures/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/design-spec/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/design-spec/collection.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/documentation-templates/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/frontend-architecture/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/frontend-design/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/frontend-design/redesign.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/frontend-design/scripts/accessibility_checker.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/frontend-design/scripts/ux_audit.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/frontend-design/style-brutalist.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/frontend-design/style-minimalist.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/2d-games/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/3d-games/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/game-art/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/game-audio/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/game-design/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/mobile-games/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/multiplayer/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/pc-games/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/vr-ar/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/game-development/web-games/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/geo-fundamentals/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/geo-fundamentals/scripts/geo_checker.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/i18n-localization/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/i18n-localization/scripts/i18n_checker.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/intelligent-routing/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/lint-and-validate/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/lint-and-validate/scripts/lint_runner.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/lint-and-validate/scripts/type_coverage.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mcp-builder/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/memory-system/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/decision-trees.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/mobile-backend.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/mobile-color-system.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/mobile-debugging.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/mobile-design-thinking.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/mobile-navigation.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/mobile-performance.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/mobile-testing.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/mobile-typography.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/platform-android.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/platform-ios.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/scripts/mobile_audit.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/mobile-design/touch-psychology.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/1-async-eliminating-waterfalls.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/2-bundle-bundle-size-optimization.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/3-server-server-side-performance.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/4-client-client-side-data-fetching.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/5-rerender-re-render-optimization.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/6-rendering-rendering-performance.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/7-js-javascript-performance.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/8-advanced-advanced-patterns.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/9-cache-components.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/scripts/convert_rules.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nextjs-react-expert/scripts/react_performance_checker.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/nodejs-best-practices/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/parallel-agents/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/performance-profiling/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/performance-profiling/scripts/bundle_analyzer.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/performance-profiling/scripts/lighthouse_audit.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/plan-writing/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/powershell-windows/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/python-patterns/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/red-team-tactics/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/rust-pro/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/seo-fundamentals/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/seo-fundamentals/scripts/seo_checker.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/server-management/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/simplify-code/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/skillify/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/systematic-debugging/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/tailwind-patterns/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/tdd-workflow/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/testing-patterns/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/testing-patterns/scripts/test_runner.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/verify-changes/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/vulnerability-scanner/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/vulnerability-scanner/checklists.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/vulnerability-scanner/scripts/dependency_analyzer.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/vulnerability-scanner/scripts/security_scan.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/web-design-guidelines/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/webapp-testing/SKILL.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "skills/webapp-testing/scripts/playwright_runner.py",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/brainstorm.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/coordinate.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/create.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/debug.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/deploy.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/enhance.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/orchestrate.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/plan.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/preview.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/remember.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/status.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/test.md",
+      "reason": "changed locally only"
+    },
+    {
+      "file": "workflows/verify.md",
+      "reason": "changed locally only"
+    }
+  ]
+}

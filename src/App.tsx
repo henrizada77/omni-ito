@@ -19,12 +19,11 @@ export default function App() {
   const [role, setRole] = useState<Role>('ti'); // Default cargo is TI
   const [isInitialSessionCheckDone, setIsInitialSessionCheckDone] = useState(false);
 
-  // Sync theme with body element
   useEffect(() => {
     if (theme === 'dark') {
-      document.body.className = 'bg-[#0D0D0C] text-[#E5DFD3] antialiased';
+      document.body.className = 'dark bg-[#0D0D0C] text-[#E5DFD3] antialiased';
     } else {
-      document.body.className = 'bg-[#FBFBFA] text-[#0A0A0A] antialiased';
+      document.body.className = 'light bg-[#FBFBFA] text-[#0A0A0A] antialiased';
     }
   }, [theme]);
 
@@ -166,6 +165,34 @@ export default function App() {
 
         <Route 
           path="/app/beneficios" 
+          element={
+            <ProtectedRoute 
+              user={user} 
+              role={role} 
+              isInitialCheckDone={isInitialSessionCheckDone} 
+              allowedRoles={['coordenadora_rh']}
+            >
+              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/app/ferias-aso" 
+          element={
+            <ProtectedRoute 
+              user={user} 
+              role={role} 
+              isInitialCheckDone={isInitialSessionCheckDone} 
+              allowedRoles={['coordenadora_rh']}
+            >
+              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/app/avaliacoes" 
           element={
             <ProtectedRoute 
               user={user} 

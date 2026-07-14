@@ -13,31 +13,93 @@ import {
   Legend 
 } from 'recharts';
 
+interface Benefit {
+  id: string;
+  nome: string;
+  tipo: 'adicional' | 'desconto';
+  valor_padrao: number;
+}
+
+interface Association {
+  colaborador_id: string;
+  beneficio_id: string;
+  valor_customizado: number | null;
+}
+
 interface CompensationsPanelProps {
   theme: 'dark' | 'light';
   colaboradoresList: any[];
   indicadoresList: any[];
+  benefitsList: Benefit[];
+  associationsList: Association[];
 }
 
-export default function CompensationsPanel({ theme, colaboradoresList, indicadoresList }: CompensationsPanelProps) {
+export default function CompensationsPanel({ theme, colaboradoresList, indicadoresList, benefitsList, associationsList }: CompensationsPanelProps) {
   const activeColabs = colaboradoresList.filter(c => c.status === 'ativo');
+
+  // Salary parser: handles "R$ 2.500,00" → 2500
+  const parseSalary = (salaryStr: string): number => {
+    const clean = salaryStr
+      .replace('R$', '')
+      .trim()
+      .replace(/\./g, '')   // remove thousands separator dots
+      .replace(',', '.');   // convert decimal comma to dot
+    return parseFloat(clean) || 0;
+  };
 
   // 1. Custo Total de Compensação
   const totalSalaries = activeColabs.reduce((acc, c) => {
-    const salaryStr = c.salario || '';
-    const cleanSalary = parseFloat(salaryStr.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-    return acc + cleanSalary;
+    return acc + parseSalary(c.salario || '');
   }, 0);
 
-  const totalBenefits = activeColabs.reduce((acc, c) => {
-    let benefitSum = 0;
-    if (c.vale_alimentacao) benefitSum += 600;
-    if (c.plano_saude) benefitSum += 400;
-    if (c.depily) benefitSum += 200;
-    return acc + benefitSum;
+  // Real benefit cost: sum associations for active collaborators
+  // For each active colab, find all their benefit associations and sum the values
+  const benefitBreakdown: Record<string, { nome: string; total: number; count: number }> = {};
+
+  const totalBenefits = activeColabs.reduce((acc, colab) => {
+    const colabAssocs = associationsList.filter(a => a.colaborador_id === colab.id);
+    let colabBenefitTotal = 0;
+
+    colabAssocs.forEach(assoc => {
+      const benefit = benefitsList.find(b => b.id === assoc.beneficio_id);
+      if (benefit && benefit.tipo === 'adicional') {
+        let value = assoc.valor_customizado;
+        if (value === null || value === undefined) {
+          if (benefit.nome.toLowerCase().includes('vale transporte') || benefit.valor_padrao < 1) {
+            const baseValue = parseSalary(colab.salario || '');
+            value = baseValue * (benefit.valor_padrao < 1 ? benefit.valor_padrao : 0.06);
+          } else {
+            value = benefit.valor_padrao;
+          }
+        }
+        colabBenefitTotal += value;
+
+        // Track breakdown per benefit name
+        if (!benefitBreakdown[benefit.id]) {
+          benefitBreakdown[benefit.id] = { nome: benefit.nome, total: 0, count: 0 };
+        }
+        benefitBreakdown[benefit.id].total += value;
+        benefitBreakdown[benefit.id].count += 1;
+      }
+    });
+
+    return acc + colabBenefitTotal;
   }, 0);
 
   const totalCompensacao = totalSalaries + totalBenefits;
+
+  // Build subtitle: top 3 benefits by total cost
+  const breakdownEntries = Object.values(benefitBreakdown)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 3);
+
+  const benefitSubtitle = breakdownEntries.length > 0
+    ? breakdownEntries
+        .map(b => `R$ ${(b.total / 1000).toFixed(1)}k ${b.nome}`)
+        .join(' · ')
+    : associationsList.length === 0
+      ? 'Nenhum benefício vinculado a colaboradores'
+      : 'Sem benefícios do tipo adicional';
 
   // 2. Paridade Salarial por Gênero (Feminino vs Masculino)
   const getGenderParityData = () => {
@@ -45,8 +107,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, indicador
     
     activeColabs.forEach(c => {
       if (!c.setor) return;
-      const salaryStr = c.salario || '';
-      const cleanSalary = parseFloat(salaryStr.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
+      const cleanSalary = parseSalary(c.salario || '');
       if (cleanSalary <= 0) return;
 
       if (!sectorMap[c.setor]) {
@@ -87,7 +148,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, indicador
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Custo Total de Compensação (Mensal)</span>
           <div>
             <span className="text-3xl font-extrabold font-mono leading-none">R$ {(totalCompensacao / 1000).toFixed(1)}k</span>
-            <span className="text-[9px] opacity-60 block mt-1">Salários + Benefícios (VA, Plano de Saúde, Depily)</span>
+            <span className="text-[9px] opacity-60 block mt-1">Salários + Benefícios vinculados</span>
           </div>
         </div>
 
@@ -107,7 +168,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, indicador
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Investimento Estimado em Benefícios</span>
           <div>
             <span className="text-3xl font-extrabold font-mono leading-none text-emerald-400">R$ {(totalBenefits / 1000).toFixed(1)}k</span>
-            <span className="text-[9px] opacity-60 block mt-1">R$ 600 VA · R$ 400 Saúde · R$ 200 Depily</span>
+            <span className="text-[9px] opacity-60 block mt-1 leading-relaxed">{benefitSubtitle}</span>
           </div>
         </div>
       </div>

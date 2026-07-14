@@ -54,8 +54,8 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
     setAuthLoading(true);
 
     const emailDomain = authEmail.split('@')[1];
-    if (emailDomain !== 'institutoomena.com.br' && emailDomain !== 'gmail.com') {
-      setAuthError('Cadastro restrito a e-mails corporativos @institutoomena.com.br ou @gmail.com');
+    if (emailDomain !== 'itoinstituto.com.br' && emailDomain !== 'gmail.com') {
+      setAuthError('Cadastro restrito a e-mails corporativos @itoinstituto.com.br ou @gmail.com');
       setAuthLoading(false);
       return;
     }
@@ -193,7 +193,7 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
                   <input
                     type="email"
                     required
-                    placeholder="nome@institutoomena.com.br ou @gmail.com"
+                    placeholder="nome@itoinstituto.com.br ou @gmail.com"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     className={`w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border focus:outline-none focus:ring-1 transition-all ${
