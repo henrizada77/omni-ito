@@ -25,8 +25,8 @@ import {
   Award
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
-import type { DashboardProps, AdmissionToken, Colaborador, DocumentoAssinado, ModeloDocumento, OcorrenciaJornada, AvaliacaoDesempenho, Beneficio, ColaboradorBeneficio, PlanoCarreira, IndicadorTrabalhista, LogAuditoria, CandidateReviewData, OnboardingBenefits, OnboardingTasks, SignaturePosition, ModeloFileType } from '../../types';
-import { CONTRATO_EXPERIENCIA_TEXT, REGIMENTO_INTERNO_TEXT, BANCO_HORAS_TEXT, MESES_PT_BR, DEFAULT_MODELS } from '../../data/contractTemplates';
+import type { DashboardProps } from '../../types';
+import { MESES_PT_BR, DEFAULT_MODELS } from '../../data/contractTemplates';
 
 import OverviewPanel from '../../components/analytics/OverviewPanel';
 import TurnoverPanel from '../../components/analytics/TurnoverPanel';
