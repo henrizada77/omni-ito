@@ -16,14 +16,29 @@ import {
   Tooltip 
 } from 'recharts';
 
+interface Benefit {
+  id: string;
+  nome: string;
+  tipo: 'adicional' | 'desconto';
+  valor_padrao: number;
+}
+
+interface Association {
+  colaborador_id: string;
+  beneficio_id: string;
+  valor_customizado: number | null;
+}
+
 interface OverviewPanelProps {
   theme: 'dark' | 'light';
   colaboradoresList: any[];
   ocorrenciasList: any[];
   indicadoresList: any[];
+  benefitsList: Benefit[];
+  associationsList: Association[];
 }
 
-export default function OverviewPanel({ theme, colaboradoresList, ocorrenciasList, indicadoresList }: OverviewPanelProps) {
+export default function OverviewPanel({ theme, colaboradoresList, ocorrenciasList, indicadoresList, benefitsList, associationsList }: OverviewPanelProps) {
   // Calculations
   const activeColabs = colaboradoresList.filter(c => c.status === 'ativo');
   const activeCount = activeColabs.length;
@@ -42,25 +57,45 @@ export default function OverviewPanel({ theme, colaboradoresList, ocorrenciasLis
       const mins = parseInt(parts[1], 10) || 0;
       totalLostHours += hrs + (mins / 60);
     } else if (oc.tipo && oc.tipo.includes('Falta')) {
-      totalLostHours += 8; // Assumes 8 hours lost for a full missing day
+      totalLostHours += 8;
     }
   });
   const absenteismoGeral = totalExpectedHours > 0 ? parseFloat(((totalLostHours / totalExpectedHours) * 100).toFixed(1)) : 0;
 
-  // 3. Custo Total de Compensação
-  const totalSalaries = activeColabs.reduce((acc, c) => {
-    const salaryStr = c.salario || '';
-    const cleanSalary = parseFloat(salaryStr.replace(/[^\d,]/g, '').replace(',', '.')) || 0;
-    return acc + cleanSalary;
+  // 3. Custo Total de Compensação — using real salary parser
+  const parseSalary = (salaryStr: string): number => {
+    const clean = salaryStr
+      .replace('R$', '')
+      .trim()
+      .replace(/\./g, '')   // remove thousands separator dots
+      .replace(',', '.');   // convert decimal comma to dot
+    return parseFloat(clean) || 0;
+  };
+
+  const totalSalaries = activeColabs.reduce((acc, c) => acc + parseSalary(c.salario || ''), 0);
+
+  // Real benefit cost from colaborador_beneficios table
+  const totalBenefits = activeColabs.reduce((acc, colab) => {
+    const colabAssocs = associationsList.filter(a => a.colaborador_id === colab.id);
+    const colabBenefitTotal = colabAssocs.reduce((sum, assoc) => {
+      const benefit = benefitsList.find(b => b.id === assoc.beneficio_id);
+      if (benefit && benefit.tipo === 'adicional') {
+        let val = assoc.valor_customizado;
+        if (val === null || val === undefined) {
+          if (benefit.nome.toLowerCase().includes('vale transporte') || benefit.valor_padrao < 1) {
+            const baseValue = parseSalary(colab.salario || '');
+            val = baseValue * (benefit.valor_padrao < 1 ? benefit.valor_padrao : 0.06);
+          } else {
+            val = benefit.valor_padrao;
+          }
+        }
+        return sum + val;
+      }
+      return sum;
+    }, 0);
+    return acc + colabBenefitTotal;
   }, 0);
-  // Estimate benefit values (VA = R$ 600, Plano Saúde = R$ 400, Depily = R$ 200)
-  const totalBenefits = activeColabs.reduce((acc, c) => {
-    let benefitSum = 0;
-    if (c.vale_alimentacao) benefitSum += 600;
-    if (c.plano_saude) benefitSum += 400;
-    if (c.depily) benefitSum += 200;
-    return acc + benefitSum;
-  }, 0);
+
   const totalCompensacao = totalSalaries + totalBenefits;
 
   // 4. Litígios Ativos

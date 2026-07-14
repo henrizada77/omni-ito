@@ -211,7 +211,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
         rawSal = `R$ ${rawSal}`;
       }
 
-      // Prepare payload for Supabase insertion
+      // Prepare payload for RPC
       const newColaborador = {
         nome: formData.nome,
         cpf: formData.cpf,
@@ -219,36 +219,27 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
         cargo: formData.cargo,
         setor: formData.setor,
         salario: rawSal,
-        status: 'ativo', // Onboarding creates active employees in roster
+        status: 'ativo',
         data_admissao: formData.data_admissao,
         genero: formData.genero === 'Masculino' ? 'M' : (formData.genero === 'Feminino' ? 'F' : null),
         vale_alimentacao: true,
         plano_saude: true,
         depily: true,
-        ficha_admissao: formData, // Save whole form payload in JSONB
-        documentos_anexos: filesUrls, // Save attachments path mapping in JSONB
-        onboarding_progresso: 100 // Fully onboarded
+        ficha_admissao: formData,
+        documentos_anexos: filesUrls,
+        onboarding_progresso: 100
       };
 
-      const { error: insertErr } = await supabase
-        .from('colaboradores')
-        .insert(newColaborador);
+      // 2. Call SECURITY DEFINER RPC — validates token & inserts colaborador bypassing RLS
+      const { data: rpcResult, error: rpcError } = await supabase.rpc(
+        'inserir_colaborador_via_admissao',
+        { p_dados: newColaborador, p_token: token || '' }
+      );
 
-      if (insertErr) throw insertErr;
+      if (rpcError) throw rpcError;
+      if (rpcResult && !rpcResult.success) throw new Error(rpcResult.error || 'Erro ao inserir colaborador.');
 
-      if (token) {
-        await supabase
-          .from('admission_tokens')
-          .update({ status: 'concluido', usado_em: new Date().toISOString() })
-          .eq('token', token);
-      }
-
-      // 3. Log action
-      await supabase.from('logs_auditoria').insert({
-        acao: 'CADASTRO_VIA_FORMULARIO_ADMISSAO',
-        detalhes: { colaborador_nome: formData.nome, cpf: formData.cpf }
-      });
-
+      // Token update and audit log are handled inside the RPC function
       setSuccessMsg('Ficha de admissão enviada com sucesso! O novo colaborador foi inserido no sistema.');
       setTimeout(() => {
         onSuccess();

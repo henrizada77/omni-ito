@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "runId": "20260714-000744-827",
+  "strategy": "merge",
+  "toolkitVersion": "2026.7.12",
+  "createdAt": "2026-07-14T00:07:45.204Z",
+  "backupDir": "C:\\Users\\Admin\\Documents\\Nova pasta\\.ag-kit-backups\\20260714-000744-827",
+  "summary": {
+    "actions": 0,
+    "conflicts": 0,
+    "preserved": 0,
+    "unchanged": 195
+  },
+  "actions": [],
+  "conflicts": [],
+  "preserved": []
+}

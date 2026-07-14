@@ -46,6 +46,9 @@ create table if not exists public.modelos_documentos (
   id uuid primary key default gen_random_uuid(),
   titulo text not null,
   conteudo text not null, -- Contains dynamic variables like {{nome}}, {{cpf}}, etc.
+  assinatura_coordenadas jsonb,
+  assinatura_rep_coordenadas jsonb,
+  tipo_arquivo text default 'texto',
   criado_em timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
@@ -112,8 +115,8 @@ declare
   email_domain text;
 begin
   email_domain := split_part(new.email, '@', 2);
-  if email_domain != 'institutoomena.com.br' and email_domain != 'gmail.com' then
-    raise exception 'Cadastro restrito a e-mails corporativos @institutoomena.com.br ou @gmail.com';
+  if email_domain != 'itoinstituto.com.br' and email_domain != 'gmail.com' then
+    raise exception 'Cadastro restrito a e-mails corporativos @itoinstituto.com.br ou @gmail.com';
   end if;
 
   insert into public.perfis (id, email, cargo)
@@ -218,6 +221,8 @@ create table if not exists public.colaboradores (
   documento_identidade_url text,
   comprovante_residencia_url text,
   exame_aso_url text,
+  data_desligamento date,
+  motivo_desligamento text,
   
   -- Onboarding Checklist Columns
   vale_alimentacao boolean not null default false,
@@ -268,7 +273,9 @@ begin
 
   new.onboarding_progresso := (true_count * 100) / total_items;
   
-  if new.onboarding_progresso = 100 then
+  if new.status = 'desligado' then
+    -- Keep status as 'desligado'
+  elsif new.onboarding_progresso = 100 then
     new.status := 'ativo';
   else
     new.status := 'pendente';
@@ -402,6 +409,17 @@ create policy "Permitir controle total do bucket documentos-envios para RH e TI"
   with check (
     bucket_id = 'documentos-envios' 
     and (public.get_user_role() = 'coordenadora_rh' or auth.jwt() ->> 'email' = 'ito.thiagosilva@gmail.com')
+  );
+
+-- Policy: Candidatos anônimos (formulário público /admissao/:token) podem
+-- fazer upload apenas no path admissao/ do bucket documentos-envios
+drop policy if exists "Permitir upload de admissao por candidatos anonimos" on storage.objects;
+create policy "Permitir upload de admissao por candidatos anonimos"
+  on storage.objects for insert
+  to anon
+  with check (
+    bucket_id = 'documentos-envios'
+    and (storage.foldername(name))[1] = 'admissao'
   );
 
 create table if not exists public.ocorrencias_jornada (
@@ -560,7 +578,68 @@ insert into public.beneficios (nome, tipo, valor_padrao, descricao)
 values
   ('Vale Alimentação (VR/VA)', 'adicional', 450.00, 'Auxílio alimentação mensal para dias trabalhados'),
   ('Plano de Saúde Unimed', 'desconto', 180.00, 'Coparticipação do plano de saúde corporativo'),
-  ('Vale Transporte (VT)', 'adicional', 220.00, 'Auxílio deslocamento diário'),
+  ('Vale Transporte (VT)', 'desconto', 0.06, 'Desconto legal de 6% do salário base para Vale Transporte'),
   ('Auxílio Creche', 'adicional', 150.00, 'Auxílio para colaboradores com filhos até 5 anos'),
   ('Seguro de Vida', 'desconto', 25.00, 'Seguro de vida em grupo opcional')
 on conflict (nome) do nothing;
+
+-- 15. Tabelas de Plano de Carreira e Avaliação de Desempenho
+create table if not exists public.planos_carreira (
+  id uuid primary key default gen_random_uuid(),
+  cargo_atual text not null unique,
+  proximo_cargo text not null,
+  requisito_tempo_meses integer not null default 12,
+  requisito_nota_avaliacao numeric not null default 4.0,
+  salario_projetado text not null,
+  criado_em timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create table if not exists public.avaliacoes_desempenho (
+  id uuid primary key default gen_random_uuid(),
+  colaborador_id uuid references public.colaboradores(id) on delete cascade not null,
+  data_avaliacao date not null default current_date,
+  nota numeric not null constraint check_nota check (nota between 1.0 and 5.0),
+  comentarios text,
+  avaliador_email text,
+  criado_em timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- RLS
+alter table public.planos_carreira enable row level security;
+alter table public.avaliacoes_desempenho enable row level security;
+
+drop policy if exists "Leitura de planos_carreira para autenticados" on public.planos_carreira;
+create policy "Leitura de planos_carreira para autenticados"
+  on public.planos_carreira for select to authenticated using (true);
+
+drop policy if exists "Escrita de planos_carreira para coordenadora_rh" on public.planos_carreira;
+create policy "Escrita de planos_carreira para coordenadora_rh"
+  on public.planos_carreira for all to authenticated
+  using (public.get_user_role() = 'coordenadora_rh' or auth.jwt() ->> 'email' = 'ito.thiagosilva@gmail.com');
+
+drop policy if exists "Leitura de avaliacoes_desempenho para autenticados" on public.avaliacoes_desempenho;
+create policy "Leitura de avaliacoes_desempenho para autenticados"
+  on public.avaliacoes_desempenho for select to authenticated using (true);
+
+drop policy if exists "Escrita de avaliacoes_desempenho para coordenadora_rh" on public.avaliacoes_desempenho;
+create policy "Escrita de avaliacoes_desempenho para coordenadora_rh"
+  on public.avaliacoes_desempenho for all to authenticated
+  using (public.get_user_role() = 'coordenadora_rh' or auth.jwt() ->> 'email' = 'ito.thiagosilva@gmail.com');
+
+-- Seeding planos_carreira
+insert into public.planos_carreira (cargo_atual, proximo_cargo, requisito_tempo_meses, requisito_nota_avaliacao, salario_projetado)
+values
+  ('Recepcionista', 'Recepcionista Líder', 12, 4.0, 'R$ 2.800,00'),
+  ('Operador de Call Center', 'Supervisor de Atendimento', 12, 4.2, 'R$ 2.600,00'),
+  ('Auxiliar de Serviços Gerais', 'Líder de Serviços Gerais', 18, 3.8, 'R$ 2.000,00'),
+  ('Fisioterapeuta', 'Fisioterapeuta Especialista', 24, 4.5, 'R$ 5.800,00'),
+  ('Fisioterapeuta Dermato-Funcional', 'Fisioterapeuta Dermato-Funcional Especialista', 24, 4.5, 'R$ 5.800,00'),
+  ('Enfermeiro Esteta', 'Enfermeiro Esteta Sênior', 24, 4.5, 'R$ 6.200,00'),
+  ('Farmacêutica Esteta', 'Farmacêutica Esteta Sênior', 24, 4.5, 'R$ 6.500,00'),
+  ('Consultora Smartshape', 'Líder de Unidade Smartshape', 18, 4.2, 'R$ 4.200,00')
+on conflict (cargo_atual) do update
+set proximo_cargo = excluded.proximo_cargo,
+    requisito_tempo_meses = excluded.requisito_tempo_meses,
+    requisito_nota_avaliacao = excluded.requisito_nota_avaliacao,
+    salario_projetado = excluded.salario_projetado;
+

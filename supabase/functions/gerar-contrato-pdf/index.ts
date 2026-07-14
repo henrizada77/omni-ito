@@ -17,21 +17,23 @@ serve(async (req) => {
   }
 
   try {
-    const { 
-      userEmail, 
-      candidateName, 
-      candidateCpf, 
-      signatureBase64, 
+    const {
+      userEmail,
+      candidateName,
+      candidateCpf,
+      signatureBase64,
       signatureRepresentativeBase64,
-      coordinatorEmail, 
+      coordinatorEmail,
       pdfTemplateBase64,
-      documentName 
+      documentName,
+      colabSignaturePosition,
+      repSignaturePosition
     } = await req.json()
 
     // 1. Collect Client IP and User Agent from request headers
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
-                     req.headers.get('x-real-ip') || 
-                     '127.0.0.1';
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      req.headers.get('x-real-ip') ||
+      '127.0.0.1';
     const userAgent = req.headers.get('user-agent') || 'Dispositivo Desconhecido';
     const timestampISO = new Date().toISOString();
 
@@ -42,17 +44,28 @@ serve(async (req) => {
 
     // 3. Initialize pdf-lib document
     let pdfDoc: PDFDocument;
-    
+
     if (pdfTemplateBase64) {
-      // Decode base64 PDF template
-      const pdfBytes = Uint8Array.from(atob(pdfTemplateBase64), c => c.charCodeAt(0))
-      pdfDoc = await PDFDocument.load(pdfBytes)
+      try {
+        // Decode base64 PDF template
+        const pdfBytes = Uint8Array.from(atob(pdfTemplateBase64), c => c.charCodeAt(0))
+        pdfDoc = await PDFDocument.load(pdfBytes)
+      } catch (err: any) {
+        // Fallback for DOCX or corrupt PDF: generate signing wrapper
+        console.log("PDF load failed, falling back to signature certificate:", err.message)
+        pdfDoc = await PDFDocument.create()
+        const page = pdfDoc.addPage([600, 800])
+        const font = await pdfDoc.embedFont("Helvetica")
+
+        const text = `REGISTRO E CERTIFICADO DE ASSINATURA DIGITAL\n\nEste documento certifica a assinatura digital do modelo de contrato:\n"${documentName || 'Contrato de Admissão'}"\n\nNome do Colaborador: ${candidateName}\nCPF: ${candidateCpf}\nSetor: Admissional\n\nAs assinaturas eletrônicas e registros de auditoria foram vinculados a este certificado.`;
+        page.drawText(text, { x: 50, y: 700, size: 11, font, lineHeight: 18 })
+      }
     } else {
       // Fallback: Create blank PDF if no base64 is provided
       pdfDoc = await PDFDocument.create()
       const page = pdfDoc.addPage([600, 800])
       const font = await pdfDoc.embedFont("Helvetica")
-      
+
       const text = `CONTRATO DE ADMISSÃO\n\nEu, ${candidateName}, portador do CPF ${candidateCpf}, declaro estar de acordo com os termos deste Instituto.\n\nAssinaturas Eletrônicas Registradas abaixo:`;
       page.drawText(text, { x: 50, y: 700, size: 11, font, lineHeight: 15 })
     }
@@ -77,60 +90,101 @@ serve(async (req) => {
       repSignatureImage = await pdfDoc.embedPng(repSignatureImageBytes)
     }
 
-    // 6. Draw signatures on PDF form fields or fallback
+    // 6. Draw signatures on custom coordinates, form fields, or fallback
     let drewCandidateOnField = false;
     let drewRepOnField = false;
+    let drewCandidateOnCoords = false;
+    let drewRepOnCoords = false;
 
-    try {
-      const form = pdfDoc.getForm()
-      const fields = form.getFields()
-      
-      for (const field of fields) {
-        const name = field.getName()
-        
-        // Match Candidate tag
-        if (signatureImage && (name.includes('[ASSINATURA_COLABORADOR]') || name.toLowerCase().includes('assinatura_colaborador') || name.toLowerCase() === 'assinatura')) {
-          const widgets = field.acroField.getWidgets()
-          if (widgets.length > 0) {
-            const rect = widgets[0].getRectangle()
-            lastPage.drawImage(signatureImage, {
-              x: rect.x,
-              y: rect.y,
-              width: rect.width || 150,
-              height: rect.height || 60
-            })
-            form.removeField(field)
-            drewCandidateOnField = true
-          }
-        }
-
-        // Match RH Representative tag
-        if (repSignatureImage && (name.includes('[ASSINATURA_REPRESENTANTE]') || name.toLowerCase().includes('assinatura_representante') || name.toLowerCase().includes('representante'))) {
-          const widgets = field.acroField.getWidgets()
-          if (widgets.length > 0) {
-            const rect = widgets[0].getRectangle()
-            lastPage.drawImage(repSignatureImage, {
-              x: rect.x,
-              y: rect.y,
-              width: rect.width || 150,
-              height: rect.height || 60
-            })
-            form.removeField(field)
-            drewRepOnField = true
-          }
-        }
+    // Draw Candidate signature on custom coordinates if provided
+    if (signatureImage && colabSignaturePosition && typeof colabSignaturePosition.x === 'number' && typeof colabSignaturePosition.y === 'number') {
+      try {
+        const pageIdx = Math.max(0, Math.min(pages.length - 1, (colabSignaturePosition.page || 1) - 1));
+        const targetPage = pages[pageIdx];
+        targetPage.drawImage(signatureImage, {
+          x: colabSignaturePosition.x,
+          y: colabSignaturePosition.y,
+          width: 140,
+          height: 55
+        });
+        drewCandidateOnCoords = true;
+      } catch (err: any) {
+        console.log("Error drawing candidate signature on custom coords:", err.message);
       }
-    } catch (e) {
-      console.log("Form field mapping failed or not present:", e.message)
     }
 
-    // Fallbacks: Draw in footer area
+    // Draw RH Representative signature on custom coordinates if provided
+    if (repSignatureImage && repSignaturePosition && typeof repSignaturePosition.x === 'number' && typeof repSignaturePosition.y === 'number') {
+      try {
+        const pageIdx = Math.max(0, Math.min(pages.length - 1, (repSignaturePosition.page || 1) - 1));
+        const targetPage = pages[pageIdx];
+        targetPage.drawImage(repSignatureImage, {
+          x: repSignaturePosition.x,
+          y: repSignaturePosition.y,
+          width: 140,
+          height: 55
+        });
+        drewRepOnCoords = true;
+      } catch (err: any) {
+        console.log("Error drawing representative signature on custom coords:", err.message);
+      }
+    }
+
+    // Try form fields drawing as backup/legacy support (only if not drawn on coordinates)
+    if (!drewCandidateOnCoords || !drewRepOnCoords) {
+      try {
+        const form = pdfDoc.getForm()
+        const fields = form.getFields()
+
+        for (const field of fields) {
+          const name = field.getName()
+
+          // Match Candidate tag
+          if (signatureImage && !drewCandidateOnCoords && !drewCandidateOnField &&
+            (name.includes('[ASSINATURA_COLABORADOR]') || name.toLowerCase().includes('assinatura_colaborador') || name.toLowerCase() === 'assinatura')) {
+            const widgets = field.acroField.getWidgets()
+            if (widgets.length > 0) {
+              const rect = widgets[0].getRectangle()
+              lastPage.drawImage(signatureImage, {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width || 150,
+                height: rect.height || 60
+              })
+              form.removeField(field)
+              drewCandidateOnField = true
+            }
+          }
+
+          // Match RH Representative tag
+          if (repSignatureImage && !drewRepOnCoords && !drewRepOnField &&
+            (name.includes('[ASSINATURA_REPRESENTANTE]') || name.toLowerCase().includes('assinatura_representante') || name.toLowerCase().includes('representante'))) {
+            const widgets = field.acroField.getWidgets()
+            if (widgets.length > 0) {
+              const rect = widgets[0].getRectangle()
+              lastPage.drawImage(repSignatureImage, {
+                x: rect.x,
+                y: rect.y,
+                width: rect.width || 150,
+                height: rect.height || 60
+              })
+              form.removeField(field)
+              drewRepOnField = true
+            }
+          }
+        }
+      } catch (e: any) {
+        console.log("Form field mapping failed or not present:", e.message)
+      }
+    }
+
+    // Fallbacks: Draw in footer area (only if neither field nor coordinates matched)
     const sigWidth = 140;
     const sigHeight = 55;
     const yPos = 125;
 
     // Draw Candidate signature fallback
-    if (signatureImage && !drewCandidateOnField) {
+    if (signatureImage && !drewCandidateOnField && !drewCandidateOnCoords) {
       const xPos = repSignatureImage ? (width / 2) - 165 : (width - sigWidth) / 2;
       lastPage.drawImage(signatureImage, {
         x: xPos,
@@ -141,7 +195,7 @@ serve(async (req) => {
     }
 
     // Draw RH Representative signature fallback
-    if (repSignatureImage && !drewRepOnField) {
+    if (repSignatureImage && !drewRepOnField && !drewRepOnCoords) {
       const xPos = signatureImage ? (width / 2) + 25 : (width - sigWidth) / 2;
       lastPage.drawImage(repSignatureImage, {
         x: xPos,
@@ -164,22 +218,22 @@ serve(async (req) => {
     // 8. Draw the Audit Stamp at the very bottom of the last page
     const font = await pdfDoc.embedFont("Helvetica")
     const timestampLocal = new Date(timestampISO).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ' (Horário de Brasília)';
-    
+
     let auditText = '';
     if (signatureBase64 && repSignatureImage) {
-      auditText = 
+      auditText =
         `AUDITORIA DIGITAL OMNI ITO — VERIFICAÇÃO JURÍDICA BILATERAL DE ASSINATURA\n` +
         `Candidato: ${candidateName} (Assinatura Registrada) | Representante RH: Coordenadora (Assinatura Registrada)\n` +
         `Finalização: ${timestampLocal} | IP Responsável: ${clientIp}\n` +
         `Código de Integridade Consolidado (SHA-256): ${auditHash}`;
     } else if (signatureBase64) {
-      auditText = 
+      auditText =
         `AUDITORIA DIGITAL OMNI ITO — CONTRATO ASSINADO PELO CANDIDATO (AGUARDANDO RH)\n` +
         `Assinante: ${candidateName} | Data/Hora: ${timestampLocal}\n` +
         `IP do Assinante: ${clientIp} | Dispositivo: ${userAgent.substring(0, 90)}\n` +
         `Código de Integridade Parcial (SHA-256): ${auditHash}`;
     } else {
-      auditText = 
+      auditText =
         `DOCUMENTO NÃO ASSINADO — RASCUNHO PARA LEITURA PRÉVIA\n` +
         `Aguardando assinatura digital do candidato pelo portal admissional.`;
     }
@@ -234,24 +288,24 @@ serve(async (req) => {
     })
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "PDF processado com sucesso!", 
+      JSON.stringify({
+        success: true,
+        message: "PDF processado com sucesso!",
         signedUrl: urlData.signedUrl,
         documentHash: auditHash
       }),
-      { 
+      {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
+        status: 200
       }
     )
 
   } catch (error: any) {
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { 
+      {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400 
+        status: 400
       }
     )
   }
