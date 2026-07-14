@@ -17,24 +17,23 @@ serve(async (req) => {
   }
 
   try {
-    const { 
-      userEmail, 
-      candidateName, 
-      candidateCpf, 
-      signatureBase64, 
+    const {
+      userEmail,
+      candidateName,
+      candidateCpf,
+      signatureBase64,
       signatureRepresentativeBase64,
-      coordinatorEmail, 
+      coordinatorEmail,
       pdfTemplateBase64,
       documentName,
       colabSignaturePosition,
-      repSignaturePosition,
-      customText 
+      repSignaturePosition
     } = await req.json()
 
     // 1. Collect Client IP and User Agent from request headers
-    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() || 
-                     req.headers.get('x-real-ip') || 
-                     '127.0.0.1';
+    const clientIp = req.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
+      req.headers.get('x-real-ip') ||
+      '127.0.0.1';
     const userAgent = req.headers.get('user-agent') || 'Dispositivo Desconhecido';
     const timestampISO = new Date().toISOString();
 
@@ -45,7 +44,7 @@ serve(async (req) => {
 
     // 3. Initialize pdf-lib document
     let pdfDoc: PDFDocument;
-    
+
     if (pdfTemplateBase64) {
       try {
         // Decode base64 PDF template
@@ -57,7 +56,7 @@ serve(async (req) => {
         pdfDoc = await PDFDocument.create()
         const page = pdfDoc.addPage([600, 800])
         const font = await pdfDoc.embedFont("Helvetica")
-        
+
         const text = `REGISTRO E CERTIFICADO DE ASSINATURA DIGITAL\n\nEste documento certifica a assinatura digital do modelo de contrato:\n"${documentName || 'Contrato de Admissão'}"\n\nNome do Colaborador: ${candidateName}\nCPF: ${candidateCpf}\nSetor: Admissional\n\nAs assinaturas eletrônicas e registros de auditoria foram vinculados a este certificado.`;
         page.drawText(text, { x: 50, y: 700, size: 11, font, lineHeight: 18 })
       }
@@ -66,9 +65,9 @@ serve(async (req) => {
       pdfDoc = await PDFDocument.create()
       const page = pdfDoc.addPage([600, 800])
       const font = await pdfDoc.embedFont("Helvetica")
-      
-      const text = customText || `CONTRATO DE ADMISSÃO\n\nEu, ${candidateName}, portador do CPF ${candidateCpf}, declaro estar de acordo com os termos deste Instituto.\n\nAssinaturas Eletrônicas Registradas abaixo:`;
-      page.drawText(text, { x: 50, y: 720, size: 9.5, font, lineHeight: 14 })
+
+      const text = `CONTRATO DE ADMISSÃO\n\nEu, ${candidateName}, portador do CPF ${candidateCpf}, declaro estar de acordo com os termos deste Instituto.\n\nAssinaturas Eletrônicas Registradas abaixo:`;
+      page.drawText(text, { x: 50, y: 700, size: 11, font, lineHeight: 15 })
     }
 
     const pages = pdfDoc.getPages()
@@ -136,13 +135,13 @@ serve(async (req) => {
       try {
         const form = pdfDoc.getForm()
         const fields = form.getFields()
-        
+
         for (const field of fields) {
           const name = field.getName()
-          
+
           // Match Candidate tag
-          if (signatureImage && !drewCandidateOnCoords && !drewCandidateOnField && 
-              (name.includes('[ASSINATURA_COLABORADOR]') || name.toLowerCase().includes('assinatura_colaborador') || name.toLowerCase() === 'assinatura')) {
+          if (signatureImage && !drewCandidateOnCoords && !drewCandidateOnField &&
+            (name.includes('[ASSINATURA_COLABORADOR]') || name.toLowerCase().includes('assinatura_colaborador') || name.toLowerCase() === 'assinatura')) {
             const widgets = field.acroField.getWidgets()
             if (widgets.length > 0) {
               const rect = widgets[0].getRectangle()
@@ -158,8 +157,8 @@ serve(async (req) => {
           }
 
           // Match RH Representative tag
-          if (repSignatureImage && !drewRepOnCoords && !drewRepOnField && 
-              (name.includes('[ASSINATURA_REPRESENTANTE]') || name.toLowerCase().includes('assinatura_representante') || name.toLowerCase().includes('representante'))) {
+          if (repSignatureImage && !drewRepOnCoords && !drewRepOnField &&
+            (name.includes('[ASSINATURA_REPRESENTANTE]') || name.toLowerCase().includes('assinatura_representante') || name.toLowerCase().includes('representante'))) {
             const widgets = field.acroField.getWidgets()
             if (widgets.length > 0) {
               const rect = widgets[0].getRectangle()
@@ -219,22 +218,22 @@ serve(async (req) => {
     // 8. Draw the Audit Stamp at the very bottom of the last page
     const font = await pdfDoc.embedFont("Helvetica")
     const timestampLocal = new Date(timestampISO).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ' (Horário de Brasília)';
-    
+
     let auditText = '';
     if (signatureBase64 && repSignatureImage) {
-      auditText = 
+      auditText =
         `AUDITORIA DIGITAL OMNI ITO — VERIFICAÇÃO JURÍDICA BILATERAL DE ASSINATURA\n` +
         `Candidato: ${candidateName} (Assinatura Registrada) | Representante RH: Coordenadora (Assinatura Registrada)\n` +
         `Finalização: ${timestampLocal} | IP Responsável: ${clientIp}\n` +
         `Código de Integridade Consolidado (SHA-256): ${auditHash}`;
     } else if (signatureBase64) {
-      auditText = 
+      auditText =
         `AUDITORIA DIGITAL OMNI ITO — CONTRATO ASSINADO PELO CANDIDATO (AGUARDANDO RH)\n` +
         `Assinante: ${candidateName} | Data/Hora: ${timestampLocal}\n` +
         `IP do Assinante: ${clientIp} | Dispositivo: ${userAgent.substring(0, 90)}\n` +
         `Código de Integridade Parcial (SHA-256): ${auditHash}`;
     } else {
-      auditText = 
+      auditText =
         `DOCUMENTO NÃO ASSINADO — RASCUNHO PARA LEITURA PRÉVIA\n` +
         `Aguardando assinatura digital do candidato pelo portal admissional.`;
     }
@@ -289,24 +288,24 @@ serve(async (req) => {
     })
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "PDF processado com sucesso!", 
+      JSON.stringify({
+        success: true,
+        message: "PDF processado com sucesso!",
         signedUrl: urlData.signedUrl,
         documentHash: auditHash
       }),
-      { 
+      {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
+        status: 200
       }
     )
 
   } catch (error: any) {
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { 
+      {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400 
+        status: 400
       }
     )
   }
