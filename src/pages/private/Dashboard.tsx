@@ -336,10 +336,116 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [filterStatusPromo, setFilterStatusPromo] = useState('Todos');
 
   // Career Evaluation states
-  const [isRegisteringAvaliacao, setIsRegisteringAvaliacao] = useState(false);
-  const [newAvaliacaoNota, setNewAvaliacaoNota] = useState(4.0);
-  const [newAvaliacaoComentarios, setNewAvaliacaoComentarios] = useState('');
   const [isSavingAvaliacao, setIsSavingAvaliacao] = useState(false);
+  const [showEvalModal, setShowEvalModal] = useState(false);
+  const [evalModalReadOnly, setEvalModalReadOnly] = useState(false);
+  const [selectedEvalForModal, setSelectedEvalForModal] = useState<any | null>(null);
+
+  const initialEvalForm = {
+    dataFeedback: new Date().toISOString().split('T')[0],
+    periodoAvaliado: '',
+    desempenhoGeral: 'Bom',
+    comentariosGestor: '',
+    pontosFortes: 'Trabalho em equipe\nComprometimento com a jornada (pontualidade e assiduidade)\nDisponibilidade',
+    pontosMelhoria: [{ oportunidade: '', acao: '' }],
+    pdi: [{ objetivo: '', acao: '', prazo: '', responsavel: '' }],
+    competencias: {
+      qualidade_entregas: 3,
+      relacionamento_interpessoal: 3,
+      comunicacao: 3,
+      organizacao: 3,
+      proatividade: 3,
+      comprometimento: 3
+    },
+    controleInterno: {
+      entregue: true,
+      arquivado: true,
+      lancado: true,
+      gestor_orientado: true
+    }
+  };
+
+  const [evalForm, setEvalForm] = useState(initialEvalForm);
+
+  const parseEvaluationComments = (commentsStr: string) => {
+    try {
+      const parsed = JSON.parse(commentsStr);
+      if (parsed && typeof parsed === 'object' && parsed.is_structured) {
+        return parsed;
+      }
+    } catch {
+      // Fallback
+    }
+    return {
+      is_structured: false,
+      dataFeedback: new Date().toISOString().split('T')[0],
+      periodoAvaliado: 'N/A',
+      desempenhoGeral: 'Bom',
+      comentariosGestor: commentsStr || '',
+      pontosFortes: 'Trabalho em equipe\nComprometimento com a jornada (pontualidade e assiduidade)\nDisponibilidade',
+      pontosMelhoria: [],
+      pdi: [],
+      competencias: {
+        qualidade_entregas: 3,
+        relacionamento_interpessoal: 3,
+        comunicacao: 3,
+        organizacao: 3,
+        proatividade: 3,
+        comprometimento: 3
+      },
+      controleInterno: {
+        entregue: false,
+        arquivado: false,
+        lancado: false,
+        gestor_orientado: false
+      }
+    };
+  };
+
+  const addPontoMelhoriaRow = () => {
+    setEvalForm(prev => ({
+      ...prev,
+      pontosMelhoria: [...prev.pontosMelhoria, { oportunidade: '', acao: '' }]
+    }));
+  };
+
+  const removePontoMelhoriaRow = (index: number) => {
+    setEvalForm(prev => ({
+      ...prev,
+      pontosMelhoria: prev.pontosMelhoria.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updatePontoMelhoriaRow = (index: number, key: 'oportunidade' | 'acao', value: string) => {
+    setEvalForm(prev => {
+      const updated = [...prev.pontosMelhoria];
+      updated[index] = { ...updated[index], [key]: value };
+      return { ...prev, pontosMelhoria: updated };
+    });
+  };
+
+  const addPdiRow = () => {
+    setEvalForm(prev => ({
+      ...prev,
+      pdi: [...prev.pdi, { objetivo: '', acao: '', prazo: '', responsavel: '' }]
+    }));
+  };
+
+  const removePdiRow = (index: number) => {
+    setEvalForm(prev => ({
+      ...prev,
+      pdi: prev.pdi.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updatePdiRow = (index: number, key: 'objetivo' | 'acao' | 'prazo' | 'responsavel', value: string) => {
+    setEvalForm(prev => {
+      const updated = [...prev.pdi];
+      updated[index] = { ...updated[index], [key]: value };
+      return { ...prev, pdi: updated };
+    });
+  };
+
 
   // Link Generation States
   const [newCandidateName, setNewCandidateName] = useState('Ana Souza Pereira');
@@ -525,14 +631,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setOffboardDate(new Date().toISOString().split('T')[0]);
       setOffboardType('Voluntario');
       setOffboardReason('');
-      setIsRegisteringAvaliacao(false);
-      setNewAvaliacaoNota(4.0);
-      setNewAvaliacaoComentarios('');
+      setShowEvalModal(false);
+      setSelectedEvalForModal(null);
     } else {
       setSelectedColabDocuments([]);
       setOcorrenciasList([]);
       setIsOffboardingMode(false);
-      setIsRegisteringAvaliacao(false);
+      setShowEvalModal(false);
+      setSelectedEvalForModal(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeColaboradorForDrawer]);
@@ -1409,14 +1515,28 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       const userObj = userObjStr ? JSON.parse(userObjStr) : null;
       const avaliadorEmail = userObj?.email || 'coordenadora@itoclinic.com';
 
+      const avgNota = (
+        evalForm.competencias.qualidade_entregas +
+        evalForm.competencias.relacionamento_interpessoal +
+        evalForm.competencias.comunicacao +
+        evalForm.competencias.organizacao +
+        evalForm.competencias.proatividade +
+        evalForm.competencias.comprometimento
+      ) / 6;
+
+      const serializedComments = JSON.stringify({
+        is_structured: true,
+        ...evalForm
+      });
+
       const { data, error } = await supabase
         .from('avaliacoes_desempenho')
         .insert({
           colaborador_id: activeColaboradorForDrawer.id,
-          nota: newAvaliacaoNota,
-          comentarios: newAvaliacaoComentarios.trim() || null,
+          nota: parseFloat(avgNota.toFixed(2)),
+          comentarios: serializedComments,
           avaliador_email: avaliadorEmail,
-          data_avaliacao: new Date().toISOString().split('T')[0]
+          data_avaliacao: evalForm.dataFeedback || new Date().toISOString().split('T')[0]
         })
         .select('*')
         .single();
@@ -1431,13 +1551,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       await logAuditoria('LANCAMENTO_AVALIACAO_DESEMPENHO', {
         colaborador_id: activeColaboradorForDrawer.id,
         nome: activeColaboradorForDrawer.nome,
-        nota: newAvaliacaoNota
+        nota: avgNota
       });
 
-      alert(`Avaliação de desempenho lançada com sucesso com nota ${newAvaliacaoNota}!`);
-      setIsRegisteringAvaliacao(false);
-      setNewAvaliacaoNota(4.0);
-      setNewAvaliacaoComentarios('');
+      alert(`Avaliação de desempenho lançada com sucesso com média ${avgNota.toFixed(1)}!`);
+      setShowEvalModal(false);
     } catch (err: any) {
       alert('Erro ao registrar avaliação: ' + err.message);
     } finally {
@@ -5042,87 +5160,75 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <span className="text-[9px] font-bold uppercase tracking-wider opacity-60">Histórico de Avaliações</span>
                         {hasFullAccess && (
                           <button
-                            onClick={() => setIsRegisteringAvaliacao(!isRegisteringAvaliacao)}
-                            className={`text-[9px] px-2.5 py-1 rounded font-bold uppercase transition-all ${isRegisteringAvaliacao
-                                ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500'
-                                : (theme === 'dark' ? 'bg-white/5 border border-white/10 hover:bg-white/10 text-white' : 'bg-black/5 border-black/10 hover:bg-black/10 text-black')
-                              }`}
+                            onClick={() => {
+                              setEvalForm(initialEvalForm);
+                              setEvalModalReadOnly(false);
+                              setSelectedEvalForModal(null);
+                              setShowEvalModal(true);
+                            }}
+                            className={`text-[9px] px-2.5 py-1 rounded font-bold uppercase transition-all ${
+                              theme === 'dark' ? 'bg-white/5 border border-white/10 hover:bg-white/10 text-white' : 'bg-black/5 border-black/10 hover:bg-black/10 text-black'
+                            }`}
                           >
-                            {isRegisteringAvaliacao ? 'Cancelar' : '✏️ Avaliar'}
+                            ✏️ Avaliar
                           </button>
                         )}
                       </div>
 
-                      {/* Formulário de Nova Avaliação */}
-                      {isRegisteringAvaliacao && (
-                        <form onSubmit={handleCadastrarAvaliacao} className={`p-4 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
-                          }`}>
-                          <div>
-                            <div className="flex justify-between items-center mb-1.5">
-                              <label className="block text-[9px] font-bold uppercase opacity-65">Nota de Desempenho</label>
-                              <span className="text-xs font-mono font-bold text-emerald-400">{newAvaliacaoNota.toFixed(1)} / 5.0</span>
-                            </div>
-                            <input
-                              type="range"
-                              min="1.0"
-                              max="5.0"
-                              step="0.5"
-                              value={newAvaliacaoNota}
-                              onChange={(e) => setNewAvaliacaoNota(parseFloat(e.target.value))}
-                              className="w-full h-1.5 rounded-lg appearance-none cursor-pointer bg-white/15 accent-[#E5DFD3]"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1.5">Comentários & Feedbacks</label>
-                            <textarea
-                              required
-                              rows={3}
-                              placeholder="Foque nos pontos fortes e oportunidades de melhoria..."
-                              value={newAvaliacaoComentarios}
-                              onChange={(e) => setNewAvaliacaoComentarios(e.target.value)}
-                              className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
-                                }`}
-                            />
-                          </div>
-
-                          <button
-                            type="submit"
-                            disabled={isSavingAvaliacao}
-                            className={`w-full py-2.5 rounded text-[10px] font-bold tracking-wider uppercase transition-colors ${theme === 'dark'
-                                ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]'
-                                : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
-                              } disabled:opacity-50`}
-                          >
-                            {isSavingAvaliacao ? 'Gravando...' : 'Gravar Avaliação'}
-                          </button>
-                        </form>
-                      )}
-
                       {/* Lista de Avaliações */}
                       <div className="space-y-3">
                         {colabAvaliacoes.length > 0 ? (
-                          colabAvaliacoes.map((a) => (
-                            <div key={a.id} className={`p-3 rounded-xl border space-y-2 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
-                              }`}>
-                              <div className="flex items-center justify-between text-[10px]">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold text-[9px]">
-                                    Nota {Number(a.nota).toFixed(1)}
+                          colabAvaliacoes.map((a) => {
+                            const parsed = parseEvaluationComments(a.comentarios);
+                            return (
+                              <div key={a.id} className={`p-3 rounded-xl border space-y-2 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                                }`}>
+                                <div className="flex items-center justify-between text-[10px]">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono font-bold text-[9px]">
+                                      Nota {Number(a.nota).toFixed(1)}
+                                    </span>
+                                    <span className="opacity-45">por {a.avaliador_email?.split('@')[0]}</span>
+                                  </div>
+                                  <span className="opacity-45 font-mono">
+                                    {new Date(a.data_avaliacao + 'T12:00:00').toLocaleDateString('pt-BR')}
                                   </span>
-                                  <span className="opacity-45">por {a.avaliador_email?.split('@')[0]}</span>
                                 </div>
-                                <span className="opacity-45 font-mono">
-                                  {new Date(a.data_avaliacao + 'T12:00:00').toLocaleDateString('pt-BR')}
-                                </span>
+                                <div className="text-[10px] space-y-1 opacity-70">
+                                  {parsed.periodoAvaliado && parsed.periodoAvaliado !== 'N/A' && (
+                                    <div><span className="font-semibold">Período:</span> {parsed.periodoAvaliado}</div>
+                                  )}
+                                  <div><span className="font-semibold">Desempenho Geral:</span> {parsed.desempenhoGeral}</div>
+                                </div>
+                                {parsed.comentariosGestor && (
+                                  <p className="text-xs opacity-75 leading-relaxed bg-white/2 p-2 rounded-lg italic font-sans line-clamp-2">
+                                    "{parsed.comentariosGestor}"
+                                  </p>
+                                )}
+                                <button
+                                  onClick={() => {
+                                    setEvalForm({
+                                      dataFeedback: a.data_avaliacao,
+                                      periodoAvaliado: parsed.periodoAvaliado || '',
+                                      desempenhoGeral: parsed.desempenhoGeral || 'Bom',
+                                      comentariosGestor: parsed.comentariosGestor || '',
+                                      pontosFortes: parsed.pontosFortes || '',
+                                      pontosMelhoria: parsed.pontosMelhoria && parsed.pontosMelhoria.length > 0 ? parsed.pontosMelhoria : [{ oportunidade: '', acao: '' }],
+                                      pdi: parsed.pdi && parsed.pdi.length > 0 ? parsed.pdi : [{ objetivo: '', acao: '', prazo: '', responsavel: '' }],
+                                      competencias: parsed.competencias || { qualidade_entregas: 3, relacionamento_interpessoal: 3, comunicacao: 3, organizacao: 3, proatividade: 3, comprometimento: 3 },
+                                      controleInterno: parsed.controleInterno || { entregue: false, arquivado: false, lancado: false, gestor_orientado: false }
+                                    });
+                                    setEvalModalReadOnly(true);
+                                    setSelectedEvalForModal(a);
+                                    setShowEvalModal(true);
+                                  }}
+                                  className="w-full text-center py-1 rounded text-[9px] font-bold uppercase transition-all bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 mt-1"
+                                >
+                                  📄 Ver Relatório Completo
+                                </button>
                               </div>
-                              {a.comentarios && (
-                                <p className="text-xs opacity-75 leading-relaxed bg-white/2 p-2 rounded-lg italic font-sans">
-                                  "{a.comentarios}"
-                                </p>
-                              )}
-                            </div>
-                          ))
+                            );
+                          })
                         ) : (
                           <p className="text-xs opacity-50 italic text-center py-6">Nenhuma avaliação de desempenho registrada.</p>
                         )}
@@ -5141,6 +5247,595 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         </>
       )}
 
+      {showEvalModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto no-print">
+          <style>{`
+            @media print {
+              body * {
+                visibility: hidden !important;
+              }
+              .print-modal, .print-modal * {
+                visibility: visible !important;
+                color: #000000 !important;
+                background-color: transparent !important;
+                background-image: none !important;
+                border-color: #000000 !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+              }
+              .print-modal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                max-height: 100% !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                padding: 20px !important;
+                margin: 0 !important;
+                border: none !important;
+              }
+              .no-print {
+                display: none !important;
+              }
+              .print-border, .print-border th, .print-border td {
+                border: 1px solid #000000 !important;
+                padding: 6px 10px !important;
+              }
+              input, select, textarea {
+                border: none !important;
+                background: transparent !important;
+                color: black !important;
+                resize: none !important;
+                outline: none !important;
+                box-shadow: none !important;
+                appearance: none !important;
+                -webkit-appearance: none !important;
+              }
+            }
+          `}</style>
+          
+          <div className={`w-full max-w-4xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
+            theme === 'dark' ? 'bg-[#121211] border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
+          }`}>
+            
+            {/* Header */}
+            <div className="border-b border-white/10 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:border-black">
+              <div>
+                <h2 className="text-lg md:text-xl font-bold tracking-tight">Avaliação de Desempenho & PDI</h2>
+                <p className="text-xs opacity-60 print:opacity-100">
+                  Colaborador(a): <span className="font-semibold">{activeColaboradorForDrawer?.nome}</span> | Cargo: <span className="font-semibold">{activeColaboradorForDrawer?.cargo}</span>
+                  {evalModalReadOnly && selectedEvalForModal && (
+                    <> | Avaliador: <span className="font-semibold">{selectedEvalForModal.avaliador_email}</span></>
+                  )}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3 w-full md:w-auto no-print">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                    theme === 'dark' ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-black'
+                  }`}
+                >
+                  🖨️ Imprimir / PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowEvalModal(false)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+
+            {/* Content Form */}
+            <form onSubmit={handleCadastrarAvaliacao} className="space-y-6 flex-grow print:space-y-4">
+              
+              {/* Metadata row */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-black/5 pb-4 mb-4 dark:border-white/5 print:border-black">
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider opacity-75 mb-1.5 print:text-black">Data do Feedback</label>
+                  {evalModalReadOnly ? (
+                    <span className="text-xs font-medium block mt-1 font-mono print:text-black">
+                      {evalForm.dataFeedback ? new Date(evalForm.dataFeedback + 'T12:00:00').toLocaleDateString('pt-BR') : '__/__/____'}
+                    </span>
+                  ) : (
+                    <input
+                      type="date"
+                      required
+                      value={evalForm.dataFeedback}
+                      onChange={e => setEvalForm(p => ({ ...p, dataFeedback: e.target.value }))}
+                      disabled={evalModalReadOnly}
+                      className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent transition-colors ${
+                        theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                      }`}
+                    />
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase tracking-wider opacity-75 mb-1.5 print:text-black">Período Avaliado</label>
+                  {evalModalReadOnly ? (
+                    <span className="text-xs font-medium block mt-1 print:text-black">
+                      {evalForm.periodoAvaliado || '___________________________'}
+                    </span>
+                  ) : (
+                    <input
+                      type="text"
+                      required
+                      placeholder="Ex: Janeiro a Junho de 2026"
+                      value={evalForm.periodoAvaliado}
+                      onChange={e => setEvalForm(p => ({ ...p, periodoAvaliado: e.target.value }))}
+                      disabled={evalModalReadOnly}
+                      className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent transition-colors ${
+                        theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                      }`}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* 1. Desempenho Geral */}
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">1. Desempenho Geral</h3>
+                <div>
+                  <span className="block text-[10px] font-bold uppercase opacity-70 mb-2 print:text-black">Avalie o desempenho do colaborador durante o período:</span>
+                  {evalModalReadOnly ? (
+                    <div className="flex flex-col gap-1.5 font-mono text-xs print:text-black">
+                      {['Excelente', 'Muito Bom', 'Bom', 'Regular', 'Necessita Melhorias'].map((level) => {
+                        const isSelected = evalForm.desempenhoGeral === level;
+                        return (
+                          <div key={level} className="flex items-center gap-2">
+                            <span className="text-sm font-semibold select-none">{isSelected ? '☑' : '☐'}</span>
+                            <span className={isSelected ? 'font-bold' : 'opacity-70'}>{level}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
+                      {['Excelente', 'Muito Bom', 'Bom', 'Regular', 'Necessita Melhorias'].map((level) => {
+                        const isSelected = evalForm.desempenhoGeral === level;
+                        return (
+                          <button
+                            key={level}
+                            type="button"
+                            disabled={evalModalReadOnly}
+                            onClick={() => setEvalForm(p => ({ ...p, desempenhoGeral: level }))}
+                            className={`py-2 px-1 rounded-lg text-center font-bold text-[10px] uppercase border transition-all ${
+                              isSelected
+                                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                                : (theme === 'dark' ? 'border-white/5 bg-white/2 hover:bg-white/5 opacity-60' : 'border-black/5 bg-black/2 hover:bg-black/5 opacity-60')
+                            }`}
+                          >
+                            {isSelected ? '✓ ' : ''}{level}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold uppercase opacity-70 mb-1.5 print:text-black">Comentários do Gestor</label>
+                  {evalModalReadOnly ? (
+                    <p className="text-xs p-3 rounded-lg bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 leading-relaxed italic print:bg-transparent print:border-none print:p-0 print:text-black">
+                      <strong>Comentários do Gestor:</strong> {evalForm.comentariosGestor || 'O desempenho atual apresenta lacunas técnicas e comportamentais que precisam de correção imediata.'}
+                    </p>
+                  ) : (
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Descreva detalhadamente o desempenho, lacunas técnicas/comportamentais ou avanços..."
+                      value={evalForm.comentariosGestor}
+                      onChange={e => setEvalForm(p => ({ ...p, comentariosGestor: e.target.value }))}
+                      disabled={evalModalReadOnly}
+                      className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none focus:outline-none ${
+                        theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                      }`}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* 2. Pontos Fortes */}
+              <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">2. Pontos Fortes</h3>
+                {evalModalReadOnly ? (
+                  <div className="text-xs space-y-1.5 print:text-black">
+                    {(evalForm.pontosFortes || '')
+                      .split('\n')
+                      .map(line => line.trim())
+                      .filter(line => line.length > 0)
+                      .map((line, i) => (
+                        <div key={i} className="flex items-start gap-1">
+                          <span>-</span>
+                          <span>{line.startsWith('-') ? line.substring(1).trim() : line}</span>
+                        </div>
+                      ))}
+                    {(!evalForm.pontosFortes || evalForm.pontosFortes.trim().length === 0) && (
+                      <p className="opacity-50 italic">Nenhum ponto forte registrado.</p>
+                    )}
+                  </div>
+                ) : (
+                  <textarea
+                    required
+                    rows={3}
+                    placeholder="Liste os pontos fortes demonstrados pelo colaborador (ex: trabalho em equipe, comprometimento, proatividade...)"
+                    value={evalForm.pontosFortes}
+                    onChange={e => setEvalForm(p => ({ ...p, pontosFortes: e.target.value }))}
+                    disabled={evalModalReadOnly}
+                    className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none focus:outline-none ${
+                      theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                    }`}
+                  />
+                )}
+              </div>
+
+              {/* 3. Pontos de Melhorias */}
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">3. Pontos de Melhorias</h3>
+                  {!evalModalReadOnly && (
+                    <button
+                      type="button"
+                      onClick={addPontoMelhoriaRow}
+                      className="text-[9px] px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 font-bold uppercase border border-emerald-500/20"
+                    >
+                      ＋ Adicionar
+                    </button>
+                  )}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse print-border">
+                    <thead>
+                      <tr className={`text-[10px] font-bold uppercase border-b ${theme === 'dark' ? 'border-white/10' : 'border-black/10'} print:border-black`}>
+                        <th className="pb-2 w-1/2 print:text-black">Oportunidade de Melhoria</th>
+                        <th className="pb-2 w-1/2 print:text-black">Ação Recomendada</th>
+                        {!evalModalReadOnly && <th className="pb-2 w-12 text-center no-print">Ação</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 print:divide-y-0">
+                      {evalForm.pontosMelhoria.map((row, idx) => (
+                        <tr key={idx} className="print:border-b print:border-black/20">
+                          <td className="py-2.5 pr-2">
+                            {evalModalReadOnly ? (
+                              <span className="text-xs block print:text-black">{row.oportunidade || '______'}</span>
+                            ) : (
+                              <input
+                                type="text"
+                                required
+                                placeholder="Ex: Comunicação clara"
+                                value={row.oportunidade}
+                                onChange={e => updatePontoMelhoriaRow(idx, 'oportunidade', e.target.value)}
+                                disabled={evalModalReadOnly}
+                                className={`w-full text-xs p-1.5 rounded border bg-transparent ${
+                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                }`}
+                              />
+                            )}
+                          </td>
+                          <td className="py-2.5 pr-2">
+                            {evalModalReadOnly ? (
+                              <span className="text-xs block print:text-black">{row.acao || '______'}</span>
+                            ) : (
+                              <input
+                                type="text"
+                                required
+                                placeholder="Ex: Realizar feedback individual quinzenal"
+                                value={row.acao}
+                                onChange={e => updatePontoMelhoriaRow(idx, 'acao', e.target.value)}
+                                disabled={evalModalReadOnly}
+                                className={`w-full text-xs p-1.5 rounded border bg-transparent ${
+                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                }`}
+                              />
+                            )}
+                          </td>
+                          {!evalModalReadOnly && (
+                            <td className="py-2.5 text-center no-print">
+                              <button
+                                type="button"
+                                onClick={() => removePontoMelhoriaRow(idx)}
+                                className="text-rose-500 hover:text-rose-400 font-bold text-xs"
+                                disabled={evalForm.pontosMelhoria.length <= 1}
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 4. Plano de Desenvolvimento (PDI) */}
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">4. Plano de Desenvolvimento</h3>
+                  {!evalModalReadOnly && (
+                    <button
+                      type="button"
+                      onClick={addPdiRow}
+                      className="text-[9px] px-2 py-1 rounded bg-emerald-500/10 text-emerald-400 font-bold uppercase border border-emerald-500/20"
+                    >
+                      ＋ Adicionar
+                    </button>
+                  )}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse print-border">
+                    <thead>
+                      <tr className={`text-[10px] font-bold uppercase border-b ${theme === 'dark' ? 'border-white/10' : 'border-black/10'} print:border-black`}>
+                        <th className="pb-2 print:text-black">Objetivo</th>
+                        <th className="pb-2 print:text-black">Ação</th>
+                        <th className="pb-2 w-28 print:text-black">Prazo</th>
+                        <th className="pb-2 w-32 print:text-black">Responsável</th>
+                        {!evalModalReadOnly && <th className="pb-2 w-12 text-center no-print">Ação</th>}
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 print:divide-y-0">
+                      {evalForm.pdi.map((row, idx) => (
+                        <tr key={idx} className="print:border-b print:border-black/20">
+                          <td className="py-2.5 pr-2">
+                            {evalModalReadOnly ? (
+                              <span className="text-xs block print:text-black">{row.objetivo || '______'}</span>
+                            ) : (
+                              <input
+                                type="text"
+                                required
+                                placeholder="Ex: Melhorar pontualidade"
+                                value={row.objetivo}
+                                onChange={e => updatePdiRow(idx, 'objetivo', e.target.value)}
+                                disabled={evalModalReadOnly}
+                                className={`w-full text-xs p-1.5 rounded border bg-transparent ${
+                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                }`}
+                              />
+                            )}
+                          </td>
+                          <td className="py-2.5 pr-2">
+                            {evalModalReadOnly ? (
+                              <span className="text-xs block print:text-black">{row.acao || '______'}</span>
+                            ) : (
+                              <input
+                                type="text"
+                                required
+                                placeholder="Ex: Organizar agenda diária"
+                                value={row.acao}
+                                onChange={e => updatePdiRow(idx, 'acao', e.target.value)}
+                                disabled={evalModalReadOnly}
+                                className={`w-full text-xs p-1.5 rounded border bg-transparent ${
+                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                }`}
+                              />
+                            )}
+                          </td>
+                          <td className="py-2.5 pr-2">
+                            {evalModalReadOnly ? (
+                              <span className="text-xs block print:text-black">{row.prazo || '______'}</span>
+                            ) : (
+                              <input
+                                type="text"
+                                required
+                                placeholder="Ex: 30 dias"
+                                value={row.prazo}
+                                onChange={e => updatePdiRow(idx, 'prazo', e.target.value)}
+                                disabled={evalModalReadOnly}
+                                className={`w-full text-xs p-1.5 rounded border bg-transparent ${
+                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                }`}
+                              />
+                            )}
+                          </td>
+                          <td className="py-2.5 pr-2">
+                            {evalModalReadOnly ? (
+                              <span className="text-xs block print:text-black">{row.responsavel || '______'}</span>
+                            ) : (
+                              <input
+                                type="text"
+                                required
+                                placeholder="Ex: Colaborador"
+                                value={row.responsavel}
+                                onChange={e => updatePdiRow(idx, 'responsavel', e.target.value)}
+                                disabled={evalModalReadOnly}
+                                className={`w-full text-xs p-1.5 rounded border bg-transparent ${
+                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                }`}
+                              />
+                            )}
+                          </td>
+                          {!evalModalReadOnly && (
+                            <td className="py-2.5 text-center no-print">
+                              <button
+                                type="button"
+                                onClick={() => removePdiRow(idx)}
+                                className="text-rose-500 hover:text-rose-400 font-bold text-xs"
+                                disabled={evalForm.pdi.length <= 1}
+                              >
+                                ✕
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 5. Avaliação de Competências */}
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">5. Avaliação de Competências</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse print-border">
+                    <thead>
+                      <tr className={`text-[10px] font-bold uppercase border-b ${theme === 'dark' ? 'border-white/10' : 'border-black/10'} print:border-black`}>
+                        <th className="pb-2 print:text-black">Competência</th>
+                        <th className="pb-2 text-center w-64 print:text-black">Nota (1 a 5)</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 print:divide-y-0">
+                      {[
+                        { key: 'qualidade_entregas', label: 'Qualidade das entregas' },
+                        { key: 'relacionamento_interpessoal', label: 'Relacionamento interpessoal' },
+                        { key: 'comunicacao', label: 'Comunicação' },
+                        { key: 'organizacao', label: 'Organização' },
+                        { key: 'proatividade', label: 'Proatividade' },
+                        { key: 'comprometimento', label: 'Comprometimento' }
+                      ].map((item) => {
+                        const currentScore = (evalForm.competencias as any)[item.key];
+                        return (
+                          <tr key={item.key} className="print:border-b print:border-black/20">
+                            <td className="py-3 text-xs font-medium print:text-black">{item.label}</td>
+                            <td className="py-3">
+                              <div className="flex items-center justify-center gap-3">
+                                {[1, 2, 3, 4, 5].map((score) => {
+                                  const isChecked = currentScore === score;
+                                  if (evalModalReadOnly) {
+                                    return (
+                                      <span
+                                        key={score}
+                                        className="font-mono text-xs select-none print:text-black mx-1"
+                                      >
+                                        {isChecked ? `☑${score}` : `☐${score}`}
+                                      </span>
+                                    );
+                                  }
+                                  return (
+                                    <button
+                                      key={score}
+                                      type="button"
+                                      disabled={evalModalReadOnly}
+                                      onClick={() => {
+                                        setEvalForm(p => ({
+                                          ...p,
+                                          competencias: {
+                                            ...p.competencias,
+                                            [item.key]: score
+                                          }
+                                        }));
+                                      }}
+                                      className={`w-6 h-6 rounded-full font-mono text-[10px] font-bold flex items-center justify-center border transition-all ${
+                                        isChecked
+                                          ? 'bg-emerald-500 border-emerald-500 text-white'
+                                          : (theme === 'dark' ? 'border-white/15 hover:border-white/30 text-white bg-white/2' : 'border-black/15 hover:border-black/30 text-black bg-black/2')
+                                      }`}
+                                    >
+                                      {score}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 6. Ciência das Partes & 7. Controle Interno */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-1 print:gap-4 print:pt-4">
+                
+                {/* 6. Ciência das Partes */}
+                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">6. Ciência das Partes</h3>
+                  <p className="text-[10px] opacity-70 italic print:text-black">Declaro estar ciente e de acordo com o feedback recebido.</p>
+                  
+                  <div className="space-y-4 pt-2 text-xs font-mono print:space-y-3 print:pt-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <span className="print:text-black">Assinatura do Colaborador: ___________________________</span>
+                      <span className="print:text-black">Data: __/__/____</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <span className="print:text-black">Assinatura do Gestor: ___________________________</span>
+                      <span className="print:text-black">Data: __/__/____</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <span className="print:text-black">Assinatura do RH: ___________________________</span>
+                      <span className="print:text-black">Data: __/__/____</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 7. Controle Interno (RH) */}
+                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">7. Controle Interno (RH)</h3>
+                  
+                  <div className="space-y-3 print:space-y-1.5 print:pt-1">
+                    {[
+                      { key: 'entregue', label: 'Documento entregue ao colaborador' },
+                      { key: 'arquivado', label: 'Cópia arquivada no prontuário' },
+                      { key: 'lancado', label: 'Lançamento em sistema realizado' },
+                      { key: 'gestor_orientado', label: 'Gestor orientado sobre próximos passos' }
+                    ].map((item) => {
+                      const isChecked = (evalForm.controleInterno as any)[item.key];
+                      if (evalModalReadOnly) {
+                        return (
+                          <div key={item.key} className="flex items-center gap-2 text-xs font-mono select-none print:text-black">
+                            <span className="text-sm font-semibold">{isChecked ? '☑' : '☐'}</span>
+                            <span className="opacity-75 print:opacity-100">{item.label}</span>
+                          </div>
+                        );
+                      }
+                      return (
+                        <label key={item.key} className="flex items-center gap-2.5 cursor-pointer text-xs select-none">
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            disabled={evalModalReadOnly}
+                            onChange={e => {
+                              setEvalForm(p => ({
+                                ...p,
+                                controleInterno: {
+                                  ...p.controleInterno,
+                                  [item.key]: e.target.checked
+                                }
+                              }));
+                            }}
+                            className={`w-3.5 h-3.5 rounded accent-emerald-500`}
+                          />
+                          <span className="opacity-75">{item.label}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Form Actions (Create Mode Only) */}
+              {!evalModalReadOnly && (
+                <div className="pt-4 border-t border-white/10 flex justify-end gap-3 no-print">
+                  <button
+                    type="button"
+                    onClick={() => setShowEvalModal(false)}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold transition-colors ${
+                      theme === 'dark' ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-black'
+                    }`}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingAvaliacao}
+                    className={`px-4 py-2 rounded-lg text-xs font-bold tracking-wider uppercase transition-colors ${
+                      theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+                    } disabled:opacity-50`}
+                  >
+                    {isSavingAvaliacao ? 'Gravando...' : 'Gravar Avaliação'}
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
