@@ -5,19 +5,32 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { PDFDocument, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
+const allowedOrigins = [
+  'https://seu-sistema-rh.vercel.app',
+  'http://localhost:5173'
+];
+
+const getCorsHeaders = (origin: string | null) => {
+  const originToUse = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
+  return {
+    'Access-Control-Allow-Origin': originToUse,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+};
 
 serve(async (req) => {
+  const origin = req.headers.get('origin');
+  const responseHeaders = getCorsHeaders(origin);
+
   // Handle CORS Pre-flight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+    return new Response('ok', { headers: responseHeaders })
   }
 
   try {
     const {
+      token, // Candidate token for validation
       userEmail,
       candidateName,
       candidateCpf,
@@ -41,6 +54,60 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ""
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ""
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // 3. Security Hardening: Validate caller authorization (JWT or Token)
+    const authHeader = req.headers.get('Authorization') || '';
+    const jwtToken = authHeader.replace(/^Bearer /, '').trim();
+    let isAuthorized = false;
+
+    // Mode A: Request via Authenticated JWT Coordinator (RH or TI)
+    if (jwtToken) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser(jwtToken);
+      if (!authError && user) {
+        const { data: profile } = await supabase
+          .from('perfis')
+          .select('cargo')
+          .eq('id', user.id)
+          .single();
+
+        const emailDomain = user.email?.split('@')[1];
+        if (profile?.cargo === 'coordenadora_rh' || user.email === 'ito.thiagosilva@gmail.com' || emailDomain === 'itoinstituto.com.br') {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    // Mode B: Request via Candidate Token Validation (Bypasses JWT)
+    if (!isAuthorized && token) {
+      const { data: tokenRow, error: tokenError } = await supabase
+        .from('admission_tokens')
+        .select('*')
+        .eq('token', token)
+        .single();
+
+      if (!tokenError && tokenRow) {
+        const isExpired = new Date(tokenRow.expira_em) < new Date();
+        const details = tokenRow.detalhes || {};
+        const expectedCpf = tokenRow.candidato_cpf || details.cpf || '';
+        
+        // Confirm token is active, matches requested CPF, and is in valid status
+        if (!isExpired && 
+            candidateCpf.replace(/\D/g, '') === expectedCpf.replace(/\D/g, '') &&
+            (tokenRow.status === 'aguardando_assinatura' || tokenRow.status === 'aguardando_assinatura_rh')) {
+          isAuthorized = true;
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Acesso não autorizado. Token ou credenciais inválidos." }),
+        {
+          headers: { ...responseHeaders, "Content-Type": "application/json" },
+          status: 401
+        }
+      );
+    }
 
     // 3. Initialize pdf-lib document
     let pdfDoc: PDFDocument;
@@ -292,10 +359,11 @@ serve(async (req) => {
         success: true,
         message: "PDF processado com sucesso!",
         signedUrl: urlData.signedUrl,
+        filePath: fileName,
         documentHash: auditHash
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...responseHeaders, "Content-Type": "application/json" },
         status: 200
       }
     )
@@ -304,7 +372,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...responseHeaders, "Content-Type": "application/json" },
         status: 400
       }
     )

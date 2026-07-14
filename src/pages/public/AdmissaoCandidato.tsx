@@ -94,13 +94,12 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
     }
     
     try {
-      const { data, error } = await supabase
-        .from('admission_tokens')
-        .select('*')
-        .eq('token', token)
-        .single();
+      const { data: arrayData, error } = await supabase
+        .rpc('get_admission_token_by_token', { p_token: token });
       
       if (error) throw error;
+      
+      const data = arrayData && arrayData.length > 0 ? arrayData[0] : null;
       
       if (data) {
         const isExpired = new Date(data.expira_em) < new Date();
@@ -116,16 +115,16 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
           setCargo(data.candidato_cargo || 'Recepcionista');
           setTokenStatus(data.status || 'pendente_preenchimento');
           
-          // Log view
-          await supabase.from('admission_tokens')
-            .update({ visualizado_em: new Date().toISOString() })
-            .eq('token', token);
+          // Log view securely via RPC
+          await supabase.rpc('mark_admission_token_viewed', { p_token: token });
 
           // If waiting signature, get the PDF draft url
           if (data.status === 'aguardando_assinatura') {
             await loadDraftPdf(data);
           }
         }
+      } else {
+        setIsTokenValid(false);
       }
     } catch {
       // Simulation fallback for invalid/dummy routing
@@ -168,6 +167,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({
+          token: tokenData.token,
           userEmail: tokenData.candidato_email,
           candidateName: tokenData.candidato_nome,
           candidateCpf: tokenData.candidato_cpf || details.cpf || '000.000.000-00',
@@ -248,14 +248,13 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
     setSubmitError('');
 
     try {
-      // Get template details
-      const { data: tokenRow, error: fetchErr } = await supabase
-        .from('admission_tokens')
-        .select('*')
-        .eq('token', token)
-        .single();
+      // Get token details securely via RPC
+      const { data: arrayData, error: fetchErr } = await supabase
+        .rpc('get_admission_token_by_token', { p_token: token });
       
-      if (fetchErr || !tokenRow) throw new Error('Token inválido ou não encontrado.');
+      if (fetchErr) throw fetchErr;
+      const tokenRow = arrayData && arrayData.length > 0 ? arrayData[0] : null;
+      if (!tokenRow) throw new Error('Token inválido ou não encontrado.');
 
       const details = tokenRow.detalhes || {};
       const cpf = tokenRow.candidato_cpf || details.cpf || '000.000.000-00';
@@ -269,6 +268,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
           },
           body: JSON.stringify({
+            token,
             userEmail: candidateEmail,
             candidateName: nome,
             candidateCpf: cpf,
@@ -293,37 +293,23 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
         };
       }
 
-      // Save document registry
-      const { error: insertErr } = await supabase
-        .from('documentos_assinados')
-        .insert({
-          titulo: `Contrato de Trabalho - ${nome}`,
-          colaborador_cpf: cpf,
-          url_arquivo: res.signedUrl,
-          document_hash: res.documentHash,
-          status: 'aguardando_rh',
-          assinatura_desenhada: signatureBase64,
-          ip_address: '192.168.45.102',
-          user_agent: navigator.userAgent,
-          assinado_em: new Date().toISOString()
-        });
+      // Save document registry and update token status in a secure database transaction RPC
+      const { data: signResult, error: signErr } = await supabase.rpc('sign_admission_token', {
+        p_token: token,
+        p_signature_base64: signatureBase64,
+        p_user_agent: navigator.userAgent,
+        p_signed_url: res.filePath || res.signedUrl,
+        p_document_hash: res.documentHash
+      });
 
-      if (insertErr) throw insertErr;
+      if (signErr) throw signErr;
+      if (!signResult || !signResult.success) throw new Error('Falha ao processar assinatura eletrônica.');
 
-      // Mark token as awaiting RH signature
-      await supabase.from('admission_tokens')
-        .update({ 
-          status: 'aguardando_assinatura_rh'
-        })
-        .eq('token', token);
-
-      // Log audit
+      // Log audit (IP and User Agent automatically populated by trigger metadata)
       await supabase.from('logs_auditoria').insert({
         usuario_email: candidateEmail,
         acao: 'CANDIDATO_ASSINA_CONTRATO',
-        detalhes: { nome, cpf, document_hash: res.documentHash },
-        ip_address: '192.168.45.102',
-        user_agent: navigator.userAgent
+        detalhes: { nome, cpf, document_hash: res.documentHash }
       });
 
       setTokenStatus('aguardando_assinatura_rh');

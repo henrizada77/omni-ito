@@ -25,6 +25,8 @@ import {
   Award
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import type { DashboardProps, AdmissionToken, Colaborador, DocumentoAssinado, ModeloDocumento, OcorrenciaJornada, AvaliacaoDesempenho, Beneficio, ColaboradorBeneficio, PlanoCarreira, IndicadorTrabalhista, LogAuditoria, CandidateReviewData, OnboardingBenefits, OnboardingTasks, SignaturePosition, ModeloFileType } from '../../types';
+import { CONTRATO_EXPERIENCIA_TEXT, REGIMENTO_INTERNO_TEXT, BANCO_HORAS_TEXT, MESES_PT_BR, DEFAULT_MODELS } from '../../data/contractTemplates';
 
 import OverviewPanel from '../../components/analytics/OverviewPanel';
 import TurnoverPanel from '../../components/analytics/TurnoverPanel';
@@ -34,85 +36,10 @@ import LegalPanel from '../../components/analytics/LegalPanel';
 import FormManager from '../../components/documents/FormManager';
 import BenefitsManager from '../../components/benefits/BenefitsManager';
 
-const CONTRATO_EXPERIENCIA_TEXT = `CONTRATO INDIVIDUAL DE TRABALHO A TÍTULO DE EXPERIÊNCIA
-
-Pelo presente instrumento particular, de um lado BIOLIFE CLÍNICA MÉDICA LTDA., pessoa jurídica de direito privado, inscrita no CNPJ sob o nº 37.037.182/0001-85, com sede na Rua Olavo Macedo Ribeiro, nº 320, bairro Jatiúca, Maceió/AL, doravante denominada EMPREGADORA, e, de outro lado, {{nome}}, pessoa física, inscrita no CPF sob o nº {{cpf}}, residente e domiciliado(a) em Rua {{endereco}}, doravante denominado(a) EMPREGADO(A), têm entre si justo e contratado o presente CONTRATO DE TRABALHO A TÍTULO DE EXPERIÊNCIA, nos termos do artigo 443, §2º, alínea "c", da CLT, mediante as cláusulas e condições a seguir:
-
-CLÁUSULA 1ª – DO OBJETO E DA ADMISSÃO
-1.1. O(A) EMPREGADO(A) é admitido(a) para prestar serviços à EMPREGADORA a partir de {{data_admissao}}.
-1.2. O presente contrato é celebrado em caráter de experiência, visando à avaliação recíproca entre as partes quanto à adaptação às atividades e às condições de trabalho.
-
-CLÁUSULA 2ª – DA FUNÇÃO E DAS ATIVIDADES
-2.1. O(A) EMPREGADO(A) exercerá a função de {{cargo}}, compatível com o CBO nº {{cbo}}.
-    • 2.2. Constituem atribuições do cargo, dentre outras compatíveis com a função e com a condição pessoal do(a) EMPREGADO(A): 
-{{atribuicoes}}
-
-2.3. O(A) EMPREGADO(A) compromete-se a executar as atividades inerentes à sua função com zelo, diligência e boa-fé, observando as orientações da EMPREGADORA.
-2.4. Poderá haver a designação para atividades correlatas, desde que compatíveis com a função contratada, sem que isso configure acúmulo ou desvio de função.
-2.5. Eventual alteração de função observará os limites legais e será formalizada por aditivo contratual.
-
-CLÁUSULA 3ª – DA REMUNERAÇÃO
-3.1. O(A) EMPREGADO(A) perceberá salário mensal no valor de R$ {{salario}} ({{salario_extenso}}).
-3.2. O pagamento será realizado até o 5º dia útil do mês subsequente ao vencido.
-
-CLÁUSULA 4ª – DA JORNADA DE TRABALHO E BANCO DE HORAS
-4.1. A jornada de trabalho será alternada em uma semana de segunda-feira a quinta-feira, das 08h00 às 13h00 e das 14h00 às 18h00, sexta-feira das 08h00 ás 17h00, podendo sofrer ajustes conforme necessidade operacional, respeitados os limites legais.
-4.2. As partes ajustam a adoção de banco de horas, nos termos da lei, mediante as seguintes condições:
-(a) As horas extraordinárias serão registradas e compensadas na proporção de 1 (uma) hora trabalhada por 1 (uma) hora de descanso;
-(b) O prazo máximo para compensação será de até 6 (seis) meses;
-(c) A compensação será definida de comum acordo entre as partes, observadas as necessidades do serviço;
-(d) Na hipótese de rescisão contratual sem compensação integral, as horas extras serão pagas como extraordinárias.
-
-CLÁUSULA 5ª – DO LOCAL DE TRABALHO
-5.1. O(A) EMPREGADO(A) exercerá suas atividades na sede da EMPREGADORA, concordando com a possibilidade de transferência, a qualquer tempo, a título temporário ou definitivo, tanto no âmbito da unidade para a qual foi admitido(a) como para outras, em qualquer localidade deste estado ou do país.
-
-CLÁUSULA 6ª – DOS DESCONTOS
-6.1. A EMPREGADORA poderá efetuar os descontos previstos em lei, em instrumentos coletivos e outros autorizados pelo(a) EMPREGADO(A).
-6.2. Eventuais danos causados pelo(a) EMPREGADO(A) poderão ser descontados quando comprovada a conduta dolosa ou culposa, mediante apuração e garantia de contraditório.
-6.3. Contribuições sindicais ou assistenciais observarão estritamente o disposto em norma coletiva e o direito de oposição do empregado.
-
-CLÁUSULA 7ª – DAS NORMAS INTERNAS E USO DE DISPOSITIVOS
-7.1. O(A) EMPREGADO(A) deverá observar as normas internas da EMPREGADORA.
-7.2. O uso de dispositivos pessoais durante a jornada poderá ser restringido quando incompatível com as atividades, sem prejuízo de situações emergenciais ou devidamente autorizadas.
-
-CLÁUSULA 8ª – DA CONFIDENCIALIDADE E PROTEÇÃO DE DADOS
-8.1. O(A) EMPREGADO(A) obriga-se a manter sigilo sobre informações confidenciais da EMPREGADORA, incluindo dados de pacientes, informações comerciais, operacionais e estratégicas.
-8.2. O tratamento de dados pessoais deverá observar as diretrizes da Lei Geral de Proteção de Dados (Lei nº 13.709/2018).
-8.3. O descumprimento desta cláusula poderá ensejar a aplicação das medidas disciplinares cabíveis, inclusive rescisão por justa causa.
-
-CLÁUSULA 9ª – DO MONITORAMENTO
-9.1. A EMPREGADORA poderá realizar monitoramento por câmeras em suas dependências, para fins de segurança e controle patrimonial, dentre outros.
-9.2. O monitoramento observará os princípios da necessidade, adequação e proporcionalidade, sendo vedada a captação em áreas de intimidade do estabelecimento.
-
-CLÁUSULA 10ª – DAS SANÇÕES ADMINISTRATIVAS
-10.1. O descumprimento das obrigações contratuais e normas internas poderá ensejar a aplicação de medidas disciplinares ao(à) EMPREGADO(A), como advertência verbal, advertência escrita, suspensão e rescisão por justa causa, nos termos da legislação trabalhista.
-
-CLÁUSULA 11ª – DA VIGÊNCIA
-11.1. O presente contrato terá duração inicial de 30 (trinta) dias, podendo ser prorrogado uma única vez, até o limite máximo de 90 (noventa) dias.
-11.2. Findo o prazo sem manifestação das partes, o contrato será automaticamente convertido em prazo indeterminado.
-
-CLÁUSULA 12ª – DISPOSIÇÕES GERAIS
-12.1. O presente contrato substitui quaisquer ajustes anteriores.
-12.2. Permanecem aplicáveis as disposições da CLT, normas coletivas e legislação vigente.
-
-E, por estarem de pleno acordo, assinam o presente instrumento em duas vias de igual teor.
-
-Maceió/AL, {{dia}} de {{mes}} de {{ano}}.`;
-
-type Role = 'coordenadora_rh' | 'ti';
-type Theme = 'dark' | 'light';
-
-interface DashboardProps {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
-  user: any;
-  role: Role;
-}
-
 export default function Dashboard({ theme, setTheme, user, role }: DashboardProps) {
   const location = useLocation();
   const navigate = useNavigate();
-  const activePath = location.pathname; // '/app/dashboard', '/app/colaboradores', etc.
+  const activePath = location.pathname;
 
   // Mobile sidebar open state
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -222,10 +149,6 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const renderTemplateText = () => {
     const today = new Date();
-    const meses = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
     return docTemplate
       .replace(/{{nome}}/g, varNome || '_______')
       .replace(/{{cpf}}/g, varCpf || '_______')
@@ -238,11 +161,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       .replace(/{{endereco}}/g, varEndereco || '_______')
       .replace(/{{data_admissao}}/g, varAdmissao || '_______')
       .replace(/{{dia}}/g, today.getDate().toString())
-      .replace(/{{mes}}/g, meses[today.getMonth()])
+      .replace(/{{mes}}/g, MESES_PT_BR[today.getMonth()])
       .replace(/{{ano}}/g, today.getFullYear().toString());
   };
 
-  const [signatureHash] = useState('');
+  const signatureHash = '';
 
   const fetchModelos = async () => {
     try {
@@ -257,22 +180,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         setSelectedModeloId(data[0].id);
         setDocTemplate(data[0].conteudo);
       } else {
-        const defaultModels = [
-          { id: '1', titulo: 'Termo de Uso de Imagem', conteudo: 'Eu, {{nome}}, portador do CPF {{cpf}}, autorizo o Instituto Thiago Omena no setor de {{setor}}...' },
-          { id: '2', titulo: 'Contrato de Experiência', conteudo: CONTRATO_EXPERIENCIA_TEXT }
-        ];
-        setModelos(defaultModels);
+        setModelos(DEFAULT_MODELS);
         setSelectedModeloId('1');
-        setDocTemplate(defaultModels[0].conteudo);
+        setDocTemplate(DEFAULT_MODELS[0].conteudo);
       }
     } catch {
-      const defaultModels = [
-        { id: '1', titulo: 'Termo de Uso de Imagem (Local)', conteudo: 'Eu, {{nome}}, portador do CPF {{cpf}}, autorizo o Instituto Thiago Omena no setor de {{setor}}...' },
-        { id: '2', titulo: 'Contrato de Experiência (Local)', conteudo: CONTRATO_EXPERIENCIA_TEXT }
-      ];
-      setModelos(defaultModels);
+      setModelos(DEFAULT_MODELS);
       setSelectedModeloId('1');
-      setDocTemplate(defaultModels[0].conteudo);
+      setDocTemplate(DEFAULT_MODELS[0].conteudo);
     }
   };
 
@@ -534,6 +449,54 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     const diffTime = now.getTime() - start.getTime();
     const diffDays = diffTime / (1000 * 60 * 60 * 24);
     return diffDays <= 90;
+  };
+
+  const getFilePathFromUrl = (url: string) => {
+    if (!url) return '';
+    let path = url;
+    if (url.startsWith('http')) {
+      try {
+        const parts = url.split('/contratos-assinados/');
+        if (parts.length > 1) {
+          path = parts[1].split('?')[0];
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    // Clean up any leading slash or bucket name if present in relative path
+    if (path.startsWith('/')) {
+      path = path.slice(1);
+    }
+    if (path.startsWith('contratos-assinados/')) {
+      path = path.replace('contratos-assinados/', '');
+    }
+    return path;
+  };
+
+  const handleViewDocument = async (url: string) => {
+    if (!url) return;
+    if (url.includes('token=dummy')) {
+      alert('Aviso: Este documento foi assinado em Modo de Simulação (Edge Function offline). Não há um arquivo PDF físico gerado na Storage.');
+      return;
+    }
+    try {
+      const filePath = getFilePathFromUrl(url);
+      const { data, error } = await supabase.storage
+        .from('contratos-assinados')
+        .createSignedUrl(filePath, 60);
+
+      if (error) throw error;
+      if (data?.signedUrl) {
+        window.open(data.signedUrl, '_blank');
+      }
+    } catch (err: any) {
+      if (err.message?.includes('Object not found') || err.message?.includes('not_found') || err.message?.includes('The resource could not be found')) {
+        alert('Aviso: O arquivo físico deste documento não foi encontrado na Storage. Isto geralmente ocorre com documentos de teste ou simulados localmente.');
+      } else {
+        alert('Erro ao carregar documento da Storage: ' + err.message);
+      }
+    }
   };
 
   const fetchSelectedColabDocuments = async (cpf: string) => {
@@ -824,16 +787,21 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (!selectedTokenRow) throw new Error("Nenhum token selecionado.");
 
       const details = selectedTokenRow.detalhes || {};
+      const cpf = selectedTokenRow.candidato_cpf || details.cpf || '';
 
       // 1. Fetch partial document signed by the candidate
       const { data: signDoc, error: docErr } = await supabase
         .from('documentos_assinados')
         .select('*')
-        .eq('colaborador_cpf', details.cpf)
+        .eq('colaborador_cpf', cpf)
         .eq('status', 'aguardando_rh')
         .maybeSingle();
 
       if (docErr || !signDoc) throw new Error("Contrato parcial do candidato não encontrado.");
+
+      // Fetch coordinator user session token to authenticate Edge Function
+      const { data: sessionData } = await supabase.auth.getSession();
+      const sessionToken = sessionData?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       let res;
       try {
@@ -841,17 +809,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            'Authorization': `Bearer ${sessionToken}`
           },
           body: JSON.stringify({
+            token: selectedTokenRow.token,
             userEmail: selectedTokenRow.candidato_email,
             candidateName: selectedTokenRow.candidato_nome,
-            candidateCpf: details.cpf,
+            candidateCpf: cpf,
             signatureBase64: signDoc.assinatura_desenhada,
             signatureRepresentativeBase64: representativeSignatureBase64,
             coordinatorEmail: user.email,
             pdfTemplateBase64: details.pdf_template_base64 || null,
-            documentName: `contrato_${details.cpf.replace(/\D/g, '')}_consolidado`,
+            documentName: `contrato_${cpf.replace(/\D/g, '')}_consolidado`,
             colabSignaturePosition: details.colab_signature_position || null,
             repSignaturePosition: details.rep_signature_position || null
           })
@@ -864,7 +833,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         const dummyHash = 'd7ac82751fbc9c09a80e1b2184e0368b1a89c8942b0c95029a8f4c281df60c7f';
         res = {
           success: true,
-          signedUrl: `https://jyvxhyaeagqljvqqeuwi.supabase.co/storage/v1/object/sign/contratos-assinados/contrato_${details.cpf.replace(/\D/g, '')}_consolidado.pdf?token=dummy`,
+          signedUrl: `https://jyvxhyaeagqljvqqeuwi.supabase.co/storage/v1/object/sign/contratos-assinados/contrato_${cpf.replace(/\D/g, '')}_consolidado.pdf?token=dummy`,
           documentHash: dummyHash
         };
       }
@@ -874,7 +843,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         .from('documentos_assinados')
         .update({
           status: 'finalizado',
-          url_arquivo: res.signedUrl,
+          url_arquivo: res.filePath || res.signedUrl,
           document_hash: res.documentHash,
           assinatura_representante: representativeSignatureBase64,
           assinado_em: new Date().toISOString()
@@ -898,9 +867,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         .update({
           depily: true // contract signed
         })
-        .eq('cpf', details.cpf);
+        .eq('cpf', cpf);
 
-      await logAuditoria('FINALIZACAO_ADMISSAO_CONJUNTA', { candidato: selectedTokenRow.candidato_nome, cpf: details.cpf, document_hash: res.documentHash });
+      await logAuditoria('FINALIZACAO_ADMISSAO_CONJUNTA', { candidato: selectedTokenRow.candidato_nome, cpf, document_hash: res.documentHash });
       alert('Contrato assinado bilateralmente com sucesso! Admissão concluída.');
 
       fetchTokensList();
@@ -2568,15 +2537,37 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <h4 className="text-sm font-bold">Pendências Documentais</h4>
                     <div className="space-y-3">
                       {tokensList.filter((t: any) => t.status !== 'concluido').length > 0 ? (
-                        tokensList.filter((t: any) => t.status !== 'concluido').map((t: any) => (
-                          <div key={t.id} className={`p-4 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-rose-500/5 border-rose-500/15' : 'bg-rose-50 border-rose-200'}`}>
-                            <div>
-                              <span className="text-sm font-semibold block text-rose-500">{t.candidato_nome || 'Candidato'}</span>
-                              <span className="text-[10px] opacity-60 capitalize">{t.status?.replace(/_/g, ' ')}</span>
+                        tokensList.filter((t: any) => t.status !== 'concluido').map((t: any) => {
+                          const handleResolvePending = () => {
+                            setSelectedTokenId(t.id);
+                            loadTokenForReview(t);
+                            navigate('/app/colaboradores');
+                            setColabSubTab('admissao');
+                          };
+                          return (
+                            <div 
+                              key={t.id} 
+                              onClick={handleResolvePending}
+                              className={`p-4 rounded-xl border flex items-center justify-between cursor-pointer hover:scale-[1.01] active:scale-[0.99] transition-all ${
+                                theme === 'dark' 
+                                  ? 'bg-rose-500/5 border-rose-500/15 hover:bg-rose-500/10' 
+                                  : 'bg-rose-50 border-rose-200 hover:bg-rose-100/50'
+                              }`}
+                              title="Clique para assinar/revisar esta pendência"
+                            >
+                              <div>
+                                <span className="text-sm font-semibold block text-rose-500">{t.candidato_nome || 'Candidato'}</span>
+                                <span className="text-[10px] opacity-60 capitalize">
+                                  {t.status === 'aguardando_assinatura_rh' ? 'Assinatura Pendente (RH)' : t.status?.replace(/_/g, ' ')}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[9px] opacity-50 font-bold uppercase tracking-wider">Clique para Resolver</span>
+                                <AlertTriangle size={16} className="text-rose-400 opacity-70" />
+                              </div>
                             </div>
-                            <AlertTriangle size={16} className="text-rose-400 opacity-70" />
-                          </div>
-                        ))
+                          );
+                        })
                       ) : (
                         <div className={`p-8 rounded-xl border text-center ${theme === 'dark' ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-emerald-200 bg-emerald-50'}`}>
                           <CheckCircle size={24} className="text-emerald-500 mx-auto mb-2" />
@@ -2649,9 +2640,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               <span className={`text-[9px] px-2 py-0.5 rounded-full border font-bold ${doc.status === 'finalizado' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
                                 }`}>{doc.status === 'finalizado' ? 'Finalizado' : doc.status}</span>
                               {doc.url_arquivo && (
-                                <a href={doc.url_arquivo} target="_blank" rel="noreferrer" className="p-1 rounded hover:bg-white/10 opacity-70 hover:opacity-100">
+                                <button onClick={() => handleViewDocument(doc.url_arquivo)} className="p-1 rounded hover:bg-white/10 opacity-70 hover:opacity-100">
                                   <ExternalLink size={12} />
-                                </a>
+                                </button>
                               )}
                             </div>
                           </div>
@@ -3134,6 +3125,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   'pendente_preenchimento': 'Preenchendo Ficha',
                                   'aguardando_homologacao': 'Revisar Dados',
                                   'aguardando_assinatura': 'Aguardando Assinatura',
+                                  'aguardando_assinatura_rh': 'Assinatura Pendente (RH)',
                                   'concluido': 'Finalizado'
                                 };
                                 const friendlyStatus = statMap[t.status] || 'Preenchendo Ficha';
@@ -3155,18 +3147,26 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <span className="text-xs font-bold uppercase opacity-65">Formulário Recebido (Candidato)</span>
                             {(() => {
                               const selectedTokenRow = tokensList.find(t => t.id === selectedTokenId);
+                              const isCompleted = selectedTokenRow?.status === 'concluido';
+                              const isAwaitingRH = selectedTokenRow?.status === 'aguardando_assinatura_rh';
+                              const isAwaitingCandidate = selectedTokenRow?.status === 'aguardando_assinatura';
                               return (
-                                <span className={`text-xs px-2 py-0.5 border rounded-full font-medium ${selectedTokenRow?.status === 'concluido'
+                                <span className={`text-xs px-2 py-0.5 border rounded-full font-medium ${
+                                  isCompleted
                                     ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/35'
-                                    : selectedTokenRow?.status === 'aguardando_assinatura'
-                                      ? 'bg-amber-500/20 text-amber-500 border-amber-500/35'
-                                      : 'bg-sky-500/20 text-sky-500 border-sky-500/35'
+                                    : isAwaitingRH
+                                      ? 'bg-orange-500/20 text-orange-500 border-orange-500/35'
+                                      : isAwaitingCandidate
+                                        ? 'bg-amber-500/20 text-amber-500 border-amber-500/35'
+                                        : 'bg-sky-500/20 text-sky-500 border-sky-500/35'
                                   }`}>
-                                  {selectedTokenRow?.status === 'concluido'
+                                  {isCompleted
                                     ? 'Concluído'
-                                    : selectedTokenRow?.status === 'aguardando_assinatura'
-                                      ? 'Aguardando Assinatura'
-                                      : 'Pendente Revisão'}
+                                    : isAwaitingRH
+                                      ? 'Assinatura Pendente (RH)'
+                                      : isAwaitingCandidate
+                                        ? 'Aguardando Assinatura'
+                                        : 'Pendente Revisão'}
                                 </span>
                               );
                             })()}
@@ -4433,7 +4433,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               </span>
                               <span className="text-[10px] opacity-45">Assinado {new Date(doc.assinado_em || '').toLocaleDateString('pt-BR')}</span>
                             </div>
-                            <button onClick={() => { if (doc.url_arquivo) window.open(doc.url_arquivo, '_blank'); }}
+                            <button onClick={() => handleViewDocument(doc.url_arquivo)}
                               className={`p-1 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-[#E5DFD3]' : 'text-[#0A0A0A]'}`}>
                               <ExternalLink size={13} />
                             </button>
