@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Shield,
@@ -86,6 +86,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   // --- MÓDULO 7: PLANO DE CARREIRA E AVALIAÇÃO DESEMPENHO ---
   const [dbPlanosCarreira, setDbPlanosCarreira] = useState<any[]>([]);
   const [dbAvaliacoesDesempenho, setDbAvaliacoesDesempenho] = useState<any[]>([]);
+  const [dbAdvertencias, setDbAdvertencias] = useState<any[]>([]);
 
   // --- MÓDULO 1: DOCUMENTOS ---
   const [modelos, setModelos] = useState<any[]>([]);
@@ -301,13 +302,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
 
   // --- MÓDULO 2: COLABORADORES & SIDE-BY-SIDE ---
-  const [colabSubTab, setColabSubTab] = useState<'quadro' | 'admissao' | 'cadastrar'>('quadro');
+  const [colabSubTab, setColabSubTab] = useState<'quadro' | 'admissao' | 'cadastrar' | 'desligados'>('quadro');
 
   // Quadro de Funcionários filters and sorting
   const [searchQuery, setSearchQuery] = useState('');
   const [filterSetor, setFilterSetor] = useState('Todos');
   const [filterStatus, setFilterStatus] = useState('Todos');
   const [sortOrder, setSortOrder] = useState<'antigo' | 'recente'>('antigo');
+
+  // Agenda/Calendário RH States
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState<number | null>(new Date().getDate());
 
   // Side Drawer Prontuário States
   const [activeColaboradorForDrawer, setActiveColaboradorForDrawer] = useState<any>(null);
@@ -493,6 +499,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [ocJustificativa, setOcJustificativa] = useState('');
   const [ocFile, setOcFile] = useState<File | null>(null);
   const [isSubmittingOcorrencia, setIsSubmittingOcorrencia] = useState(false);
+
+  // Advertências States
+  const [isRegisteringAdvertencia, setIsRegisteringAdvertencia] = useState(false);
+  const [advDataFalta, setAdvDataFalta] = useState(new Date().toISOString().split('T')[0]);
+  const [advDescricaoSituacao, setAdvDescricaoSituacao] = useState('');
+  const [isSavingAdvertencia, setIsSavingAdvertencia] = useState(false);
+  const [showAdvertenciaModal, setShowAdvertenciaModal] = useState(false);
+  const [selectedAdvertenciaForModal, setSelectedAdvertenciaForModal] = useState<any | null>(null);
 
   // Cadastrar Colaborador form state
   const [cadastroNome, setCadastroNome] = useState('');
@@ -1122,6 +1136,67 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     }
   };
 
+  const handleRegisterAdvertencia = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeColaboradorForDrawer) return;
+
+    setIsSavingAdvertencia(true);
+
+    try {
+      const colabPrevAdvertencias = dbAdvertencias
+        .filter(adv => adv.colaborador_id === activeColaboradorForDrawer.id)
+        .map(adv => ({
+          id: adv.id,
+          data_falta: adv.data_falta,
+          descricao_situacao: adv.descricao_situacao,
+          criado_em: adv.criado_em
+        }));
+
+      if (!user?.email) {
+        alert('Operação não autorizada. Faça login novamente.');
+        return;
+      }
+      const avaliadorEmail = user.email;
+
+      const { data, error: insertErr } = await supabase
+        .from('colaborador_advertencias')
+        .insert({
+          colaborador_id: activeColaboradorForDrawer.id,
+          data_falta: advDataFalta,
+          descricao_situacao: advDescricaoSituacao,
+          avaliador_email: avaliadorEmail,
+          advertencias_anteriores: colabPrevAdvertencias
+        })
+        .select('*')
+        .single();
+
+      if (insertErr) throw insertErr;
+
+      if (data) {
+        setDbAdvertencias(prev => [data, ...prev]);
+      }
+
+      await logAuditoria('REGISTRAR_ADVERTENCIA', {
+        colaborador: activeColaboradorForDrawer.nome,
+        data_falta: advDataFalta
+      });
+
+      alert('Advertência registrada com sucesso!');
+
+      setAdvDataFalta(new Date().toISOString().split('T')[0]);
+      setAdvDescricaoSituacao('');
+      setIsRegisteringAdvertencia(false);
+      
+      setSelectedAdvertenciaForModal(data);
+      setShowAdvertenciaModal(true);
+
+    } catch (err: any) {
+      alert('Erro ao registrar advertência: ' + err.message);
+    } finally {
+      setIsSavingAdvertencia(false);
+    }
+  };
+
   const handleCadastrarColaborador = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cadastroNome.trim() || !cadastroCpf.trim() || !cadastroCargo.trim() || !cadastroAdmissao) {
@@ -1183,17 +1258,43 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   }, [activePath]);
 
   useEffect(() => {
-    // Inscrição Supabase Realtime para a tabela documentos_assinados
+    // Inscrição Supabase Realtime para tabelas críticas (documentos, colaboradores, advertências, avaliações)
     const channel = supabase
       .channel('documentos-assinados-realtime-rh')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'documentos_assinados' },
         (payload) => {
-          console.log('Realtime notification received:', payload);
-          // Atualiza as listas automaticamente e emite aviso visual
+          console.log('Realtime notification received (documentos):', payload);
           fetchTokensList();
           fetchColaboradoresList();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'colaboradores' },
+        (payload) => {
+          console.log('Realtime change received (colaboradores):', payload);
+          fetchColaboradoresList();
+          fetchDashboardKpis();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'colaborador_advertencias' },
+        (payload) => {
+          console.log('Realtime change received (advertencias):', payload);
+          fetchColaboradoresList();
+          fetchDashboardKpis();
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'avaliacoes_desempenho' },
+        (payload) => {
+          console.log('Realtime change received (avaliacoes):', payload);
+          fetchColaboradoresList();
+          fetchDashboardKpis();
         }
       )
       .subscribe();
@@ -1242,9 +1343,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       if (colabsRes.data) {
         setColaboradoresList(colabsRes.data);
-        if (!selectedColaboradorId && colabsRes.data.length > 0) {
-          setSelectedColaboradorId(colabsRes.data[0].id);
-          loadColaboradorOnboarding(colabsRes.data[0]);
+        const nonDesligados = colabsRes.data.filter((c: any) => c.status !== 'desligado');
+        if (!selectedColaboradorId && nonDesligados.length > 0) {
+          setSelectedColaboradorId(nonDesligados[0].id);
+          loadColaboradorOnboarding(nonDesligados[0]);
         } else if (colabsRes.data.length > 0) {
           const activeCol = colabsRes.data.find(c => c.id === selectedColaboradorId);
           if (activeCol) loadColaboradorOnboarding(activeCol);
@@ -1257,6 +1359,20 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (assocRes.data) setDbColaboradorBeneficios(assocRes.data);
       if (planosRes.data) setDbPlanosCarreira(planosRes.data);
       if (avaliacoesRes.data) setDbAvaliacoesDesempenho(avaliacoesRes.data);
+
+      let advertenciasData: any[] = [];
+      try {
+        const { data, error } = await supabase
+          .from('colaborador_advertencias')
+          .select('*')
+          .order('criado_em', { ascending: false });
+        if (!error && data) {
+          advertenciasData = data;
+        }
+      } catch (err) {
+        console.warn('colaborador_advertencias table not loaded:', err);
+      }
+      setDbAdvertencias(advertenciasData);
 
     } catch (err) {
       console.error('Error fetching colaboradores and benefits:', err);
@@ -1746,28 +1862,140 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
 
   // Filters computed list for employees board
-  const filteredAndSortedColaboradores = colaboradoresList
-    .filter(c => {
-      const matchesSearch =
-        c.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.cpf.includes(searchQuery);
+  const filteredAndSortedColaboradores = useMemo(() => {
+    return colaboradoresList
+      .filter(c => {
+        const matchesSearch =
+          c.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          c.cpf.includes(searchQuery);
 
-      const matchesSector = filterSetor === 'Todos' || c.setor === filterSetor;
+        const matchesSector = filterSetor === 'Todos' || c.setor === filterSetor;
 
-      let matchesStatus = true;
-      if (filterStatus === 'Ativo') {
-        matchesStatus = c.status === 'ativo';
-      } else if (filterStatus === 'Onboarding') {
-        matchesStatus = c.status === 'pendente';
+        let matchesStatus = true;
+        if (colabSubTab === 'desligados') {
+          matchesStatus = c.status === 'desligado';
+        } else {
+          if (filterStatus === 'Ativo') {
+            matchesStatus = c.status === 'ativo';
+          } else if (filterStatus === 'Onboarding') {
+            matchesStatus = c.status === 'pendente';
+          } else {
+            matchesStatus = c.status !== 'desligado';
+          }
+        }
+
+        return matchesSearch && matchesSector && matchesStatus;
+      })
+      .sort((a, b) => {
+        const dateA = new Date(a.data_admissao).getTime();
+        const dateB = new Date(b.data_admissao).getTime();
+        return sortOrder === 'antigo' ? dateA - dateB : dateB - dateA;
+      });
+  }, [colaboradoresList, searchQuery, filterSetor, colabSubTab, filterStatus, sortOrder]);
+
+  const warningsMap = useMemo(() => {
+    const map: Record<string, any[]> = {};
+    (dbAdvertencias || []).forEach(adv => {
+      if (adv && adv.colaborador_id) {
+        if (!map[adv.colaborador_id]) {
+          map[adv.colaborador_id] = [];
+        }
+        map[adv.colaborador_id].push(adv);
+      }
+    });
+    return map;
+  }, [dbAdvertencias]);
+
+  const calendarEvents = useMemo(() => {
+    const list: any[] = [];
+
+    colaboradoresList.forEach((col) => {
+      if (!col) return;
+
+      // 1. Férias a vencer (data_ferias_vencimento)
+      if (col.data_ferias_vencimento) {
+        const d = new Date(col.data_ferias_vencimento + 'T12:00:00');
+        if (!isNaN(d.getTime())) {
+          list.push({
+            id: `ferias-${col.id}`,
+            date: col.data_ferias_vencimento,
+            type: 'ferias',
+            label: `Férias a Vencer: ${col.nome}`,
+            desc: `Colaborador(a) ${col.nome} possui férias a vencer em ${d.toLocaleDateString('pt-BR')}.`,
+            colaborador: col
+          });
+        }
       }
 
-      return matchesSearch && matchesSector && matchesStatus;
-    })
-    .sort((a, b) => {
-      const dateA = new Date(a.data_admissao).getTime();
-      const dateB = new Date(b.data_admissao).getTime();
-      return sortOrder === 'antigo' ? dateA - dateB : dateB - dateA;
+      // 2. Experiência acabando (90 dias após data_admissao)
+      if (col.data_admissao) {
+        const dateAdm = new Date(col.data_admissao + 'T12:00:00');
+        if (!isNaN(dateAdm.getTime())) {
+          const dateExp = new Date(dateAdm.getTime() + 90 * 86400000);
+          if (!isNaN(dateExp.getTime())) {
+            const expStr = dateExp.toISOString().split('T')[0];
+            list.push({
+              id: `exp-${col.id}`,
+              date: expStr,
+              type: 'experiencia',
+              label: `Fim da Experiência: ${col.nome}`,
+              desc: `Término do período de 90 dias de experiência desde a admissão em ${dateAdm.toLocaleDateString('pt-BR')}.`,
+              colaborador: col
+            });
+          }
+        }
+      }
+
+      // 3. Vencimento de ASO (data_aso_vencimento)
+      if (col.data_aso_vencimento) {
+        const d = new Date(col.data_aso_vencimento + 'T12:00:00');
+        if (!isNaN(d.getTime())) {
+          list.push({
+            id: `aso-${col.id}`,
+            date: col.data_aso_vencimento,
+            type: 'aso',
+            label: `ASO a Vencer: ${col.nome}`,
+            desc: `Atestado de Saúde Ocupacional (ASO) vence em ${d.toLocaleDateString('pt-BR')}.`,
+            colaborador: col
+          });
+        }
+      }
+
+      // 4. Data de Admissão (aniversário ou admissão pendente/nova)
+      if (col.data_admissao) {
+        const d = new Date(col.data_admissao + 'T12:00:00');
+        if (!isNaN(d.getTime())) {
+          list.push({
+            id: `adm-${col.id}`,
+            date: col.data_admissao,
+            type: 'admissao',
+            label: `Admissão: ${col.nome}`,
+            desc: `Data de admissão de ${col.nome} (${col.cargo}) na clínica em ${d.toLocaleDateString('pt-BR')}.`,
+            colaborador: col
+          });
+        }
+      }
     });
+
+    // 5. Data de Advertências (data_falta)
+    dbAdvertencias.forEach((adv) => {
+      if (!adv || !adv.data_falta) return;
+      const col = colaboradoresList.find((c) => c.id === adv.colaborador_id);
+      const d = new Date(adv.data_falta + 'T12:00:00');
+      if (!isNaN(d.getTime())) {
+        list.push({
+          id: `adv-${adv.id}`,
+          date: adv.data_falta,
+          type: 'advertencia',
+          label: `Advertência Disciplinar: ${col?.nome || 'Colaborador'}`,
+          desc: `Advertência formal emitida devido a desvio: "${adv.descricao_situacao}"`,
+          colaborador: col
+        });
+      }
+    });
+
+    return list;
+  }, [colaboradoresList, dbAdvertencias]);
 
   // Sidebar Links array builder
   const sidebarLinks = [
@@ -1778,7 +2006,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       { path: '/app/documentos', label: 'Documentos', icon: <FileText size={16} /> },
       { path: '/app/beneficios', label: 'Benefícios', icon: <Gift size={16} /> },
       { path: '/app/ferias-aso', label: 'Férias & ASO', icon: <Calendar size={16} /> },
-      { path: '/app/avaliacoes', label: 'Avaliações', icon: <Award size={16} /> }
+      { path: '/app/avaliacoes', label: 'Avaliações', icon: <Award size={16} /> },
+      { path: '/app/agenda', label: 'Agenda RH', icon: <Calendar size={16} /> }
     ] : []),
     { path: '/app/analytics', label: 'Analytics', icon: <TrendingUp size={16} /> }
   ];
@@ -1978,17 +2207,17 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       icon: '📄'
                     },
                     {
-                      label: 'Alertas (30 dias)',
-                      value: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length,
-                      sub: 'ASO, férias e exp. a vencer',
-                      color: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length > 0 ? 'rose' : 'emerald',
-                      accent: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length > 0
+                      label: 'Alertas & Penalidades',
+                      value: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length,
+                      sub: `${dbAdvertencias.length} advertências registradas`,
+                      color: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length > 0 ? 'rose' : 'emerald',
+                      accent: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length > 0
                         ? (theme === 'dark' ? 'border-t-rose-400/60' : 'border-t-rose-400/40')
                         : (theme === 'dark' ? 'border-t-emerald-500/60' : 'border-t-emerald-500/40'),
-                      glow: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length > 0
+                      glow: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length > 0
                         ? 'shadow-[0_0_24px_-8px_rgba(251,113,133,0.22)]'
                         : 'shadow-[0_0_24px_-8px_rgba(52,211,153,0.18)]',
-                      icon: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length > 0 ? '⚠️' : '✅'
+                      icon: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length > 0 ? '⚠️' : '✅'
                     },
                   ].map((k, i) => (
                     <div key={i} className={`relative p-5 rounded-2xl border-t-2 flex flex-col justify-between h-32 transition-all duration-200 hover:scale-[1.02] ${k.accent} ${k.glow} ${theme === 'dark' ? 'bg-[#111110] border border-white/6 border-t-2' : 'bg-white border border-black/6 border-t-2'
@@ -2011,7 +2240,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 </div>
 
                 {/* ── Alertas Reais ── */}
-                {(kpiAsoVencer.length > 0 || kpiFeriasVencer.length > 0 || kpiExperienciaVencer.length > 0) && (
+                {(kpiAsoVencer.length > 0 || kpiFeriasVencer.length > 0 || kpiExperienciaVencer.length > 0 || dbAdvertencias.length > 0) && (
                   <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-rose-500/15 bg-[#111110]' : 'border-rose-200 bg-white'
                     }`}>
                     {/* Alert Header Bar */}
@@ -2022,30 +2251,58 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           }`}>
                           <AlertTriangle size={13} className="text-rose-400" />
                         </div>
-                        <span className="text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">Alertas — Próximos 30 dias</span>
+                        <span className="text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">Alertas — Próximos 30 dias & Penalidades</span>
                       </div>
                       <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-100 text-rose-500'
                         }`}>
-                        {kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length} pendências
+                        {kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length} alertas / advertências
                       </span>
                     </div>
 
                     {/* Alert Content */}
-                    <div className="p-5 grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div className="p-5 grid grid-cols-1 md:grid-cols-4 gap-5">
+                      {dbAdvertencias.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 mb-3">
+                            <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+                            <h4 className={`text-[9px] font-black tracking-[0.15em] uppercase ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Advertências Emitidas</h4>
+                          </div>
+                          <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+                            {dbAdvertencias.slice(0, 5).map((adv: any) => {
+                              const colab = colaboradoresList.find(c => c.id === adv.colaborador_id);
+                              return (
+                                <div key={adv.id} className={`p-2.5 rounded-xl border text-[11px] flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-rose-950/20 border-rose-500/20 hover:bg-rose-900/25' : 'bg-rose-50/50 border-rose-100'
+                                  } transition-colors`}>
+                                  <span className="font-semibold truncate">{colab?.nome?.split(' ').slice(0, 2).join(' ') || 'Colaborador'}</span>
+                                  <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-100 text-rose-600'
+                                    }`}>{(() => {
+                                      const d = new Date(adv.data_falta + 'T12:00:00');
+                                      return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+                                    })()}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                       {kpiAsoVencer.length > 0 && (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 mb-3">
                             <span className={`w-2 h-2 rounded-full bg-rose-400`} />
                             <h4 className={`text-[9px] font-black tracking-[0.15em] uppercase ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>ASO a Vencer</h4>
                           </div>
-                          {kpiAsoVencer.map((c: any) => (
-                            <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15 hover:bg-rose-500/12' : 'bg-rose-50 border-rose-100'
-                              } transition-colors`}>
-                              <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
-                              <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-100 text-rose-600'
-                                }`}>{new Date(c.data_aso_vencimento).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                          ))}
+                           {kpiAsoVencer.map((c: any) => {
+                            const dateD = new Date(c.data_aso_vencimento);
+                            const dateStr = isNaN(dateD.getTime()) ? '—' : dateD.toLocaleDateString('pt-BR');
+                            return (
+                              <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15 hover:bg-rose-500/12' : 'bg-rose-50 border-rose-100'
+                                } transition-colors`}>
+                                <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
+                                <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-100 text-rose-600'
+                                  }`}>{dateStr}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       {kpiFeriasVencer.length > 0 && (
@@ -2054,14 +2311,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <span className={`w-2 h-2 rounded-full bg-amber-400`} />
                             <h4 className={`text-[9px] font-black tracking-[0.15em] uppercase ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Férias a Vencer</h4>
                           </div>
-                          {kpiFeriasVencer.map((c: any) => (
-                            <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-amber-500/8 border-amber-500/15 hover:bg-amber-500/12' : 'bg-amber-50 border-amber-100'
-                              } transition-colors`}>
-                              <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
-                              <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-600'
-                                }`}>{new Date(c.data_ferias_vencimento).toLocaleDateString('pt-BR')}</span>
-                            </div>
-                          ))}
+                          {kpiFeriasVencer.map((c: any) => {
+                            const dateD = new Date(c.data_ferias_vencimento);
+                            const dateStr = isNaN(dateD.getTime()) ? '—' : dateD.toLocaleDateString('pt-BR');
+                            return (
+                              <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-amber-500/8 border-amber-500/15 hover:bg-amber-500/12' : 'bg-amber-50 border-amber-100'
+                                } transition-colors`}>
+                                <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
+                                <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-600'
+                                  }`}>{dateStr}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                       {kpiExperienciaVencer.length > 0 && (
@@ -2071,13 +2332,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <h4 className={`text-[9px] font-black tracking-[0.15em] uppercase ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Fim de Experiência</h4>
                           </div>
                           {kpiExperienciaVencer.map((c: any) => {
-                            const dateFim = new Date(new Date(c.data_admissao).getTime() + 90 * 86400000);
+                            const dateAdm = new Date(c.data_admissao);
+                            const dateFim = !isNaN(dateAdm.getTime()) ? new Date(dateAdm.getTime() + 90 * 86400000) : null;
+                            const dateStr = dateFim && !isNaN(dateFim.getTime()) ? dateFim.toLocaleDateString('pt-BR') : '—';
                             return (
                               <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-sky-500/8 border-sky-500/15 hover:bg-sky-500/12' : 'bg-sky-50 border-sky-100'
                                 } transition-colors`}>
                                 <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
                                 <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-sky-500/15 text-sky-300' : 'bg-sky-100 text-sky-600'
-                                  }`}>{dateFim.toLocaleDateString('pt-BR')}</span>
+                                  }`}>{dateStr}</span>
                               </div>
                             );
                           })}
@@ -2816,6 +3079,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       Quadro de Funcionários
                     </button>
                     <button
+                      onClick={() => setColabSubTab('desligados')}
+                      className={`text-xs px-4 py-1.5 rounded font-bold transition-all ${colabSubTab === 'desligados'
+                          ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]')
+                          : 'opacity-60 hover:opacity-100'
+                        }`}
+                    >
+                      Desligados
+                    </button>
+                    <button
                       onClick={() => setColabSubTab('admissao')}
                       className={`text-xs px-4 py-1.5 rounded font-bold transition-all ${colabSubTab === 'admissao'
                           ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]')
@@ -2837,11 +3109,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 </div>
 
                 {/* Sub-tab 1: Quadro de Funcionários (Time Ativo) */}
-                {colabSubTab === 'quadro' && (
+                {(colabSubTab === 'quadro' || colabSubTab === 'desligados') && (
                   <div className="space-y-6 animate-fadeIn">
 
                     {/* Filters Toolbar */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+                    <div className={`grid grid-cols-1 sm:grid-cols-2 ${colabSubTab === 'quadro' ? 'md:grid-cols-5' : 'md:grid-cols-4'} gap-3`}>
 
                       {/* Search box */}
                       <div className="md:col-span-2">
@@ -2889,29 +3161,31 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Dropdown Status */}
-                      <div>
-                        <label className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Status</label>
-                        <select
-                          value={filterStatus}
-                          onChange={(e) => setFilterStatus(e.target.value)}
-                          className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/15 text-black bg-white'
-                            }`}
-                        >
-                          {[
-                            { value: 'Todos', label: 'Todos os Status' },
-                            { value: 'Ativo', label: 'Ativo' },
-                            { value: 'Onboarding', label: 'Onboarding' }
-                          ].map((opt) => (
-                            <option
-                              key={opt.value}
-                              value={opt.value}
-                              className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}
-                            >
-                              {opt.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      {colabSubTab === 'quadro' && (
+                        <div>
+                          <label className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Status</label>
+                          <select
+                            value={filterStatus}
+                            onChange={(e) => setFilterStatus(e.target.value)}
+                            className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/15 text-black bg-white'
+                              }`}
+                          >
+                            {[
+                              { value: 'Todos', label: 'Todos os Status' },
+                              { value: 'Ativo', label: 'Ativo' },
+                              { value: 'Onboarding', label: 'Onboarding' }
+                            ].map((opt) => (
+                              <option
+                                key={opt.value}
+                                value={opt.value}
+                                className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}
+                              >
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
 
                       {/* Sorting Tenure Toggle */}
                       <div>
@@ -2946,21 +3220,39 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         </thead>
                         <tbody className="divide-y divide-white/5">
                           {filteredAndSortedColaboradores.length > 0 ? (
-                            filteredAndSortedColaboradores.map((c) => (
+                            filteredAndSortedColaboradores.map((c: any) => (
                               <tr
                                 key={c.id}
                                 onClick={() => setActiveColaboradorForDrawer(c)}
                                 className={`cursor-pointer transition-colors ${theme === 'dark' ? 'hover:bg-white/5' : 'hover:bg-black/5'
                                   }`}
                               >
-                                <td className="p-3 font-semibold">{c.nome}</td>
+                                <td className="p-3 font-semibold">
+                                  <div className="flex items-center gap-1.5">
+                                    <span>{c.nome}</span>
+                                    {(() => {
+                                      const colabAdvs = warningsMap[c.id] || [];
+                                      return colabAdvs.length > 0 && (
+                                        <span
+                                          title={`${colabAdvs.length} advertência(s) registrada(s)`}
+                                          className="shrink-0 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20"
+                                        >
+                                          ⚠️ {colabAdvs.length}
+                                        </span>
+                                      );
+                                    })()}
+                                  </div>
+                                </td>
                                 <td className="p-3 font-mono opacity-85">{c.cpf}</td>
                                 <td className="p-3 opacity-80">{c.cargo}</td>
                                 <td className="p-3 font-mono opacity-80">{c.salario || '—'}</td>
                                 <td className="p-3 font-mono font-bold text-emerald-500">{getSalarioLiquido(c).liquido}</td>
                                 <td className="p-3 opacity-80">{c.setor}</td>
                                 <td className="p-3 font-mono opacity-70">
-                                  {new Date(c.data_admissao).toLocaleDateString('pt-BR')}
+                                  {(() => {
+                                    const d = new Date(c.data_admissao);
+                                    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+                                  })()}
                                 </td>
                                 <td className="p-3 font-medium text-emerald-500">
                                   {calculateTenure(c.data_admissao)}
@@ -2968,16 +3260,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 <td className="p-3">
                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${c.status === 'ativo'
                                       ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
-                                      : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                                      : c.status === 'desligado'
+                                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-500'
+                                        : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                                     }`}>
-                                    {c.status === 'ativo' ? 'Ativo' : 'Onboarding'}
+                                    {c.status === 'ativo' ? 'Ativo' : c.status === 'desligado' ? 'Desligado' : 'Onboarding'}
                                   </span>
                                 </td>
                               </tr>
                             ))
                           ) : (
                             <tr>
-                              <td colSpan={7} className="text-center p-8 opacity-50 italic">
+                              <td colSpan={9} className="text-center p-8 opacity-50 italic">
                                 Nenhum colaborador encontrado com os filtros selecionados.
                               </td>
                             </tr>
@@ -3477,7 +3771,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white' : 'border-black/10 text-black'
                           }`}
                       >
-                        {colaboradoresList.map(c => (
+                        {colaboradoresList.filter(c => c.status !== 'desligado').map(c => (
                           <option key={c.id} value={c.id} className={theme === 'dark' ? 'bg-[#0D0D0C]' : 'bg-white'}>
                             {c.nome} ({c.cargo})
                           </option>
@@ -4367,6 +4661,254 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
             )}
 
+            {activePath === '/app/agenda' && hasFullAccess && (
+              <div className="space-y-6 animate-fadeIn">
+                {/* Header */}
+                <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 8</span>
+                      <h3 className="text-xl font-bold">Agenda & Calendário do RH</h3>
+                    </div>
+                    <p className="text-xs opacity-65 mt-1">Acompanhe vencimentos de ASO, Férias, Experiências e Ocorrências do time em tempo real.</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                  {/* Calendar Grid Container */}
+                  <div className={`lg:col-span-8 p-6 rounded-2xl border ${
+                    theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm'
+                  }`}>
+                    {/* Controls */}
+                    <div className="flex items-center justify-between mb-6">
+                      <h4 className="text-sm font-bold tracking-wider uppercase opacity-75">
+                        {[
+                          'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                          'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                        ][currentMonth]} de {currentYear}
+                      </h4>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            if (currentMonth === 0) {
+                              setCurrentMonth(11);
+                              setCurrentYear(prev => prev - 1);
+                            } else {
+                              setCurrentMonth(prev => prev - 1);
+                            }
+                            setSelectedCalendarDay(1);
+                          }}
+                          className={`p-2 rounded-lg border text-xs font-bold transition-all ${
+                            theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-[#0D0D0C]' : 'border-black/10 hover:bg-black/5 bg-white'
+                          }`}
+                        >
+                          ◀ Mês Ant.
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (currentMonth === 11) {
+                              setCurrentMonth(0);
+                              setCurrentYear(prev => prev + 1);
+                            } else {
+                              setCurrentMonth(prev => prev + 1);
+                            }
+                            setSelectedCalendarDay(1);
+                          }}
+                          className={`p-2 rounded-lg border text-xs font-bold transition-all ${
+                            theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-[#0D0D0C]' : 'border-black/10 hover:bg-black/5 bg-white'
+                          }`}
+                        >
+                          Próx. Mês ▶
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Weekdays Header */}
+                    <div className="grid grid-cols-7 gap-2 text-center text-[10px] font-bold uppercase tracking-wider opacity-60 mb-2">
+                      {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+                        <div key={day} className="py-2">{day}</div>
+                      ))}
+                    </div>
+
+                    {/* Monthly grid */}
+                    <div className="grid grid-cols-7 gap-2">
+                      {(() => {
+                        const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                        const startDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+
+                        const arr = [];
+                        for (let i = 0; i < startDayOfWeek; i++) {
+                          arr.push(null);
+                        }
+                        for (let d = 1; d <= daysInMonth; d++) {
+                          arr.push(d);
+                        }
+
+                        return arr.map((day, idx) => {
+                          if (day === null) {
+                            return <div key={`empty-${idx}`} className="aspect-square opacity-0 pointer-events-none" />;
+                          }
+
+                          const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                          const dayEvents = calendarEvents.filter((ev: any) => ev.date === dateStr);
+
+                          const isSelected = selectedCalendarDay === day;
+                          const isToday = new Date().getDate() === day && new Date().getMonth() === currentMonth && new Date().getFullYear() === currentYear;
+
+                          return (
+                            <button
+                              key={`day-${day}`}
+                              onClick={() => setSelectedCalendarDay(day)}
+                              className={`aspect-square rounded-xl border flex flex-col items-center justify-between p-2 transition-all relative ${
+                                isSelected
+                                  ? (theme === 'dark' ? 'bg-[#E5DFD3] border-transparent text-[#0C0C0C]' : 'bg-[#0A0A0A] border-transparent text-[#FBFBFA]')
+                                  : isToday
+                                    ? 'border-emerald-500/50 bg-emerald-500/5 text-emerald-500 font-black'
+                                    : (theme === 'dark' ? 'border-white/5 bg-white/[0.02] hover:bg-white/5 text-white/90' : 'border-black/5 bg-black/[0.01] hover:bg-black/[0.03] text-black/90')
+                              }`}
+                            >
+                              <span className="text-xs font-bold font-mono">{day}</span>
+
+                              {/* Dots indicators container */}
+                              {dayEvents.length > 0 && (
+                                <div className="flex gap-1 flex-wrap justify-center max-w-full">
+                                  {dayEvents.slice(0, 3).map((ev: any, eidx: number) => {
+                                    let dotColor = 'bg-sky-500';
+                                    if (ev.type === 'aso') dotColor = 'bg-emerald-500';
+                                    else if (ev.type === 'experiencia') dotColor = 'bg-amber-500';
+                                    else if (ev.type === 'advertencia') dotColor = 'bg-rose-500 animate-pulse';
+                                    else if (ev.type === 'admissao') dotColor = 'bg-violet-500';
+
+                                    return (
+                                      <span
+                                        key={`${ev.id}-${eidx}`}
+                                        className={`w-1.5 h-1.5 rounded-full ${dotColor}`}
+                                        title={ev.label}
+                                      />
+                                    );
+                                  })}
+                                  {dayEvents.length > 3 && (
+                                    <span className="text-[7px] font-bold leading-none opacity-60">+</span>
+                                  )}
+                                </div>
+                              )}
+                            </button>
+                          );
+                        });
+                      })()}
+                    </div>
+
+                    {/* Colors legend */}
+                    <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-white/5 text-[9px] uppercase font-bold tracking-wider opacity-60 justify-center">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-sky-500" />
+                        <span>Férias</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                        <span>ASO</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                        <span>Experiência</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-violet-500" />
+                        <span>Admissão</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                        <span>Advertência</span>
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Day Details Panel */}
+                  <div className="lg:col-span-4 space-y-4">
+                    <div className={`p-5 rounded-2xl border ${
+                      theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm'
+                    }`}>
+                      <h4 className="text-xs font-bold uppercase tracking-wider opacity-60 mb-4">
+                        Eventos do Dia {selectedCalendarDay ? `${selectedCalendarDay}/${currentMonth + 1}/${currentYear}` : '—'}
+                      </h4>
+
+                      <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 scrollbar-thin">
+                        {(() => {
+                          if (!selectedCalendarDay) return null;
+                          const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(selectedCalendarDay).padStart(2, '0')}`;
+                          const selectedDateEvents = calendarEvents.filter((ev: any) => ev.date === dateStr);
+
+                          return selectedDateEvents.length > 0 ? (
+                            selectedDateEvents.map((ev: any) => {
+                              let cardColor = 'border-sky-500/20 bg-sky-500/5';
+                              let badgeColor = 'bg-sky-500/10 text-sky-400 border-sky-500/20';
+                              let labelType = 'FÉRIAS';
+
+                              if (ev.type === 'aso') {
+                                cardColor = 'border-emerald-500/20 bg-emerald-500/5';
+                                badgeColor = 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+                                labelType = 'ASO';
+                              } else if (ev.type === 'experiencia') {
+                                cardColor = 'border-amber-500/20 bg-amber-500/5';
+                                badgeColor = 'bg-amber-500/10 text-amber-400 border-amber-500/20';
+                                labelType = 'EXPERIÊNCIA';
+                              } else if (ev.type === 'advertencia') {
+                                cardColor = 'border-rose-500/20 bg-rose-500/5';
+                                badgeColor = 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+                                labelType = 'ADVERTÊNCIA';
+                              } else if (ev.type === 'admissao') {
+                                cardColor = 'border-violet-500/20 bg-violet-500/5';
+                                badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/20';
+                                labelType = 'ADMISSÃO';
+                              }
+
+                              return (
+                                <div
+                                  key={ev.id}
+                                  className={`p-4 rounded-xl border flex flex-col gap-3 transition-transform hover:scale-[1.01] ${cardColor}`}
+                                >
+                                  <div className="flex justify-between items-start">
+                                    <span className={`px-2 py-0.5 rounded text-[8px] font-extrabold tracking-wider border ${badgeColor}`}>
+                                      {labelType}
+                                    </span>
+                                  </div>
+
+                                  <div className="space-y-1">
+                                    <h5 className="text-xs font-bold">{ev.label}</h5>
+                                    <p className="text-[11px] opacity-70 leading-relaxed">{ev.desc}</p>
+                                  </div>
+
+                                  {ev.colaborador && (
+                                    <button
+                                      onClick={() => setActiveColaboradorForDrawer(ev.colaborador)}
+                                      className={`w-full py-1.5 rounded text-[9px] font-bold tracking-widest uppercase border transition-colors ${
+                                        theme === 'dark'
+                                          ? 'border-white/10 hover:bg-white/5 text-white'
+                                          : 'border-black/10 hover:bg-black/5 text-black'
+                                      }`}
+                                    >
+                                      🔍 Abrir Prontuário
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })
+                          ) : (
+                            <div className="py-8 text-center opacity-50 italic text-xs">
+                              Nenhum evento agendado para esta data.
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+            )}
+
           </div>
         </main>
 
@@ -4400,7 +4942,17 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div>
                   <span className="text-[9px] font-bold tracking-widest uppercase opacity-60">Prontuário do Colaborador</span>
-                  <h3 className="text-base font-bold truncate max-w-[280px] mt-0.5">{activeColaboradorForDrawer.nome}</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <h3 className="text-base font-bold truncate max-w-[200px]">{activeColaboradorForDrawer.nome}</h3>
+                    {(() => {
+                      const colabAdvs = warningsMap[activeColaboradorForDrawer.id] || [];
+                      return colabAdvs.length > 0 && (
+                        <span className="shrink-0 inline-flex items-center gap-1 text-[8px] font-extrabold uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                          ⚠️ {colabAdvs.length}
+                        </span>
+                      );
+                    })()}
+                  </div>
                   <span className="text-xs opacity-50 block mt-0.5">{activeColaboradorForDrawer.cargo}</span>
                 </div>
                 <button
@@ -5011,6 +5563,111 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     ) : (
                       <p className="text-xs opacity-50 italic text-center py-6">Nenhuma ocorrência registrada para este colaborador.</p>
                     )}
+                  </div>
+
+                  {/* Divider */}
+                  <hr className={`border-t my-4 ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
+
+                  {/* Advertências Formais Section */}
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Advertências Formais</h4>
+                      {hasFullAccess && (
+                        <button
+                          onClick={() => setIsRegisteringAdvertencia(!isRegisteringAdvertencia)}
+                          className={`text-[10px] px-3 py-1.5 rounded font-bold uppercase transition-all ${isRegisteringAdvertencia
+                              ? 'bg-rose-500/10 border border-rose-500/20 text-rose-500'
+                              : (theme === 'dark' ? 'bg-white/5 border border-white/10 hover:bg-white/10 text-white' : 'bg-black/5 border-black/10 hover:bg-black/10 text-black')
+                            }`}
+                        >
+                          {isRegisteringAdvertencia ? 'Cancelar' : 'Registrar Advertência'}
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Form Cadastro Advertência */}
+                    {isRegisteringAdvertencia && (
+                      <form onSubmit={handleRegisterAdvertencia} className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                        }`}>
+                        <div>
+                          <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Falta</label>
+                          <input
+                            type="date"
+                            required
+                            value={advDataFalta}
+                            onChange={(e) => setAdvDataFalta(e.target.value)}
+                            className={`w-full text-xs p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              }`}
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Descrição Detalhada da Situação</label>
+                          <textarea
+                            required
+                            rows={4}
+                            placeholder="Descreva a atitude/falta cometida pelo funcionário..."
+                            value={advDescricaoSituacao}
+                            onChange={(e) => setAdvDescricaoSituacao(e.target.value)}
+                            className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              }`}
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={isSavingAdvertencia}
+                          className={`w-full py-2.5 rounded text-[10px] font-bold tracking-wider uppercase transition-colors ${theme === 'dark'
+                              ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]'
+                              : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+                            } disabled:opacity-50`}
+                        >
+                          {isSavingAdvertencia ? 'Salvando...' : 'Emitir Advertência'}
+                        </button>
+                      </form>
+                    )}
+
+                    {/* Lista de Advertências */}
+                    <div className="space-y-3">
+                      {(() => {
+                        const colabAdvs = warningsMap[activeColaboradorForDrawer.id] || [];
+                        return colabAdvs.length > 0 ? (
+                          colabAdvs.map((adv: any) => (
+                          <div key={adv.id} className={`p-3.5 rounded-xl border space-y-2.5 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                            }`}>
+                            <div className="flex items-center justify-between">
+                              <span className="px-2 py-0.5 rounded text-[9px] font-bold border bg-rose-500/10 border-rose-500/20 text-rose-500">
+                                ADVERTÊNCIA DISCIPLINAR
+                              </span>
+                              <span className="text-[10px] font-mono opacity-50">
+                                {new Date(adv.data_falta + 'T12:00:00').toLocaleDateString('pt-BR')}
+                              </span>
+                            </div>
+
+                            <p className="text-xs opacity-85 leading-relaxed">
+                              {adv.descricao_situacao}
+                            </p>
+
+                            <div className="flex items-center justify-between text-[10px] pt-1.5 border-t border-white/5 opacity-60">
+                              <span>Emitido por: <strong>{adv.avaliador_email?.split('@')[0]}</strong></span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSelectedAdvertenciaForModal(adv);
+                                  setShowAdvertenciaModal(true);
+                                }}
+                                className="flex items-center gap-1 hover:underline text-rose-500 font-bold"
+                              >
+                                📄 Visualizar / Imprimir
+                              </button>
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-xs opacity-50 italic text-center py-6">Nenhuma advertência disciplinar registrada.</p>
+                      );
+                    })()}
+                    </div>
                   </div>
                 </div>
               )}
@@ -5833,6 +6490,189 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 </div>
               )}
             </form>
+          </div>
+        </div>
+      )}
+
+      {showAdvertenciaModal && selectedAdvertenciaForModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto eval-modal-backdrop">
+          <style>{`
+            @media print {
+              body {
+                visibility: hidden !important;
+              }
+              .print-modal, .print-modal * {
+                visibility: visible !important;
+                color: #000000 !important;
+                background-color: transparent !important;
+                background-image: none !important;
+                border-color: #000000 !important;
+                box-shadow: none !important;
+                text-shadow: none !important;
+              }
+              @page {
+                size: A4 portrait;
+                margin: 15mm;
+              }
+              .eval-modal-backdrop {
+                position: static !important;
+                background: transparent !important;
+                backdrop-filter: none !important;
+                padding: 0 !important;
+                display: block !important;
+              }
+              .print-modal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                max-height: none !important;
+                overflow: visible !important;
+                background: #ffffff !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                border: none !important;
+              }
+              .no-print {
+                display: none !important;
+              }
+              .print-break-inside-avoid {
+                break-inside: avoid !important;
+                page-break-inside: avoid !important;
+              }
+            }
+          `}</style>
+          
+          <div className={`w-full max-w-2xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
+            theme === 'dark' ? 'bg-[#121211] border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
+          }`}>
+            
+            {/* Header de Tela */}
+            <div className="border-b border-white/10 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
+              <div>
+                <h2 className="text-lg md:text-xl font-bold tracking-tight text-rose-500">Aviso de Advertência Disciplinar</h2>
+                <p className="text-xs opacity-60">
+                  Colaborador(a): <span className="font-semibold">{activeColaboradorForDrawer?.nome}</span> | Cargo: <span className="font-semibold">{activeColaboradorForDrawer?.cargo}</span>
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3 w-full md:w-auto no-print">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-colors ${
+                    theme === 'dark' ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-black'
+                  }`}
+                >
+                  🖨️ Imprimir / PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAdvertenciaModal(false)}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-colors"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+
+            {/* Cabeçalho Corporativo de Impressão */}
+            <div className="hidden print:block border-b-2 border-black pb-4 mb-6">
+              <div className="flex justify-between items-center mb-3">
+                <div>
+                  <h1 className="text-sm font-bold tracking-wider uppercase text-black">BIOLIFE CLÍNICA MÉDICA LTDA</h1>
+                  <p className="text-[9px] text-black/60 font-mono">CNPJ: 37.037.182/0001-85 | Rua Olavo Macedo Ribeiro, 320, Jatiúca, Maceió - AL</p>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] font-bold uppercase border border-black px-2.5 py-1">Controle Interno - RH</span>
+                </div>
+              </div>
+              
+              <div className="text-center py-2.5 my-2 bg-[#f3f4f6] border border-black/10" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+                <h2 className="text-xs font-extrabold tracking-widest uppercase text-black">AVISO DE ADVERTÊNCIA AO EMPREGADO</h2>
+              </div>
+            </div>
+
+            {/* Content Form / Printable Text */}
+            <div className="space-y-6 flex-grow text-xs text-left leading-relaxed text-black/90 dark:text-white/90 print:text-black font-sans">
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4 border-b border-black/5 dark:border-white/5 print:border-black">
+                <div>
+                  <strong>NOME:</strong> {activeColaboradorForDrawer?.nome}
+                </div>
+                <div>
+                  <strong>FUNÇÃO:</strong> {activeColaboradorForDrawer?.cargo}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <p>
+                  Na conformidade da Consolidação das Leis do Trabalho, fica advertido pela(s) falta(s) abaixo discriminada(s):
+                </p>
+                <div className="mt-4 p-3 bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 rounded-lg print:border-none print:p-0 print:bg-transparent">
+                  <strong>• Ao dia {(() => {
+                    const d = new Date(selectedAdvertenciaForModal.data_falta + 'T12:00:00');
+                    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+                  })()}, o funcionário:</strong> {selectedAdvertenciaForModal.descricao_situacao}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <p>
+                  Essa conduta foi verificada confrontando o nosso regimento interno, o contrato de trabalho em vigor, bem como a legislação quanto ao tema.
+                </p>
+                <p>
+                  Tal atitude prejudica a empresa e seu rendimento no trabalho.
+                </p>
+                <p>
+                  Por isso, não só esperamos que tome as necessárias providências a fim de que não se repitam as irregularidades acima discriminadas, como também aproveitamos para esclarecer-lhe que a repetição ou a prática de outra prevista em lei, nossos Regulamentos, Ordens de Serviços, Comunicações, etc., poderá contribuir desfavoravelmente em seu progresso nesta firma, além de poder acarretar-lhe penalidades mais severas, conforme o caso e preceitos das disposições do Artigo 482 e suas alíneas da Consolidação das Leis do Trabalho.
+                </p>
+              </div>
+
+              {/* Advertências Anteriores */}
+              <div className="pt-4 border-t border-black/5 dark:border-white/5 print:border-black print-break-inside-avoid">
+                <h4 className="font-bold uppercase text-[10px] tracking-wider mb-2 text-rose-500 print:text-black">
+                  Por fim, reforço que já houveram as seguintes advertências anteriores:
+                </h4>
+                <div className="space-y-2 pl-2 font-sans">
+                  {selectedAdvertenciaForModal.advertencias_anteriores && selectedAdvertenciaForModal.advertencias_anteriores.length > 0 ? (
+                    selectedAdvertenciaForModal.advertencias_anteriores.map((prev: any, idx: number) => (
+                      <div key={idx} className="flex items-start gap-1 font-mono text-[11px] leading-relaxed">
+                        <span>•</span>
+                        <span>Advertência referente à falta de {(() => {
+                          const d = new Date(prev.data_falta + 'T12:00:00');
+                          return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+                        })()}: "{prev.descricao_situacao}"</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="opacity-50 italic">Nenhuma advertência anterior registrada até a data deste documento.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Assinaturas */}
+              <div className="grid grid-cols-2 gap-8 pt-10 print-break-inside-avoid text-center">
+                <div className="space-y-1">
+                  <div className="border-t border-black/30 dark:border-white/30 print:border-black pt-1.5 mx-auto max-w-[200px]" />
+                  <span className="text-[10px] block opacity-70">Assinatura do Empregador</span>
+                </div>
+                <div className="space-y-1">
+                  <div className="border-t border-black/30 dark:border-white/30 print:border-black pt-1.5 mx-auto max-w-[200px]" />
+                  <span className="text-[10px] block opacity-70">Ciente do Empregado</span>
+                </div>
+              </div>
+
+              {/* Local e Data */}
+              <div className="text-right pt-6 opacity-60 text-[10px] font-mono print:opacity-100">
+                Maceió - AL, {(() => {
+                  const d = new Date(selectedAdvertenciaForModal.criado_em || Date.now());
+                  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+                })()}
+              </div>
+
+            </div>
+
           </div>
         </div>
       )}
