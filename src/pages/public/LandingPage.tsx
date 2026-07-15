@@ -15,13 +15,15 @@ interface LandingPageProps {
   setTheme: (theme: 'dark' | 'light') => void;
 }
 
-type Role = 'coordenadora_rh' | 'ti';
+// Único endereço fora do domínio institucional com cadastro permitido: o TI
+// não tem conta @itoinstituto.com.br. Mantido em sincronia com o trigger
+// trg_fn_handle_new_user (supabase/sprint10_fix_escalacao_privilegio.sql).
+const TI_EMAIL = 'ito.thiagosilva@gmail.com';
 
 export default function LandingPage({ theme, setTheme }: LandingPageProps) {
   // Form States
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
-  const [authCargo, setAuthCargo] = useState<Role>('ti');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
@@ -53,22 +55,21 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
     setAuthError('');
     setAuthLoading(true);
 
+    // Espelha a regra do trigger trg_fn_handle_new_user. Só antecipa o erro:
+    // quem valida de verdade é o banco, que esta checagem não alcança.
     const emailDomain = authEmail.split('@')[1];
-    if (emailDomain !== 'itoinstituto.com.br' && emailDomain !== 'gmail.com') {
-      setAuthError('Cadastro restrito a e-mails corporativos @itoinstituto.com.br ou @gmail.com');
+    if (authEmail !== TI_EMAIL && emailDomain !== 'itoinstituto.com.br') {
+      setAuthError('Cadastro restrito a e-mails corporativos @itoinstituto.com.br');
       setAuthLoading(false);
       return;
     }
 
     try {
+      // O cargo não é enviado: o banco define 'ti' para todo cadastro novo, e
+      // promoção a coordenadora_rh é feita administrativamente.
       const { data, error } = await supabase.auth.signUp({
         email: authEmail,
-        password: authPassword,
-        options: {
-          data: {
-            cargo: authCargo
-          }
-        }
+        password: authPassword
       });
 
       if (error) throw error;
@@ -193,7 +194,7 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
                   <input
                     type="email"
                     required
-                    placeholder="nome@itoinstituto.com.br ou @gmail.com"
+                    placeholder="nome@itoinstituto.com.br"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
                     className={`w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border focus:outline-none focus:ring-1 transition-all ${
@@ -226,22 +227,11 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
 
               {authMode === 'signup' && (
                 <div className="animate-fadeIn">
-                  <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">Cargo pretendido</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-3 opacity-45" size={14} />
-                    <select
-                      value={authCargo}
-                      onChange={(e) => setAuthCargo(e.target.value as Role)}
-                      className={`w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border focus:outline-none focus:ring-1 appearance-none transition-all ${
-                        theme === 'dark' 
-                          ? 'bg-[#121211] border-white/15 focus:ring-[#E5DFD3] text-[#E5DFD3]' 
-                          : 'bg-black/5 border-black/15 focus:ring-[#0A0A0A] text-[#0A0A0A]'
-                      }`}
-                    >
-                      <option value="coordenadora_rh">Coordenadora de RH (Escrita)</option>
-                      <option value="ti">Suporte TI (Apenas Leitura)</option>
-                    </select>
-                  </div>
+                  <p className={`text-[10px] leading-relaxed opacity-60 ${theme === 'dark' ? 'text-[#E5DFD3]' : 'text-[#0A0A0A]'}`}>
+                    <User className="inline mr-1.5 -mt-0.5 opacity-60" size={12} />
+                    Novas contas entram como Suporte TI, com acesso de leitura.
+                    O acesso de coordenação é liberado pela equipe depois do cadastro.
+                  </p>
                 </div>
               )}
 

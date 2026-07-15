@@ -132,6 +132,26 @@ export default function CompensationsPanel({ theme, colaboradoresList, indicador
       .filter(s => s.Masculino > 0 || s.Feminino > 0);
   };
 
+  const parityData = getGenderParityData();
+
+  // Um colaborador só entra no gráfico se tiver gênero 'M'/'F', setor e salário
+  // legível. Quem cai fora precisa ser contado e mostrado: sem isso, um gráfico
+  // vazio parece "não há disparidade" quando na verdade é "não há dado".
+  const foraDoGrafico = {
+    semGenero: activeColabs.filter(c => c.genero !== 'M' && c.genero !== 'F').length,
+    semSetor: activeColabs.filter(c => !c.setor).length,
+    semSalario: activeColabs.filter(c => parseSalary(c.salario || '') <= 0).length
+  };
+  const totalFora = activeColabs.length - parityData.reduce(
+    (acc, s) => acc + ((s.Masculino > 0 ? 1 : 0) + (s.Feminino > 0 ? 1 : 0)), 0
+  );
+
+  const motivosVazio = [
+    foraDoGrafico.semGenero > 0 && `${foraDoGrafico.semGenero} sem gênero informado`,
+    foraDoGrafico.semSetor > 0 && `${foraDoGrafico.semSetor} sem setor`,
+    foraDoGrafico.semSalario > 0 && `${foraDoGrafico.semSalario} sem salário legível`
+  ].filter(Boolean) as string[];
+
   // 3. Satisfação Média com Benefícios (Pesquisas)
   const pesquisas = indicadoresList.filter(i => i.tipo === 'Pesquisa Beneficio');
   const satisfacaoMedia = pesquisas.length > 0
@@ -183,27 +203,62 @@ export default function CompensationsPanel({ theme, colaboradoresList, indicador
               <Percent size={14} className="text-emerald-500" /> Paridade Salarial por Gênero e Setor
             </h4>
           </div>
-          <div className="h-56 text-[10px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={getGenderParityData()} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <XAxis dataKey="setor" stroke="currentColor" opacity={0.4} tickLine={false} />
-                <YAxis stroke="currentColor" opacity={0.4} tickLine={false} tickFormatter={(v) => `R$${v}`} />
-                <Tooltip 
-                  formatter={(value) => [`R$ ${value}`, 'Média Salarial']}
-                  contentStyle={{ 
-                    backgroundColor: theme === 'dark' ? '#181816' : '#ffffff',
-                    borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                    color: theme === 'dark' ? '#E5DFD3' : '#0A0A0A',
-                    fontSize: '11px',
-                    borderRadius: '8px'
-                  }} 
-                />
-                <Legend iconSize={8} iconType="circle" />
-                <Bar dataKey="Feminino" fill="#ec4899" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Masculino" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          {parityData.length === 0 ? (
+            <div className="h-56 flex flex-col items-center justify-center text-center px-6 gap-2">
+              <Percent size={20} className="opacity-30" aria-hidden="true" />
+              <p className="text-xs font-semibold opacity-70">
+                Sem dados suficientes para comparar salários por gênero.
+              </p>
+              {activeColabs.length === 0 ? (
+                <p className="text-[11px] opacity-60 leading-relaxed">
+                  Nenhum colaborador ativo cadastrado.
+                </p>
+              ) : (
+                <p className="text-[11px] opacity-60 leading-relaxed">
+                  Dos {activeColabs.length} colaboradores ativos, nenhum tem o conjunto
+                  gênero + setor + salário preenchido.
+                  {motivosVazio.length > 0 && <> Faltando: {motivosVazio.join(', ')}.</>}
+                </p>
+              )}
+              {foraDoGrafico.semGenero > 0 && (
+                <p className="text-[11px] opacity-60 leading-relaxed">
+                  O campo de gênero da ficha de admissão vem marcado como
+                  “Prefiro não declarar”, e só “Masculino” ou “Feminino” são gravados —
+                  quem não altera fica de fora deste gráfico.
+                </p>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className="h-56 text-[10px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={parityData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <XAxis dataKey="setor" stroke="currentColor" opacity={0.4} tickLine={false} />
+                    <YAxis stroke="currentColor" opacity={0.4} tickLine={false} tickFormatter={(v) => `R$${v}`} />
+                    <Tooltip
+                      formatter={(value) => [`R$ ${value}`, 'Média Salarial']}
+                      contentStyle={{
+                        backgroundColor: theme === 'dark' ? '#181816' : '#ffffff',
+                        borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                        color: theme === 'dark' ? '#E5DFD3' : '#0A0A0A',
+                        fontSize: '11px',
+                        borderRadius: '8px'
+                      }}
+                    />
+                    <Legend iconSize={8} iconType="circle" />
+                    <Bar dataKey="Feminino" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Masculino" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+              {totalFora > 0 && (
+                <p className="text-[10px] opacity-60 leading-relaxed pt-1">
+                  {totalFora} de {activeColabs.length} colaboradores ativos ficaram fora deste
+                  gráfico{motivosVazio.length > 0 && <> ({motivosVazio.join(', ')})</>}.
+                </p>
+              )}
+            </>
+          )}
         </div>
 
         {/* Benefits satisfaction climate */}

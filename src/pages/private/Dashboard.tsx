@@ -49,12 +49,13 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const handleLogout = async () => {
     try {
+      // ip_address e user_agent são preenchidos pelo trigger
+      // trg_fn_log_auditoria_metadata, a partir dos headers da requisição.
+      // Enviá-los daqui só serviria para o cliente escolher o próprio rastro.
       await supabase.from('logs_auditoria').insert({
         usuario_id: user.id,
         usuario_email: user.email,
-        acao: 'LOGOUT',
-        ip_address: '192.168.45.102',
-        user_agent: navigator.userAgent
+        acao: 'LOGOUT'
       });
     } catch (e) {
       console.error(e);
@@ -69,9 +70,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         usuario_id: user.id,
         usuario_email: user.email,
         acao: acao,
-        detalhes: detalhes,
-        ip_address: '192.168.45.102',
-        user_agent: navigator.userAgent
+        detalhes: detalhes
       });
     } catch (err) {
       console.error('Audit log failed:', err);
@@ -93,16 +92,19 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [selectedModeloId, setSelectedModeloId] = useState<string>('');
   const [docTemplate, setDocTemplate] = useState('Termo de Consentimento de Uso de Imagem\n\nEu, {{nome}}, portador do CPF {{cpf}}, autorizo o Instituto Thiago Omena no setor de {{setor}}...');
 
-  const [varNome, setVarNome] = useState('Ana Souza Pereira');
-  const [varCpf, setVarCpf] = useState('123.456.789-00');
-  const [varSetor, setVarSetor] = useState('Biomedicina');
-  const [varCargo, setVarCargo] = useState('Fisioterapeuta Dermato-Funcional');
-  const [varCbo, setVarCbo] = useState('2238-10');
-  const [varAtribuicoes, setVarAtribuicoes] = useState('Atendimento clínico, aplicação de laser e procedimentos estéticos.');
-  const [varSalario, setVarSalario] = useState('4.500,00');
-  const [varSalarioExtenso, setVarSalarioExtenso] = useState('quatro mil e quinhentos reais');
-  const [varEndereco, setVarEndereco] = useState('Rua Olavo Macedo Ribeiro, nº 320, Jatiúca');
-  const [varAdmissao, setVarAdmissao] = useState('15/06/2026');
+  // Variáveis do contrato. Nascem vazias de propósito: o que não for preenchido
+  // sai como "_______" no documento, o que é visível. Valor de exemplo herdado
+  // aqui vira cláusula real no contrato de alguém.
+  const [varNome, setVarNome] = useState('');
+  const [varCpf, setVarCpf] = useState('');
+  const [varSetor, setVarSetor] = useState('');
+  const [varCargo, setVarCargo] = useState('');
+  const [varCbo, setVarCbo] = useState('');
+  const [varAtribuicoes, setVarAtribuicoes] = useState('');
+  const [varSalario, setVarSalario] = useState('');
+  const [varSalarioExtenso, setVarSalarioExtenso] = useState('');
+  const [varEndereco, setVarEndereco] = useState('');
+  const [varAdmissao, setVarAdmissao] = useState('');
 
   const [uploadedPdfBase64, setUploadedPdfBase64] = useState<string>('');
   const [uploadedPdfName, setUploadedPdfName] = useState<string>('');
@@ -205,6 +207,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setVarSetor(colab.setor || '');
       setVarCargo(colab.cargo || '');
       setVarSalario(colab.salario || '');
+      // Não há origem para o extenso no cadastro: precisa ser limpo junto com o
+      // salário, ou o extenso do colaborador anterior segue no contrato deste.
+      setVarSalarioExtenso('');
       
       const addrParts = [
         colab.logradouro,
@@ -454,21 +459,21 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
 
   // Link Generation States
-  const [newCandidateName, setNewCandidateName] = useState('Ana Souza Pereira');
-  const [newCandidateEmail, setNewCandidateEmail] = useState('ana.souza@gmail.com');
-  const [newCandidateCargo, setNewCandidateCargo] = useState('Fisioterapeuta Dermato-Funcional');
-  const [newCandidateSetor, setNewCandidateSetor] = useState('Biomedicina');
+  const [newCandidateName, setNewCandidateName] = useState('');
+  const [newCandidateEmail, setNewCandidateEmail] = useState('');
+  const [newCandidateCargo, setNewCandidateCargo] = useState('');
+  const [newCandidateSetor, setNewCandidateSetor] = useState('');
   const [generatedLink, setGeneratedLink] = useState('');
   const [isTokenRevoked, setIsTokenRevoked] = useState(false);
 
   // Side-by-Side Review states
   const [candidateData, setCandidateData] = useState({
-    nome: 'Ana Souza Pereira',
-    cpf: '123.456.789-00',
-    rg: '98.765.432-1',
-    cargo: 'Fisioterapeuta Dermato-Funcional',
-    setor: 'Biomedicina',
-    salario: 'R$ 4.500,00'
+    nome: '-',
+    cpf: '-',
+    rg: '-',
+    cargo: '-',
+    setor: '-',
+    salario: '-'
   });
 
   const [existingData, setExistingData] = useState({
@@ -596,8 +601,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const handleViewDocument = async (url: string) => {
     if (!url) return;
+    // Registro legado do antigo "modo de simulação": a assinatura foi gravada
+    // sem que o PDF fosse gerado, e o hash não corresponde a documento algum.
+    // Nada novo é gravado assim desde a correção, mas os antigos seguem no banco.
     if (url.includes('token=dummy')) {
-      alert('Aviso: Este documento foi assinado em Modo de Simulação (Edge Function offline). Não há um arquivo PDF físico gerado na Storage.');
+      alert(
+        'Este contrato não tem valor probatório: foi registrado sem que o PDF chegasse a ser gerado, ' +
+        'e o hash gravado não corresponde a nenhum documento. O contrato precisa ser assinado novamente.'
+      );
       return;
     }
     try {
@@ -682,13 +693,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     const details = tokenRow.detalhes || {};
     const cpfClean = tokenRow.candidato_cpf || details.cpf || '';
 
+    // Sem fallback inventado: esta é a tela em que o RH confere os dados antes
+    // de aprovar a admissão. Campo ausente tem que aparecer como ausente.
     setCandidateData({
       nome: tokenRow.candidato_nome || details.nome || '-',
       cpf: cpfClean || '-',
       rg: tokenRow.candidato_rg || details.rg || '-',
-      cargo: tokenRow.candidato_cargo || details.cargo || 'Fisioterapeuta Dermato-Funcional',
-      setor: tokenRow.candidato_setor || details.setor || 'Biomedicina',
-      salario: details.salario || 'R$ 4.500,00'
+      cargo: tokenRow.candidato_cargo || details.cargo || '-',
+      setor: tokenRow.candidato_setor || details.setor || '-',
+      salario: details.salario || '-'
     });
 
     if (cpfClean) {
@@ -923,40 +936,29 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       const { data: sessionData } = await supabase.auth.getSession();
       const sessionToken = sessionData?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      let res;
-      try {
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-contrato-pdf`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${sessionToken}`
-          },
-          body: JSON.stringify({
-            token: selectedTokenRow.token,
-            userEmail: selectedTokenRow.candidato_email,
-            candidateName: selectedTokenRow.candidato_nome,
-            candidateCpf: cpf,
-            signatureBase64: signDoc.assinatura_desenhada,
-            signatureRepresentativeBase64: representativeSignatureBase64,
-            coordinatorEmail: user.email,
-            pdfTemplateBase64: details.pdf_template_base64 || null,
-            documentName: `contrato_${cpf.replace(/\D/g, '')}_consolidado`,
-            colabSignaturePosition: details.colab_signature_position || null,
-            repSignaturePosition: details.rep_signature_position || null
-          })
-        });
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-contrato-pdf`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionToken}`
+        },
+        body: JSON.stringify({
+          token: selectedTokenRow.token,
+          userEmail: selectedTokenRow.candidato_email,
+          candidateName: selectedTokenRow.candidato_nome,
+          candidateCpf: cpf,
+          signatureBase64: signDoc.assinatura_desenhada,
+          signatureRepresentativeBase64: representativeSignatureBase64,
+          coordinatorEmail: user.email,
+          pdfTemplateBase64: details.pdf_template_base64 || null,
+          documentName: `contrato_${cpf.replace(/\D/g, '')}_consolidado`,
+          colabSignaturePosition: details.colab_signature_position || null,
+          repSignaturePosition: details.rep_signature_position || null
+        })
+      });
 
-        res = await response.json();
-        if (!res.success) throw new Error(res.error || 'Erro na fusão do contrato bilateral.');
-      } catch (fetchErr) {
-        console.warn("Edge function failed, running in simulation mode for representative signature:", fetchErr);
-        const dummyHash = 'd7ac82751fbc9c09a80e1b2184e0368b1a89c8942b0c95029a8f4c281df60c7f';
-        res = {
-          success: true,
-          signedUrl: `https://jyvxhyaeagqljvqqeuwi.supabase.co/storage/v1/object/sign/contratos-assinados/contrato_${cpf.replace(/\D/g, '')}_consolidado.pdf?token=dummy`,
-          documentHash: dummyHash
-        };
-      }
+      const res = await response.json();
+      if (!res.success) throw new Error(res.error || 'Erro na fusão do contrato bilateral.');
 
       // 3. Update public.documentos_assinados registry
       const { error: updateDocErr } = await supabase
@@ -3950,7 +3952,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     {l.acao}
                                   </span>
                                 </td>
-                                <td className="py-2.5 font-mono opacity-50">{l.ip_address || '192.168.45.102'}</td>
+                                <td className="py-2.5 font-mono opacity-60">{l.ip_address || '—'}</td>
                               </tr>
                             ))}
                           </tbody>

@@ -19,10 +19,13 @@ export default function ProtectedRoute({
   children
 }: ProtectedRouteProps) {
   if (!isInitialCheckDone) {
+    // Sem cor fixa: o <body> já recebe fundo e texto do tema em App.tsx. Com o
+    // #0D0D0C hardcoded, quem usa tema claro levava um flash preto a cada
+    // navegação protegida.
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0D0D0C] text-[#E5DFD3]">
+      <div className="min-h-screen flex items-center justify-center" role="status">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-current border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
           <span className="text-xs font-mono tracking-wider opacity-60">Verificando permissões...</span>
         </div>
       </div>

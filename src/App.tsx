@@ -1,17 +1,45 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './supabaseClient';
 
 // Pages and components
 import LandingPage from './pages/public/LandingPage';
 import AdmissaoCandidato from './pages/public/AdmissaoCandidato';
-import Dashboard from './pages/private/Dashboard';
 import ProtectedRoute from './components/ProtectedRoute';
 import AccessDenied403 from './pages/errors/AccessDenied403';
 import NotFound404 from './pages/errors/NotFound404';
 
+// Carregado sob demanda: o Dashboard e o recharts respondem pela maior parte do
+// bundle, e o candidato que abre /admissao/:token no celular não usa nenhum dos
+// dois. Importado estaticamente, ele baixava tudo isso antes de ver a ficha.
+const Dashboard = lazy(() => import('./pages/private/Dashboard'));
+
 type Role = 'coordenadora_rh' | 'ti';
 type Theme = 'dark' | 'light';
+
+// As 8 rotas privadas renderizam o mesmo Dashboard, que decide o conteúdo pelo
+// activePath. A única coisa que varia entre elas é quem pode entrar.
+const APP_ROUTES: { path: string; allowedRoles: Role[] }[] = [
+  { path: '/app/dashboard', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/documentos', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/colaboradores', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/onboarding', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/beneficios', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/ferias-aso', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/avaliacoes', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/analytics', allowedRoles: ['coordenadora_rh', 'ti'] }
+];
+
+function RouteFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center" role="status">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-current border-t-transparent rounded-full animate-spin" aria-hidden="true"></div>
+        <span className="text-xs font-mono tracking-wider opacity-60">Carregando painel...</span>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>('dark');
@@ -107,117 +135,24 @@ export default function App() {
           }
         />
 
-        <Route 
-          path="/app/dashboard" 
-          element={
-            <ProtectedRoute 
-              user={user} 
-              role={role} 
-              isInitialCheckDone={isInitialSessionCheckDone} 
-              allowedRoles={['coordenadora_rh']}
-            >
-              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
-            </ProtectedRoute>
-          } 
-        />
-
-        <Route 
-          path="/app/documentos" 
-          element={
-            <ProtectedRoute 
-              user={user} 
-              role={role} 
-              isInitialCheckDone={isInitialSessionCheckDone} 
-              allowedRoles={['coordenadora_rh']}
-            >
-              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
-            </ProtectedRoute>
-          } 
-        />
-
-        <Route 
-          path="/app/colaboradores" 
-          element={
-            <ProtectedRoute 
-              user={user} 
-              role={role} 
-              isInitialCheckDone={isInitialSessionCheckDone} 
-              allowedRoles={['coordenadora_rh']}
-            >
-              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
-            </ProtectedRoute>
-          } 
-        />
-
-        <Route 
-          path="/app/onboarding" 
-          element={
-            <ProtectedRoute 
-              user={user} 
-              role={role} 
-              isInitialCheckDone={isInitialSessionCheckDone} 
-              allowedRoles={['coordenadora_rh']}
-            >
-              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
-            </ProtectedRoute>
-          } 
-        />
-
-        <Route 
-          path="/app/beneficios" 
-          element={
-            <ProtectedRoute 
-              user={user} 
-              role={role} 
-              isInitialCheckDone={isInitialSessionCheckDone} 
-              allowedRoles={['coordenadora_rh']}
-            >
-              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
-            </ProtectedRoute>
-          } 
-        />
-
-        <Route 
-          path="/app/ferias-aso" 
-          element={
-            <ProtectedRoute 
-              user={user} 
-              role={role} 
-              isInitialCheckDone={isInitialSessionCheckDone} 
-              allowedRoles={['coordenadora_rh']}
-            >
-              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
-            </ProtectedRoute>
-          } 
-        />
-
-        <Route 
-          path="/app/avaliacoes" 
-          element={
-            <ProtectedRoute 
-              user={user} 
-              role={role} 
-              isInitialCheckDone={isInitialSessionCheckDone} 
-              allowedRoles={['coordenadora_rh']}
-            >
-              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
-            </ProtectedRoute>
-          } 
-        />
-
-        <Route 
-          path="/app/analytics" 
-          element={
-            <ProtectedRoute 
-              user={user} 
-              role={role} 
-              isInitialCheckDone={isInitialSessionCheckDone} 
-              allowedRoles={['coordenadora_rh', 'ti']}
-            >
-              <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
-            </ProtectedRoute>
-          } 
-        />
+        {APP_ROUTES.map(({ path, allowedRoles }) => (
+          <Route
+            key={path}
+            path={path}
+            element={
+              <ProtectedRoute
+                user={user}
+                role={role}
+                isInitialCheckDone={isInitialSessionCheckDone}
+                allowedRoles={allowedRoles}
+              >
+                <Suspense fallback={<RouteFallback />}>
+                  <Dashboard theme={theme} setTheme={setTheme} user={user} role={role} />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          />
+        ))}
 
         {/* Error Pages */}
         <Route path="/403" element={<AccessDenied403 theme={theme} />} />

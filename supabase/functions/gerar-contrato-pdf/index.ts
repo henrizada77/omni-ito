@@ -5,18 +5,39 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { PDFDocument, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
 
+// Origens liberadas, separadas por vírgula. Configure com:
+//   npx supabase secrets set ALLOWED_ORIGINS="https://SEU-DOMINIO.vercel.app"
+// O localhost do Vite entra sempre, para o dev não precisar de segredo.
+// Antes isto era uma lista fixa em que o domínio de produção nunca foi
+// preenchido — ficou 'https://seu-sistema-rh.vercel.app' até hoje.
 const allowedOrigins = [
-  'https://seu-sistema-rh.vercel.app',
-  'http://localhost:5173'
+  'http://localhost:5173',
+  ...(Deno.env.get('ALLOWED_ORIGINS') ?? '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)
 ];
 
+/** Só os dígitos do CPF. Aceita null/undefined sem estourar. */
+const cpfDigits = (value: unknown): string => String(value ?? '').replace(/\D/g, '');
+
 const getCorsHeaders = (origin: string | null) => {
-  const originToUse = origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0];
-  return {
-    'Access-Control-Allow-Origin': originToUse,
+  const headers: Record<string, string> = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    // A resposta varia conforme a origem: sem isto, um cache intermediário pode
+    // servir o header de uma origem para outra.
+    'Vary': 'Origin'
   };
+
+  // Origem desconhecida não recebe Access-Control-Allow-Origin nenhum. Antes,
+  // ela recebia o primeiro item da lista, o que só produzia um erro de CORS
+  // confuso no navegador em vez de uma recusa explícita.
+  if (origin && allowedOrigins.includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin;
+  }
+
+  return headers;
 };
 
 serve(async (req) => {
@@ -88,11 +109,14 @@ serve(async (req) => {
       if (!tokenError && tokenRow) {
         const isExpired = new Date(tokenRow.expira_em) < new Date();
         const details = tokenRow.detalhes || {};
-        const expectedCpf = tokenRow.candidato_cpf || details.cpf || '';
-        
-        // Confirm token is active, matches requested CPF, and is in valid status
-        if (!isExpired && 
-            candidateCpf.replace(/\D/g, '') === expectedCpf.replace(/\D/g, '') &&
+        const informado = cpfDigits(candidateCpf);
+        const esperado = cpfDigits(tokenRow.candidato_cpf || details.cpf);
+
+        // O `informado.length > 0` não é redundante: sem ele, uma chamada sem
+        // candidateCpf contra um token sem CPF compara '' === '' e autoriza.
+        if (!isExpired &&
+            informado.length > 0 &&
+            informado === esperado &&
             (tokenRow.status === 'aguardando_assinatura' || tokenRow.status === 'aguardando_assinatura_rh')) {
           isAuthorized = true;
         }
@@ -318,7 +342,8 @@ serve(async (req) => {
     const pdfResultBytes = await pdfDoc.save()
 
     // 10. Save to the private storage bucket: contratos-assinados/CPF/file.pdf
-    const cpfClean = candidateCpf.replace(/\D/g, '')
+    const cpfClean = cpfDigits(candidateCpf)
+    if (!cpfClean) throw new Error('CPF do candidato ausente: não é possível definir o caminho do arquivo.')
     const docBaseName = documentName ? documentName.replace(/[^a-zA-Z0-9_\.-]/g, '_') : `contrato_${Date.now()}`;
     const fileSuffix = signatureRepresentativeBase64 ? '_final' : (signatureBase64 ? '_candidato' : '_rascunho');
     const fileName = `${cpfClean}/${docBaseName}${fileSuffix}.pdf`;
@@ -369,11 +394,18 @@ serve(async (req) => {
     )
 
   } catch (error: any) {
+    // O detalhe fica nos logs da função, onde é útil. Devolver error.message ao
+    // chamador entregaria mensagem crua do Postgres/Storage a um candidato
+    // anônimo — nomes de constraint, colunas, estrutura do bucket.
+    console.error('gerar-contrato-pdf falhou:', error?.stack || error?.message || error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({
+        success: false,
+        error: 'Não foi possível processar o contrato. Consulte os logs da função para o detalhe.'
+      }),
       {
         headers: { ...responseHeaders, "Content-Type": "application/json" },
-        status: 400
+        status: 500
       }
     )
   }

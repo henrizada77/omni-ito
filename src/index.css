@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* A Inter era declarada no font-family sem nunca ser carregada: todo mundo via
+   system-ui, e a tipografia mudava conforme o sistema operacional. Servida pelo
+   próprio bundle, sem CDN. */
+@import "@fontsource-variable/inter";
 
 @theme {
   /* Warm Minimalist & Onyx Palette */
@@ -12,6 +16,32 @@
   --color-primary-dark: #E5DFD3;
   --color-bege-farda: #E5DFD3;
   --color-sand: #D4CBB7;
+
+  /* animate-fadeIn é usada em 45 lugares e nunca existiu: o Tailwind v4 não
+     traz essa utility, então as transições entre passos, abas e modais eram
+     no-op. Definida aqui, elas passam a acontecer de fato. */
+  --animate-fadeIn: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Usada na barra de passos da ficha de admissão. Vinha de um plugin
+   (tailwind-scrollbar-hide) que não está instalado. */
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Glassmorphism of High Fidelity */
@@ -121,7 +151,7 @@
 }
 
 body {
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: 'Inter Variable', 'Inter', system-ui, sans-serif;
   overflow-x: hidden;
   transition: background-color 0.5s ease, color 0.5s ease;
 }
@@ -132,6 +162,30 @@ body.dark {
 
 body.light {
   color-scheme: light;
+}
+
+/* O Safari no iOS dá zoom automático em qualquer campo com fonte abaixo de 16px
+   e não desfaz ao sair dele. Os ~70 campos da ficha de admissão herdam 12px do
+   <form>, então o candidato preenchia a ficha inteira com a página deslocada.
+   Os campos não têm tamanho próprio, então esta regra de elemento basta — os
+   rótulos continuam pequenos. */
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Custom scrollbar for premium aesthetics */

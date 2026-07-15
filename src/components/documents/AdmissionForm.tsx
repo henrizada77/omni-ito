@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../supabaseClient';
 import { 
   User, 
@@ -33,6 +33,16 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  // O banner de erro fica no topo do formulário, e cada passo é mais alto que a
+  // tela do celular. Sem isto, o candidato clica em "Avançar" no rodapé e o erro
+  // renderiza fora da vista — o botão parece não funcionar.
+  const errorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!errorMsg) return;
+    errorRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    errorRef.current?.focus();
+  }, [errorMsg]);
 
   // Form Fields State
   const [formData, setFormData] = useState({
@@ -282,15 +292,23 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
       </div>
 
       {errorMsg && (
-        <div className="p-3 rounded-lg text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center gap-2">
-          <AlertTriangle size={14} />
+        <div
+          ref={errorRef}
+          role="alert"
+          tabIndex={-1}
+          className="p-3 rounded-lg text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center gap-2"
+        >
+          <AlertTriangle size={14} aria-hidden="true" />
           <span>{errorMsg}</span>
         </div>
       )}
 
       {successMsg && (
-        <div className="p-3 rounded-lg text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center gap-2">
-          <CheckCircle size={14} />
+        <div
+          role="status"
+          className="p-3 rounded-lg text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center gap-2"
+        >
+          <CheckCircle size={14} aria-hidden="true" />
           <span>{successMsg}</span>
         </div>
       )}
@@ -699,7 +717,10 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
                   <div className="flex items-center gap-3">
                     <label className={`cursor-pointer px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 bg-[#10b981]/20 border border-[#10b981]/25 text-[#10b981] ${selectedFiles.identidade ? 'opacity-100':'opacity-70 hover:opacity-100'}`}>
                       <Upload size={12} /> {selectedFiles.identidade ? 'Alterar' : 'Anexar'}
-                      <input type="file" required={!selectedFiles.identidade} className="hidden" accept="image/*,application/pdf" onChange={e => handleFileChange('identidade', e.target.files ? e.target.files[0] : null)} />
+                      {/* Sem `required`: o input está com display:none e o browser não
+                          consegue focar o balão de erro nele — aborta o submit em silêncio.
+                          Quem valida os anexos é o validateStep (passo 6). */}
+                      <input type="file" className="hidden" accept="image/*,application/pdf" onChange={e => handleFileChange('identidade', e.target.files ? e.target.files[0] : null)} />
                     </label>
                     {selectedFiles.identidade && <span className="truncate max-w-[120px] opacity-75">{selectedFiles.identidade.name}</span>}
                   </div>
@@ -713,7 +734,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
                   <div className="flex items-center gap-3">
                     <label className={`cursor-pointer px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 bg-[#10b981]/20 border border-[#10b981]/25 text-[#10b981] ${selectedFiles.residencia ? 'opacity-100':'opacity-70 hover:opacity-100'}`}>
                       <Upload size={12} /> {selectedFiles.residencia ? 'Alterar' : 'Anexar'}
-                      <input type="file" required={!selectedFiles.residencia} className="hidden" accept="image/*,application/pdf" onChange={e => handleFileChange('residencia', e.target.files ? e.target.files[0] : null)} />
+                      <input type="file" className="hidden" accept="image/*,application/pdf" onChange={e => handleFileChange('residencia', e.target.files ? e.target.files[0] : null)} />
                     </label>
                     {selectedFiles.residencia && <span className="truncate max-w-[120px] opacity-75">{selectedFiles.residencia.name}</span>}
                   </div>

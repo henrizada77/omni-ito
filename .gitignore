@@ -1,1 +1,15 @@
 node_modules
+
+# Build — o Vercel builda a partir do fonte; dist versionado só gera churn de
+# 1,2 MB a cada build e faz o linter apontar para o bundle minificado.
+dist
+
+# Segredos. Mesmo as chaves publishable do Supabase saem daqui.
+.env
+.env.*
+!.env.example
+
+# Lixo de ferramenta e de sessão
+.ag-kit-backups
+scratch_*
+*.local

@@ -17,21 +17,43 @@ interface AdmissaoCandidatoProps {
   setTheme: (theme: 'dark' | 'light') => void;
 }
 
+/**
+ * Erro cuja mensagem foi escrita para o candidato ler — quem abre esta página é
+ * alguém sendo contratado, não um desenvolvedor. Qualquer outro erro é logado no
+ * console e substituído por um texto genérico antes de chegar à tela.
+ */
+class ErroVisivelAoCandidato extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ErroVisivelAoCandidato';
+  }
+}
+
 export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidatoProps) {
   const { token } = useParams<{ token: string }>();
   
   // Validation States
   const [isValidatingToken, setIsValidatingToken] = useState(true);
-  const [isTokenValid, setIsTokenValid] = useState(true);
-  const [candidateEmail, setCandidateEmail] = useState('candidato@gmail.com');
+  const [isTokenValid, setIsTokenValid] = useState(false);
+  const [candidateEmail, setCandidateEmail] = useState('');
   const [tokenStatus, setTokenStatus] = useState('pendente_preenchimento');
 
   // Form Fields
-  const [nome, setNome] = useState('Ana Souza Pereira');
-  const [cargo, setCargo] = useState('Recepcionista');
+  const [nome, setNome] = useState('');
+  const [cargo, setCargo] = useState('');
 
   const [submitError, setSubmitError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // O banner de erro fica acima do visualizador do contrato e do quadro de
+  // assinatura; o botão de enviar fica abaixo dos dois. No celular, o erro
+  // renderiza fora da vista e o botão parece não ter feito nada.
+  const submitErrorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!submitError) return;
+    submitErrorRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    submitErrorRef.current?.focus();
+  }, [submitError]);
 
   // PDF Draft states
   const [pdfDraftUrl, setPdfDraftUrl] = useState('');
@@ -112,7 +134,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
           setTokenDetails(data.detalhes || {});
           setNome(data.candidato_nome);
           setCandidateEmail(data.candidato_email);
-          setCargo(data.candidato_cargo || 'Recepcionista');
+          setCargo(data.candidato_cargo || '');
           setTokenStatus(data.status || 'pendente_preenchimento');
           
           // Log view securely via RPC
@@ -126,9 +148,9 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
       } else {
         setIsTokenValid(false);
       }
-    } catch {
-      // Simulation fallback for invalid/dummy routing
-      setIsTokenValid(true);
+    } catch (err) {
+      console.error('Falha ao validar token de admissão:', err);
+      setIsTokenValid(false);
     } finally {
       setIsValidatingToken(false);
     }
@@ -167,7 +189,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
           'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
         },
         body: JSON.stringify({
-          token: tokenData.token,
+          token: token,
           userEmail: tokenData.candidato_email,
           candidateName: tokenData.candidato_nome,
           candidateCpf: tokenData.candidato_cpf || details.cpf || '000.000.000-00',
@@ -259,38 +281,65 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
       const details = tokenRow.detalhes || {};
       const cpf = tokenRow.candidato_cpf || details.cpf || '000.000.000-00';
 
-      let res;
+      const payload = {
+        token,
+        userEmail: candidateEmail,
+        candidateName: nome,
+        candidateCpf: cpf,
+        signatureBase64,
+        coordinatorEmail: tokenRow.criado_por || 'rh@thiagoomena.com.br',
+        pdfTemplateBase64: details.pdf_template_base64 || null,
+        documentName: `contrato_${cpf.replace(/\D/g, '')}_assinado`,
+        colabSignaturePosition: details.colab_signature_position || null,
+        repSignaturePosition: details.rep_signature_position || null
+      };
+
+      let response: Response;
       try {
-        const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-contrato-pdf`, {
+        response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gerar-contrato-pdf`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({
-            token,
-            userEmail: candidateEmail,
-            candidateName: nome,
-            candidateCpf: cpf,
-            signatureBase64,
-            coordinatorEmail: tokenRow.criado_por || 'rh@thiagoomena.com.br',
-            pdfTemplateBase64: details.pdf_template_base64 || null,
-            documentName: `contrato_${cpf.replace(/\D/g, '')}_assinado`,
-            colabSignaturePosition: details.colab_signature_position || null,
-            repSignaturePosition: details.rep_signature_position || null
-          })
+          body: JSON.stringify(payload)
         });
+      } catch (netErr) {
+        // fetch só rejeita por rede/CORS — nunca por status HTTP. É daqui que
+        // vinha o "Failed to fetch" cru na tela do candidato.
+        console.error('Falha de rede ao chamar gerar-contrato-pdf:', netErr);
+        throw new ErroVisivelAoCandidato(
+          'Não conseguimos falar com o servidor para gerar seu contrato. ' +
+          'Verifique sua conexão e tente novamente — sua assinatura continua no quadro.'
+        );
+      }
 
+      if (!response.ok) {
+        console.error(`gerar-contrato-pdf respondeu ${response.status} ${response.statusText}`);
+        throw new ErroVisivelAoCandidato(
+          response.status === 404
+            ? 'O serviço que gera o contrato não está disponível no momento. ' +
+              'Isso é uma falha nossa, não sua: avise a equipe de RH e tente mais tarde.'
+            : 'O servidor não conseguiu gerar seu contrato agora. ' +
+              'Tente novamente em alguns instantes; se continuar, avise a equipe de RH.'
+        );
+      }
+
+      let res: any;
+      try {
         res = await response.json();
-        if (!res.success) throw new Error(res.error || 'Erro na geração do PDF assinado.');
-      } catch (fetchErr) {
-        console.warn("Edge function failed, running in simulation mode for candidate signature:", fetchErr);
-        const dummyHash = 'd7ac82751fbc9c09a80e1b2184e0368b1a89c8942b0c95029a8f4c281df60c7f';
-        res = {
-          success: true,
-          signedUrl: `https://jyvxhyaeagqljvqqeuwi.supabase.co/storage/v1/object/sign/contratos-assinados/contrato_${cpf.replace(/\D/g, '')}_assinado.pdf?token=dummy`,
-          documentHash: dummyHash
-        };
+      } catch {
+        throw new ErroVisivelAoCandidato(
+          'O servidor devolveu uma resposta inesperada. Tente novamente em alguns instantes.'
+        );
+      }
+
+      if (!res.success) {
+        console.error('gerar-contrato-pdf falhou:', res.error);
+        throw new ErroVisivelAoCandidato(
+          'Não foi possível gerar seu contrato agora. ' +
+          'Tente novamente; se continuar, avise a equipe de RH.'
+        );
       }
 
       // Save document registry and update token status in a secure database transaction RPC
@@ -313,8 +362,18 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
       });
 
       setTokenStatus('aguardando_assinatura_rh');
-    } catch (err: any) {
-      setSubmitError(err.message || 'Erro ao registrar assinatura.');
+    } catch (err) {
+      // Só mensagem escrita para o candidato chega à tela. Erro de rede ou do
+      // Postgres vira texto técnico em inglês que ele não sabe o que fazer com.
+      if (err instanceof ErroVisivelAoCandidato) {
+        setSubmitError(err.message);
+      } else {
+        console.error('Erro ao registrar assinatura:', err);
+        setSubmitError(
+          'Não foi possível registrar sua assinatura agora. Tente novamente em alguns instantes. ' +
+          'Se o problema continuar, avise a equipe de RH.'
+        );
+      }
     } finally {
       setSubmitting(false);
     }
@@ -442,8 +501,13 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
             </div>
 
             {submitError && (
-              <div className="p-3 rounded-lg text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center gap-2">
-                <AlertTriangle size={14} />
+              <div
+                ref={submitErrorRef}
+                role="alert"
+                tabIndex={-1}
+                className="p-3 rounded-lg text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-start gap-2 leading-relaxed"
+              >
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
                 <span>{submitError}</span>
               </div>
             )}
@@ -479,6 +543,9 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
               <div className={`relative border rounded-xl overflow-hidden ${
                 theme === 'dark' ? 'bg-[#121211] border-white/15' : 'bg-black/5 border-black/15'
               }`}>
+                {/* touch-none é o que impede o gesto de assinar de rolar a página.
+                    preventDefault não serve aqui: o React registra onTouchMove como
+                    listener passivo no root, e a chamada seria ignorada. */}
                 <canvas
                   ref={canvasRef}
                   onMouseDown={startDrawing}
@@ -488,7 +555,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
                   onTouchStart={startDrawing}
                   onTouchMove={draw}
                   onTouchEnd={stopDrawing}
-                  className="w-full cursor-crosshair h-[180px] bg-transparent"
+                  className="w-full cursor-crosshair h-[180px] bg-transparent touch-none select-none"
                 />
               </div>
               
