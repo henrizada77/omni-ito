@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
-import { 
-  AlertTriangle, 
-  Sun, 
-  Moon, 
-  Mail, 
-  KeyRound, 
-  User
+import { Link } from 'react-router-dom';
+import {
+  AlertTriangle,
+  Sun,
+  Moon,
+  Mail,
+  KeyRound,
+  User,
+  Star,
+  MessageSquare
 } from 'lucide-react';
 import { useMouseGlow } from '../../hooks/useMouseGlow';
 import { supabase } from '../../supabaseClient';
@@ -151,6 +154,39 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
                 <p className="text-xs font-semibold">Monitoramento automático de prazos de 45 e 90 dias ativo.</p>
               </div>
             </div>
+          </div>
+
+          {/* Canais anônimos — descobríveis por qualquer visitante sem precisar
+              de login. RH divulga o link direto pela equipe. */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Link
+              to="/pesquisa"
+              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
+                theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
+              }`}
+            >
+              <div className="w-9 h-9 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-500">
+                <Star size={16} />
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-bold">Pesquisa de Satisfação</div>
+                <div className="text-[10px] opacity-60">Anônima · 1 minuto</div>
+              </div>
+            </Link>
+            <Link
+              to="/ouvidoria"
+              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
+                theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
+              }`}
+            >
+              <div className="w-9 h-9 rounded-full bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-500">
+                <MessageSquare size={16} />
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-bold">Ouvidoria</div>
+                <div className="text-[10px] opacity-60">Elogio, sugestão, reclamação ou denúncia</div>
+              </div>
+            </Link>
           </div>
         </div>
 

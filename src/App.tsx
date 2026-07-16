@@ -5,6 +5,8 @@ import { supabase } from './supabaseClient';
 // Pages and components
 import LandingPage from './pages/public/LandingPage';
 import AdmissaoCandidato from './pages/public/AdmissaoCandidato';
+import PesquisaSatisfacao from './pages/public/PesquisaSatisfacao';
+import Ouvidoria from './pages/public/Ouvidoria';
 import ProtectedRoute from './components/ProtectedRoute';
 import AccessDenied403 from './pages/errors/AccessDenied403';
 import NotFound404 from './pages/errors/NotFound404';
@@ -27,6 +29,9 @@ const APP_ROUTES: { path: string; allowedRoles: Role[] }[] = [
   { path: '/app/beneficios', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/ferias-aso', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/avaliacoes', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/cargos', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/feedback', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/agenda', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/analytics', allowedRoles: ['coordenadora_rh', 'ti'] }
 ];
 
@@ -116,9 +121,19 @@ export default function App() {
           } 
         />
         
-        <Route 
-          path="/admissao/:token" 
-          element={<AdmissaoCandidato theme={theme} setTheme={setTheme} />} 
+        <Route
+          path="/admissao/:token"
+          element={<AdmissaoCandidato theme={theme} setTheme={setTheme} />}
+        />
+
+        <Route
+          path="/pesquisa"
+          element={<PesquisaSatisfacao theme={theme} setTheme={setTheme} />}
+        />
+
+        <Route
+          path="/ouvidoria"
+          element={<Ouvidoria theme={theme} setTheme={setTheme} />}
         />
 
         {/* Private Admin Routes */}

@@ -217,6 +217,84 @@ export interface AvaliacaoDesempenho {
   criado_em: string;
 }
 
+export interface Cargo {
+  id: string;
+  titulo: string;
+  descricao?: string;
+  atribuicoes: string[];
+  cbo?: string;
+  setor?: string;
+  faixa_salarial_min?: number;
+  faixa_salarial_max?: number;
+  requisitos?: string;
+  ativo: boolean;
+  criado_em: string;
+}
+
+export interface TrilhaCarreira {
+  id: string;
+  nome: string;
+  descricao?: string;
+  ativo: boolean;
+  criado_em: string;
+}
+
+export interface TrilhaDegrau {
+  id: string;
+  trilha_id: string;
+  cargo_id: string;
+  ordem: number;
+  requisito_tempo_meses?: number;
+  requisito_nota_avaliacao?: number;
+  competencias?: string;
+  observacao?: string;
+}
+
+export type PromocaoStatus = 'proposta' | 'aprovada' | 'efetivada' | 'rejeitada';
+
+export type CategoriaSatisfacao = 'Geral' | 'Ambiente' | 'Liderança' | 'Benefícios' | 'Carreira' | 'Comunicação';
+
+export interface PesquisaSatisfacao {
+  id: string;
+  nota: number;
+  categoria: CategoriaSatisfacao;
+  comentario?: string;
+  criado_em: string;
+}
+
+export type TipoOuvidoria = 'Elogio' | 'Sugestão' | 'Reclamação' | 'Denúncia';
+export type StatusOuvidoria = 'novo' | 'em_analise' | 'resolvido' | 'arquivado';
+
+export interface OuvidoriaManifestacao {
+  id: string;
+  tipo: TipoOuvidoria;
+  setor_alvo?: string;
+  mensagem: string;
+  status: StatusOuvidoria;
+  resposta_interna?: string;
+  atualizado_em: string;
+  criado_em: string;
+}
+
+export interface Promocao {
+  id: string;
+  colaborador_id: string;
+  cargo_origem_id?: string;
+  cargo_destino_id: string;
+  cargo_origem_titulo?: string;
+  cargo_destino_titulo: string;
+  salario_anterior?: string;
+  salario_novo?: string;
+  data_proposta: string;
+  data_efetivacao?: string;
+  status: PromocaoStatus;
+  motivo?: string;
+  proposto_por?: string;
+  aprovado_por?: string;
+  atualizado_em: string;
+  criado_em: string;
+}
+
 export interface IndicadorTrabalhista {
   id: string;
   tipo: 'Processo Trabalhista' | 'Acidente de Trabalho' | 'Pesquisa Beneficio';

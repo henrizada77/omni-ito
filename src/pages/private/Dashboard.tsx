@@ -22,7 +22,9 @@ import {
   Download,
   Gift,
   Calendar,
-  Award
+  Award,
+  Briefcase,
+  MessageSquare
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
@@ -35,6 +37,8 @@ import CompensationsPanel from '../../components/analytics/CompensationsPanel';
 import LegalPanel from '../../components/analytics/LegalPanel';
 import FormManager from '../../components/documents/FormManager';
 import BenefitsManager from '../../components/benefits/BenefitsManager';
+import CargosManager from '../../components/cargos/CargosManager';
+import FeedbackManager from '../../components/feedback/FeedbackManager';
 
 export default function Dashboard({ theme, setTheme, user, role }: DashboardProps) {
   const location = useLocation();
@@ -1128,9 +1132,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setOcFile(null);
       setIsRegisteringOcorrencia(false);
 
-      // Refresh list
+      // Refresh list — fetchAnalyticsData é o que popula ocorrenciasAnalytics
+      // (fonte dos painéis de analytics); sem ele a ocorrência só aparecia
+      // no drawer, e os relatórios continuavam com dado velho até um F5.
       fetchOcorrencias(activeColaboradorForDrawer.id);
       fetchDashboardKpis();
+      fetchAnalyticsData();
     } catch (err: any) {
       alert('Erro ao registrar ocorrência: ' + err.message);
     } finally {
@@ -1476,6 +1483,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [logsAuditoria, setLogsAuditoria] = useState<any[]>([]);
   const [ocorrenciasAnalytics, setOcorrenciasAnalytics] = useState<any[]>([]);
   const [indicadoresTrabalhistas, setIndicadoresTrabalhistas] = useState<any[]>([]);
+  const [pesquisasSatisfacao, setPesquisasSatisfacao] = useState<any[]>([]);
   const [analyticsSubTab, setAnalyticsSubTab] = useState<'geral' | 'turnover' | 'saude' | 'compensacao' | 'juridico'>('geral');
 
   // --- MÓDULO 5: DASHBOARD KPIs (dados reais) ---
@@ -1720,13 +1728,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const fetchAnalyticsData = async () => {
     try {
-      const [logsRes, colabsRes, ocorrenciasRes, indicadoresRes, benefitsRes, assocRes] = await Promise.all([
+      const [logsRes, colabsRes, ocorrenciasRes, indicadoresRes, benefitsRes, assocRes, pesquisasRes] = await Promise.all([
         supabase.from('logs_auditoria').select('*').order('criado_em', { ascending: false }).limit(8),
         supabase.from('colaboradores').select('*'),
         supabase.from('ocorrencias_jornada').select('*, colaboradores(nome, setor)'),
         supabase.from('indicadores_trabalhistas').select('*'),
         supabase.from('beneficios').select('*'),
-        supabase.from('colaborador_beneficios').select('*')
+        supabase.from('colaborador_beneficios').select('*'),
+        supabase.from('pesquisas_satisfacao').select('nota, categoria, criado_em')
       ]);
 
       if (logsRes.data) setLogsAuditoria(logsRes.data);
@@ -1735,6 +1744,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (indicadoresRes.data) setIndicadoresTrabalhistas(indicadoresRes.data);
       if (benefitsRes.data) setDbBenefits(benefitsRes.data);
       if (assocRes.data) setDbColaboradorBeneficios(assocRes.data);
+      if (pesquisasRes.data) setPesquisasSatisfacao(pesquisasRes.data);
     } catch (err) {
       console.error("Error fetching analytics data:", err);
     }
@@ -2009,6 +2019,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       { path: '/app/beneficios', label: 'Benefícios', icon: <Gift size={16} /> },
       { path: '/app/ferias-aso', label: 'Férias & ASO', icon: <Calendar size={16} /> },
       { path: '/app/avaliacoes', label: 'Avaliações', icon: <Award size={16} /> },
+      { path: '/app/cargos', label: 'Cargos & Carreira', icon: <Briefcase size={16} /> },
+      { path: '/app/feedback', label: 'Voz do Time', icon: <MessageSquare size={16} /> },
       { path: '/app/agenda', label: 'Agenda RH', icon: <Calendar size={16} /> }
     ] : []),
     { path: '/app/analytics', label: 'Analytics', icon: <TrendingUp size={16} /> }
@@ -3985,6 +3997,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     indicadoresList={indicadoresTrabalhistas}
                     benefitsList={dbBenefits}
                     associationsList={dbColaboradorBeneficios}
+                    pesquisasSatisfacao={pesquisasSatisfacao}
                   />
                 )}
 
@@ -4663,6 +4676,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
             )}
 
+            {activePath === '/app/cargos' && hasFullAccess && (
+              <CargosManager theme={theme} userEmail={user?.email || ''} />
+            )}
+
+            {activePath === '/app/feedback' && hasFullAccess && (
+              <FeedbackManager theme={theme} />
+            )}
+
             {activePath === '/app/agenda' && hasFullAccess && (
               <div className="space-y-6 animate-fadeIn">
                 {/* Header */}
@@ -5046,6 +5067,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     { label: 'Bairro', field: 'bairro' },
                     { label: 'Cidade', field: 'cidade' },
                     { label: 'UF', field: 'uf' },
+                    { label: 'Cargo', field: 'cargo', span: 2 },
+                    { label: 'Setor', field: 'setor' },
+                    { label: 'Salário', field: 'salario' },
                     { label: 'Vencimento ASO', field: 'data_aso_vencimento', type: 'date' },
                     { label: 'Limite de Férias', field: 'data_ferias_vencimento', type: 'date' },
                   ] as any[]).map(({ label, field, span, type, opts }: any) => {

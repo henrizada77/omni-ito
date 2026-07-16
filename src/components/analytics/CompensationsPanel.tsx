@@ -32,9 +32,10 @@ interface CompensationsPanelProps {
   indicadoresList: any[];
   benefitsList: Benefit[];
   associationsList: Association[];
+  pesquisasSatisfacao?: { nota: number; categoria?: string; criado_em?: string }[];
 }
 
-export default function CompensationsPanel({ theme, colaboradoresList, indicadoresList, benefitsList, associationsList }: CompensationsPanelProps) {
+export default function CompensationsPanel({ theme, colaboradoresList, benefitsList, associationsList, pesquisasSatisfacao }: CompensationsPanelProps) {
   const activeColabs = colaboradoresList.filter(c => c.status === 'ativo');
 
   // Salary parser: handles "R$ 2.500,00" → 2500
@@ -152,10 +153,12 @@ export default function CompensationsPanel({ theme, colaboradoresList, indicador
     foraDoGrafico.semSalario > 0 && `${foraDoGrafico.semSalario} sem salário legível`
   ].filter(Boolean) as string[];
 
-  // 3. Satisfação Média com Benefícios (Pesquisas)
-  const pesquisas = indicadoresList.filter(i => i.tipo === 'Pesquisa Beneficio');
+  // 3. Satisfação Média — vem do canal anônimo /pesquisa (pesquisas_satisfacao).
+  // A fonte antiga (indicadores_trabalhistas tipo 'Pesquisa Beneficio') era seed
+  // fictício e continua na tabela mas não alimenta mais este número.
+  const pesquisas = pesquisasSatisfacao || [];
   const satisfacaoMedia = pesquisas.length > 0
-    ? parseFloat((pesquisas.reduce((acc, p) => acc + (p.nota_satisfacao || 0), 0) / pesquisas.length).toFixed(1))
+    ? parseFloat((pesquisas.reduce((acc, p) => acc + (p.nota || 0), 0) / pesquisas.length).toFixed(1))
     : 0;
 
   return (
@@ -283,7 +286,9 @@ export default function CompensationsPanel({ theme, colaboradoresList, indicador
               ))}
             </div>
             <span className="text-[10px] opacity-50 font-mono text-center px-4 leading-relaxed">
-              Baseado em {pesquisas.length} respostas coletadas nas pesquisas trimestrais de RH.
+              {pesquisas.length > 0
+                ? `Baseado em ${pesquisas.length} respostas anônimas do canal /pesquisa.`
+                : 'Aguardando primeiras respostas em /pesquisa (canal anônimo).'}
             </span>
           </div>
         </div>
