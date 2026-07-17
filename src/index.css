@@ -164,6 +164,23 @@ body.light {
   color-scheme: light;
 }
 
+/* Menu suspenso (lista de <option>) no tema escuro. O `color-scheme: dark`
+   acima já pede o popup escuro ao navegador, mas o Chrome/Edge ignora isso
+   quando o <select> recebe um background explícito (o caso de quase todos os
+   selects do app, com bg-[#121211]/bg-[#0D0D0C]) e volta a pintar a lista de
+   branco. Forçar o background/cor do <option> fecha essa brecha. */
+body.dark option {
+  background-color: #121211;
+  color: #E5DFD3;
+}
+
+body.dark select:focus option:checked,
+body.dark option:hover,
+body.dark option:checked {
+  background-color: #1f1f1e;
+  color: #E5DFD3;
+}
+
 /* O Safari no iOS dá zoom automático em qualquer campo com fonte abaixo de 16px
    e não desfaz ao sair dele. Os ~70 campos da ficha de admissão herdam 12px do
    <form>, então o candidato preenchia a ficha inteira com a página deslocada.
