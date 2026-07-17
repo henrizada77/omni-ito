@@ -1,7 +1,9 @@
 
-import { 
-  Smile, 
-  Percent
+import {
+  Smile,
+  Percent,
+  Building2,
+  AlertTriangle
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -33,9 +35,15 @@ interface CompensationsPanelProps {
   benefitsList: Benefit[];
   associationsList: Association[];
   pesquisasSatisfacao?: { nota: number; categoria?: string; criado_em?: string }[];
+  cargosReferencia?: {
+    titulo: string;
+    referencia_salarial_al: number | null;
+    referencia_salarial_fonte: string | null;
+    referencia_salarial_data: string | null;
+  }[];
 }
 
-export default function CompensationsPanel({ theme, colaboradoresList, benefitsList, associationsList, pesquisasSatisfacao }: CompensationsPanelProps) {
+export default function CompensationsPanel({ theme, colaboradoresList, benefitsList, associationsList, pesquisasSatisfacao, cargosReferencia }: CompensationsPanelProps) {
   const activeColabs = colaboradoresList.filter(c => c.status === 'ativo');
 
   // Salary parser: handles "R$ 2.500,00" → 2500
@@ -157,6 +165,59 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
   // A fonte antiga (indicadores_trabalhistas tipo 'Pesquisa Beneficio') era seed
   // fictício e continua na tabela mas não alimenta mais este número.
   const pesquisas = pesquisasSatisfacao || [];
+
+  // 4. Comparativo ITO × Mercado Alagoas por cargo.
+  // Cargos entram só se existir referencia_salarial_al preenchida + pelo menos
+  // um colaborador ativo com esse titulo e salário legível. Match é por texto
+  // exato — colaboradores.cargo é livre e pode divergir do catálogo (nesse
+  // caso o cargo cai fora do comparativo, mas continua na base).
+  const cargoRefMap = new Map<string, {
+    ref: number;
+    fonte: string | null;
+    data: string | null;
+  }>();
+  (cargosReferencia || []).forEach(c => {
+    if (c.referencia_salarial_al && c.referencia_salarial_al > 0) {
+      cargoRefMap.set(c.titulo, {
+        ref: Number(c.referencia_salarial_al),
+        fonte: c.referencia_salarial_fonte,
+        data: c.referencia_salarial_data
+      });
+    }
+  });
+
+  const itoPorCargoAgg: Record<string, { total: number; count: number }> = {};
+  activeColabs.forEach(c => {
+    if (!c.cargo) return;
+    const s = parseSalary(c.salario || '');
+    if (s <= 0) return;
+    if (!itoPorCargoAgg[c.cargo]) itoPorCargoAgg[c.cargo] = { total: 0, count: 0 };
+    itoPorCargoAgg[c.cargo].total += s;
+    itoPorCargoAgg[c.cargo].count++;
+  });
+
+  const mercadoData = Object.entries(itoPorCargoAgg)
+    .map(([cargo, agg]) => {
+      const ref = cargoRefMap.get(cargo);
+      if (!ref) return null;
+      const medioIto = Math.round(agg.total / agg.count);
+      const deltaPct = ((medioIto - ref.ref) / ref.ref) * 100;
+      return {
+        cargo,
+        ITO: medioIto,
+        Alagoas: Math.round(ref.ref),
+        n: agg.count,
+        fonte: ref.fonte,
+        dataRef: ref.data,
+        placeholder: (ref.fonte || '').toLowerCase().includes('placeholder'),
+        deltaPct
+      };
+    })
+    .filter((x): x is NonNullable<typeof x> => x !== null)
+    .sort((a, b) => Math.abs(b.deltaPct) - Math.abs(a.deltaPct));
+
+  const cargosSemReferencia = Object.keys(itoPorCargoAgg).filter(c => !cargoRefMap.has(c));
+  const totalRefsPlaceholder = mercadoData.filter(d => d.placeholder).length;
   const satisfacaoMedia = pesquisas.length > 0
     ? parseFloat((pesquisas.reduce((acc, p) => acc + (p.nota || 0), 0) / pesquisas.length).toFixed(1))
     : 0;
@@ -292,6 +353,121 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
             </span>
           </div>
         </div>
+      </div>
+
+      {/* ====== ITO × Mercado Alagoas por cargo ====== */}
+      <div className={`p-5 rounded-xl border space-y-4 ${
+        theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+      }`}>
+        <div className="pb-2 border-b border-white/5 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">
+            <Building2 size={14} className="text-sky-400" /> Média salarial por cargo — ITO × Mercado Alagoas
+          </h4>
+          {totalRefsPlaceholder > 0 && (
+            <span className="text-[10px] text-amber-500 flex items-center gap-1">
+              <AlertTriangle size={11} /> {totalRefsPlaceholder} cargo(s) com referência marcada como <em>placeholder</em>
+            </span>
+          )}
+        </div>
+
+        {mercadoData.length === 0 ? (
+          <div className="py-10 text-center space-y-2">
+            <p className="text-xs opacity-70">Nenhum cargo tem referência salarial de Alagoas preenchida.</p>
+            <p className="text-[10px] opacity-50 leading-relaxed max-w-md mx-auto">
+              Cadastre em <strong>Cargos &amp; Carreira → editar cargo → Referência de mercado — Alagoas</strong>.
+              A migração sprint15 já traz um seed placeholder para os cargos comuns do catálogo — se você já rodou,
+              o gráfico deve aparecer com o alerta amarelo até você substituir pela fonte real.
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={mercadoData} margin={{ top: 10, right: 10, left: -10, bottom: 60 }}>
+                  <XAxis
+                    dataKey="cargo"
+                    stroke={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'}
+                    tick={{ fontSize: 9 }}
+                    interval={0}
+                    angle={-35}
+                    textAnchor="end"
+                    height={70}
+                  />
+                  <YAxis
+                    stroke={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'}
+                    tick={{ fontSize: 10 }}
+                    tickFormatter={(v: number) => `R$${(v / 1000).toFixed(1)}k`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: theme === 'dark' ? '#121211' : '#FFFFFF',
+                      border: `1px solid ${theme === 'dark' ? '#333' : '#DDD'}`,
+                      fontSize: 11
+                    }}
+                    formatter={(v: number, name: string) => [
+                      `R$ ${new Intl.NumberFormat('pt-BR').format(v)}`,
+                      name
+                    ]}
+                    labelFormatter={(label: string) => {
+                      const row = mercadoData.find(d => d.cargo === label);
+                      if (!row) return label;
+                      const parts = [
+                        `${label} (${row.n} colab.)`,
+                        row.fonte ? `Fonte: ${row.fonte}` : null,
+                        row.dataRef ? `Ref: ${new Date(row.dataRef + 'T12:00:00').toLocaleDateString('pt-BR')}` : null,
+                        `Δ ITO vs AL: ${row.deltaPct >= 0 ? '+' : ''}${row.deltaPct.toFixed(1)}%`
+                      ].filter(Boolean);
+                      return parts.join(' · ');
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="ITO" fill={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'} radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="Alagoas" fill="#38bdf8" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Ranking curto de gaps — os 3 mais discrepantes acima e abaixo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+              <div>
+                <div className="text-[10px] uppercase font-bold tracking-wider opacity-60 mb-2">Cargos acima do mercado AL</div>
+                <div className="space-y-1">
+                  {mercadoData.filter(d => d.deltaPct > 0).slice(0, 3).map(d => (
+                    <div key={d.cargo} className="text-[11px] flex items-center justify-between">
+                      <span className="truncate mr-2">{d.cargo}</span>
+                      <span className="font-mono text-emerald-500 shrink-0">+{d.deltaPct.toFixed(1)}%</span>
+                    </div>
+                  )) || <span className="text-[10px] italic opacity-40">—</span>}
+                  {mercadoData.filter(d => d.deltaPct > 0).length === 0 && (
+                    <span className="text-[10px] italic opacity-40">Nenhum</span>
+                  )}
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-bold tracking-wider opacity-60 mb-2">Cargos abaixo do mercado AL</div>
+                <div className="space-y-1">
+                  {mercadoData.filter(d => d.deltaPct < 0).slice(0, 3).map(d => (
+                    <div key={d.cargo} className="text-[11px] flex items-center justify-between">
+                      <span className="truncate mr-2">{d.cargo}</span>
+                      <span className="font-mono text-rose-500 shrink-0">{d.deltaPct.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                  {mercadoData.filter(d => d.deltaPct < 0).length === 0 && (
+                    <span className="text-[10px] italic opacity-40">Nenhum</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {cargosSemReferencia.length > 0 && (
+              <p className="text-[10px] opacity-50 leading-relaxed pt-2 border-t border-white/5">
+                {cargosSemReferencia.length} cargo(s) do ITO estão fora do comparativo por não ter referência AL cadastrada:{' '}
+                <span className="opacity-80">{cargosSemReferencia.slice(0, 5).join(', ')}{cargosSemReferencia.length > 5 ? ` e mais ${cargosSemReferencia.length - 5}` : ''}</span>.
+                Cadastre em <strong>Cargos &amp; Carreira</strong> para incluí-los.
+              </p>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

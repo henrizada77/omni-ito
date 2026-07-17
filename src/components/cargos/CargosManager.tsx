@@ -293,7 +293,10 @@ function CatalogoView({
         faixa_salarial_min: cargoDraft.faixa_salarial_min ?? null,
         faixa_salarial_max: cargoDraft.faixa_salarial_max ?? null,
         requisitos: cargoDraft.requisitos || null,
-        ativo: cargoDraft.ativo ?? true
+        ativo: cargoDraft.ativo ?? true,
+        referencia_salarial_al: cargoDraft.referencia_salarial_al ?? null,
+        referencia_salarial_fonte: cargoDraft.referencia_salarial_fonte || null,
+        referencia_salarial_data: cargoDraft.referencia_salarial_data || null
       };
 
       if (selectedCargoId) {
@@ -484,7 +487,21 @@ function CatalogoView({
               }`}
             >
               <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold truncate">{c.titulo}</div>
+                <div className="text-xs font-bold truncate flex items-center gap-1.5">
+                  <span className="truncate">{c.titulo}</span>
+                  {c.referencia_salarial_al ? (
+                    <span
+                      title={`Referência AL: ${formatMoney(c.referencia_salarial_al)}${c.referencia_salarial_fonte ? ` · ${c.referencia_salarial_fonte}` : ''}`}
+                      className={`text-[8px] font-mono px-1 rounded shrink-0 ${
+                        c.referencia_salarial_fonte?.includes('placeholder')
+                          ? 'bg-amber-500/15 text-amber-500'
+                          : 'bg-emerald-500/15 text-emerald-500'
+                      }`}
+                    >
+                      AL
+                    </span>
+                  ) : null}
+                </div>
                 <div className="text-[10px] opacity-60 truncate">
                   {c.setor || 'Sem setor'}
                   {c.faixa_salarial_min ? ` · ${formatMoney(c.faixa_salarial_min)}` : ''}
@@ -570,6 +587,52 @@ function CatalogoView({
                   onChange={e => setCargoDraft({ ...cargoDraft, faixa_salarial_max: e.target.value ? Number(e.target.value) : undefined })}
                   className={`w-full text-xs px-3 py-2 rounded-lg border mt-1 ${inputBg}`}
                 />
+              </div>
+
+              {/* Referência de mercado (Alagoas) — alimenta o gráfico comparativo
+                  em Analytics → Compensação. Cargo sem valor preenchido é
+                  omitido do gráfico. */}
+              <div className="md:col-span-2 pt-2 border-t border-white/5">
+                <div className="text-[10px] font-bold uppercase tracking-wider opacity-60 mb-2">
+                  Referência de mercado — Alagoas
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-[9px] uppercase tracking-wider opacity-60">Média salarial AL (R$)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={cargoDraft.referencia_salarial_al ?? ''}
+                      onChange={e => setCargoDraft({ ...cargoDraft, referencia_salarial_al: e.target.value ? Number(e.target.value) : undefined })}
+                      className={`w-full text-xs px-3 py-2 rounded-lg border mt-1 ${inputBg}`}
+                      placeholder="Ex.: 3800"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase tracking-wider opacity-60">Fonte</label>
+                    <input
+                      type="text"
+                      value={cargoDraft.referencia_salarial_fonte ?? ''}
+                      onChange={e => setCargoDraft({ ...cargoDraft, referencia_salarial_fonte: e.target.value })}
+                      className={`w-full text-xs px-3 py-2 rounded-lg border mt-1 ${inputBg}`}
+                      placeholder="RAIS 2025, Catho..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] uppercase tracking-wider opacity-60">Data da referência</label>
+                    <input
+                      type="date"
+                      value={cargoDraft.referencia_salarial_data ?? ''}
+                      onChange={e => setCargoDraft({ ...cargoDraft, referencia_salarial_data: e.target.value })}
+                      className={`w-full text-xs px-3 py-2 rounded-lg border mt-1 ${inputBg}`}
+                    />
+                  </div>
+                </div>
+                {cargoDraft.referencia_salarial_fonte?.includes('placeholder') && (
+                  <div className="mt-2 text-[10px] text-amber-500 flex items-center gap-1">
+                    ⚠ Fonte marcada como placeholder — substitua pelo dado real antes de usar em decisão.
+                  </div>
+                )}
               </div>
 
               <div className="md:col-span-2">

@@ -228,6 +228,9 @@ export interface Cargo {
   faixa_salarial_max?: number;
   requisitos?: string;
   ativo: boolean;
+  referencia_salarial_al?: number;
+  referencia_salarial_fonte?: string;
+  referencia_salarial_data?: string;
   criado_em: string;
 }
 

@@ -1484,6 +1484,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [ocorrenciasAnalytics, setOcorrenciasAnalytics] = useState<any[]>([]);
   const [indicadoresTrabalhistas, setIndicadoresTrabalhistas] = useState<any[]>([]);
   const [pesquisasSatisfacao, setPesquisasSatisfacao] = useState<any[]>([]);
+  const [cargosAnalytics, setCargosAnalytics] = useState<any[]>([]);
   const [analyticsSubTab, setAnalyticsSubTab] = useState<'geral' | 'turnover' | 'saude' | 'compensacao' | 'juridico'>('geral');
 
   // --- MÓDULO 5: DASHBOARD KPIs (dados reais) ---
@@ -1728,14 +1729,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const fetchAnalyticsData = async () => {
     try {
-      const [logsRes, colabsRes, ocorrenciasRes, indicadoresRes, benefitsRes, assocRes, pesquisasRes] = await Promise.all([
+      const [logsRes, colabsRes, ocorrenciasRes, indicadoresRes, benefitsRes, assocRes, pesquisasRes, cargosRes] = await Promise.all([
         supabase.from('logs_auditoria').select('*').order('criado_em', { ascending: false }).limit(8),
         supabase.from('colaboradores').select('*'),
         supabase.from('ocorrencias_jornada').select('*, colaboradores(nome, setor)'),
         supabase.from('indicadores_trabalhistas').select('*'),
         supabase.from('beneficios').select('*'),
         supabase.from('colaborador_beneficios').select('*'),
-        supabase.from('pesquisas_satisfacao').select('nota, categoria, criado_em')
+        supabase.from('pesquisas_satisfacao').select('nota, categoria, criado_em'),
+        supabase.from('cargos').select('titulo, referencia_salarial_al, referencia_salarial_fonte, referencia_salarial_data')
       ]);
 
       if (logsRes.data) setLogsAuditoria(logsRes.data);
@@ -1745,6 +1747,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (benefitsRes.data) setDbBenefits(benefitsRes.data);
       if (assocRes.data) setDbColaboradorBeneficios(assocRes.data);
       if (pesquisasRes.data) setPesquisasSatisfacao(pesquisasRes.data);
+      if (cargosRes.data) setCargosAnalytics(cargosRes.data);
     } catch (err) {
       console.error("Error fetching analytics data:", err);
     }
@@ -3998,6 +4001,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     benefitsList={dbBenefits}
                     associationsList={dbColaboradorBeneficios}
                     pesquisasSatisfacao={pesquisasSatisfacao}
+                    cargosReferencia={cargosAnalytics}
                   />
                 )}
 
