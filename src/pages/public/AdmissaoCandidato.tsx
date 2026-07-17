@@ -98,12 +98,14 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
   const [sigPointsCount, setSigPointsCount] = useState(0);
   const [isSigning, setIsSigning] = useState(false);
 
-  // Sync theme class
+  // Sync theme class. A classe dark/light aciona `color-scheme` no index.css —
+  // sem ela, os <select> da ficha de admissão abriam a lista de opções com
+  // fundo branco no tema escuro.
   useEffect(() => {
     if (theme === 'dark') {
-      document.body.className = 'bg-[#0D0D0C] text-[#E5DFD3] antialiased';
+      document.body.className = 'dark bg-[#0D0D0C] text-[#E5DFD3] antialiased';
     } else {
-      document.body.className = 'bg-[#FBFBFA] text-[#0A0A0A] antialiased';
+      document.body.className = 'light bg-[#FBFBFA] text-[#0A0A0A] antialiased';
     }
   }, [theme]);
 

@@ -49,9 +49,11 @@ export default function Ouvidoria({ theme, setTheme }: OuvidoriaProps) {
   const rateLimit = useRateLimit('omni_ouvidoria_last', THREE_HOURS_MS);
 
   useEffect(() => {
+    // A classe dark/light é o que aciona `color-scheme` no index.css — sem ela,
+    // o <select> de setor abria a lista com fundo branco no tema escuro.
     document.body.className = theme === 'dark'
-      ? 'bg-[#0D0D0C] text-[#E5DFD3] antialiased'
-      : 'bg-[#FBFBFA] text-[#0A0A0A] antialiased';
+      ? 'dark bg-[#0D0D0C] text-[#E5DFD3] antialiased'
+      : 'light bg-[#FBFBFA] text-[#0A0A0A] antialiased';
   }, [theme]);
 
   const submit = async () => {
