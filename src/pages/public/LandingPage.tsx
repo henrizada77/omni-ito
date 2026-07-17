@@ -47,7 +47,18 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
       });
       if (error) throw error;
     } catch (err: any) {
-      setAuthError(err.message || 'Erro ao realizar login.');
+      // O Supabase devolve "Invalid login credentials" tanto para senha errada
+      // quanto para e-mail ainda não confirmado — distinguir os dois evita que o
+      // usuário fique tentando a senha achando que errou, quando na verdade
+      // falta clicar no link de confirmação.
+      const msg = err?.message || '';
+      if (err?.code === 'email_not_confirmed' || /email not confirmed/i.test(msg)) {
+        setAuthError('Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada (e o spam) e clique no link antes de entrar.');
+      } else if (/invalid login credentials/i.test(msg)) {
+        setAuthError('E-mail ou senha incorretos. Se você acabou de se cadastrar, confirme o e-mail antes de fazer login.');
+      } else {
+        setAuthError(msg || 'Erro ao realizar login.');
+      }
     } finally {
       setAuthLoading(false);
     }
@@ -70,14 +81,42 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
     try {
       // O cargo não é enviado: o banco define 'ti' para todo cadastro novo, e
       // promoção a coordenadora_rh é feita administrativamente.
+      // emailRedirectTo faz o link de confirmação apontar para o domínio de onde
+      // o cadastro partiu (produção ou localhost no dev), em vez do Site URL
+      // fixo do projeto. Só tem efeito se este domínio estiver na allowlist de
+      // Redirect URLs do Supabase — ver Authentication → URL Configuration.
       const { data, error } = await supabase.auth.signUp({
         email: authEmail,
-        password: authPassword
+        password: authPassword,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
       });
 
       if (error) throw error;
-      if (data.user) {
-        alert('Cadastro realizado com sucesso! Você pode realizar o login agora.');
+
+      // Quando o e-mail já existe, o Supabase (anti-enumeração) NÃO dá erro:
+      // devolve um user com identities vazio. Tratar como "já cadastrado".
+      const jaCadastrado =
+        !!data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0;
+
+      if (jaCadastrado) {
+        setAuthError('Este e-mail já possui cadastro. Faça login ou use "esqueci minha senha".');
+        setAuthMode('login');
+        setAuthPassword('');
+      } else if (data.session) {
+        // Confirmação de e-mail DESLIGADA no projeto: o cadastro já vem logado.
+        // O onAuthStateChange em App.tsx assume e redireciona para /app.
+        setAuthPassword('');
+      } else {
+        // Confirmação de e-mail LIGADA: a conta existe mas está inativa até o
+        // usuário clicar no link enviado. Não é "pode logar agora" — era essa
+        // mensagem que enganava, mandando tentar login antes de confirmar.
+        alert(
+          'Cadastro criado! Enviamos um e-mail de confirmação para ' + authEmail + '.\n\n' +
+          'Abra o link do e-mail para ativar a conta ANTES de fazer login. ' +
+          'Se o link levar para um endereço que não abre, avise o TI: o redirecionamento do Supabase precisa ser ajustado.'
+        );
         setAuthMode('login');
         setAuthPassword('');
       }
