@@ -5,18 +5,37 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { PDFDocument, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
 
-// Origens liberadas, separadas por vírgula. Configure com:
-//   npx supabase secrets set ALLOWED_ORIGINS="https://SEU-DOMINIO.vercel.app"
-// O localhost do Vite entra sempre, para o dev não precisar de segredo.
-// Antes isto era uma lista fixa em que o domínio de produção nunca foi
-// preenchido — ficou 'https://seu-sistema-rh.vercel.app' até hoje.
-const allowedOrigins = [
-  'http://localhost:5173',
-  ...(Deno.env.get('ALLOWED_ORIGINS') ?? '')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean)
-];
+// Domínios extras liberados, além do localhost e dos deploys da Vercel (que
+// são reconhecidos por padrão abaixo). Use isto para um domínio PRÓPRIO de
+// produção. Separe por vírgula:
+//   npx supabase secrets set ALLOWED_ORIGINS="https://rh.itoinstituto.com.br"
+const explicitAllowedOrigins = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+/**
+ * Decide se a origem pode ler a resposta (CORS). Reconhece, sem precisar de
+ * segredo: localhost em qualquer porta (dev) e qualquer deploy *.vercel.app
+ * (produção e previews). Domínio próprio entra via ALLOWED_ORIGINS.
+ *
+ * Por que liberar *.vercel.app é seguro aqui: CORS não autentica nada — só diz
+ * quais origens de NAVEGADOR podem ler a resposta (curl/Postman ignoram). Quem
+ * protege este endpoint é a validação de token+CPF (candidato) ou JWT (RH/TI)
+ * mais abaixo. Uma origem liberada sem token/CPF válido só recebe 401.
+ */
+const isAllowedOrigin = (origin: string | null): boolean => {
+  if (!origin) return false;
+  if (explicitAllowedOrigins.includes(origin)) return true;
+  try {
+    const u = new URL(origin);
+    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return true;
+    if (u.protocol === 'https:' && u.hostname.endsWith('.vercel.app')) return true;
+  } catch {
+    // origin malformada — nega
+  }
+  return false;
+};
 
 /** Só os dígitos do CPF. Aceita null/undefined sem estourar. */
 const cpfDigits = (value: unknown): string => String(value ?? '').replace(/\D/g, '');
@@ -33,8 +52,8 @@ const getCorsHeaders = (origin: string | null) => {
   // Origem desconhecida não recebe Access-Control-Allow-Origin nenhum. Antes,
   // ela recebia o primeiro item da lista, o que só produzia um erro de CORS
   // confuso no navegador em vez de uma recusa explícita.
-  if (origin && allowedOrigins.includes(origin)) {
-    headers['Access-Control-Allow-Origin'] = origin;
+  if (isAllowedOrigin(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin as string;
   }
 
   return headers;
