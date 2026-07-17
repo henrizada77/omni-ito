@@ -8,9 +8,13 @@ import {
   Sun,
   Moon,
   Send,
-  ArrowLeft
+  ArrowLeft,
+  Clock
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { useRateLimit, formatRetryAfter } from '../../hooks/useRateLimit';
+
+const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
 
 interface PesquisaSatisfacaoProps {
   theme: 'dark' | 'light';
@@ -28,6 +32,7 @@ export default function PesquisaSatisfacao({ theme, setTheme }: PesquisaSatisfac
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
+  const rateLimit = useRateLimit('omni_pesquisa_last', THREE_HOURS_MS);
 
   useEffect(() => {
     document.body.className = theme === 'dark'
@@ -36,6 +41,10 @@ export default function PesquisaSatisfacao({ theme, setTheme }: PesquisaSatisfac
   }, [theme]);
 
   const submit = async () => {
+    if (!rateLimit.allowed) {
+      setError(`Aguarde ${formatRetryAfter(rateLimit.retryAfterSec)} para enviar outra avaliação.`);
+      return;
+    }
     if (nota < 1 || nota > 5) {
       setError('Escolha uma nota de 1 a 5 estrelas.');
       return;
@@ -49,6 +58,7 @@ export default function PesquisaSatisfacao({ theme, setTheme }: PesquisaSatisfac
         comentario: comentario.trim() || null
       });
       if (dbErr) throw dbErr;
+      rateLimit.markSent();
       setSubmitted(true);
     } catch (err: any) {
       console.error('Falha ao registrar pesquisa:', err);
@@ -115,17 +125,9 @@ export default function PesquisaSatisfacao({ theme, setTheme }: PesquisaSatisfac
               <ShieldCheck size={12} className="text-emerald-500" />
               Nenhum dado pessoal foi coletado
             </div>
-            <button
-              onClick={() => {
-                setSubmitted(false);
-                setNota(0);
-                setComentario('');
-                setCategoria('Geral');
-              }}
-              className={`text-xs px-4 py-1.5 rounded-lg font-bold ${btnPrimary}`}
-            >
-              Enviar outra avaliação
-            </button>
+            <div className="text-[10px] opacity-60 pt-2">
+              Você poderá enviar outra avaliação em <strong>{formatRetryAfter(rateLimit.retryAfterSec)}</strong>.
+            </div>
           </div>
         ) : (
           <div className={`rounded-2xl border p-6 md:p-8 space-y-6 ${cardBg}`}>
@@ -217,18 +219,32 @@ export default function PesquisaSatisfacao({ theme, setTheme }: PesquisaSatisfac
               <div className="text-right text-[9px] opacity-40 mt-1">{comentario.length}/2000</div>
             </div>
 
+            {!rateLimit.allowed && (
+              <div className="p-3 rounded-lg text-xs font-semibold bg-amber-500/10 border border-amber-500/20 text-amber-500 flex items-center gap-2">
+                <Clock size={14} />
+                <span>
+                  Você já enviou uma avaliação recentemente deste dispositivo.
+                  Poderá enviar outra em <strong>{formatRetryAfter(rateLimit.retryAfterSec)}</strong>.
+                </span>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={submit}
-              disabled={submitting || nota < 1}
+              disabled={submitting || nota < 1 || !rateLimit.allowed}
               className={`w-full py-3 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 ${btnPrimary} disabled:opacity-50`}
             >
-              {submitting ? 'Enviando...' : <><Send size={13} /> Enviar avaliação anônima</>}
+              {submitting
+                ? 'Enviando...'
+                : !rateLimit.allowed
+                  ? <><Clock size={13} /> Aguarde {formatRetryAfter(rateLimit.retryAfterSec)}</>
+                  : <><Send size={13} /> Enviar avaliação anônima</>}
             </button>
 
             <div className="text-[10px] opacity-40 font-mono flex items-center justify-center gap-1.5 pt-4 border-t border-white/5">
               <ShieldCheck size={12} className="text-emerald-500" />
-              Envio anônimo — sem IP, sem e-mail, sem rastro
+              Envio anônimo — sem IP, sem e-mail, sem rastro · 1 envio a cada 3h
             </div>
           </div>
         )}

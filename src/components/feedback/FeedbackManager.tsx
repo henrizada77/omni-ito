@@ -12,7 +12,10 @@ import {
   Lightbulb,
   Flag,
   ShieldAlert,
-  Filter
+  Filter,
+  Link as LinkIcon,
+  Copy,
+  Check
 } from 'lucide-react';
 import type {
   PesquisaSatisfacao,
@@ -139,6 +142,8 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
           <CheckCircle size={14} /> {successMsg}
         </div>
       )}
+
+      <PublicLinksCard theme={theme} cardBg={cardBg} btnPrimary={btnPrimary} btnSecondary={btnSecondary} />
 
       {loading ? (
         <div className="py-16 flex flex-col items-center gap-3 opacity-60">
@@ -636,6 +641,117 @@ function OuvidoriaView({
             })}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// PUBLIC LINKS CARD — compartilhar as URLs anônimas
+// ============================================================================
+
+function PublicLinksCard({
+  theme,
+  cardBg,
+  btnPrimary,
+  btnSecondary
+}: {
+  theme: 'dark' | 'light';
+  cardBg: string;
+  btnPrimary: string;
+  btnSecondary: string;
+}) {
+  // window.location.origin em SSR seria undefined, mas Vite/React puro roda no
+  // client — usar direto é seguro aqui.
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const pesquisaUrl = `${origin}/pesquisa`;
+  const ouvidoriaUrl = `${origin}/ouvidoria`;
+  const [copied, setCopied] = useState<'pesquisa' | 'ouvidoria' | null>(null);
+
+  const copy = async (url: string, which: 'pesquisa' | 'ouvidoria') => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(which);
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      // clipboard bloqueado (iframe cross-origin ou navegador antigo) — usuário
+      // ainda vê o link em texto e pode copiar manualmente.
+    }
+  };
+
+  const rowBase = theme === 'dark'
+    ? 'border-white/10 bg-white/[0.02]'
+    : 'border-black/10 bg-black/[0.02]';
+
+  return (
+    <div className={`p-5 rounded-2xl border ${cardBg}`}>
+      <div className="flex items-center gap-2 mb-3">
+        <LinkIcon size={14} className="opacity-60" />
+        <h4 className="text-xs font-bold uppercase tracking-wider opacity-75">
+          Links públicos para divulgar
+        </h4>
+      </div>
+      <p className="text-[10px] opacity-60 mb-4 leading-relaxed">
+        Compartilhe estes links com o time (WhatsApp, e-mail, QR code impresso).
+        Ambos abrem formulários anônimos com rate limit de 1 envio a cada 3h por dispositivo.
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className={`p-3 rounded-lg border ${rowBase}`}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <Star size={12} className="text-emerald-500" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Pesquisa de Satisfação</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <code className={`flex-1 text-[10px] px-2 py-1.5 rounded font-mono truncate ${theme === 'dark' ? 'bg-[#0D0D0C]' : 'bg-white'}`}>
+              {pesquisaUrl}
+            </code>
+            <button
+              onClick={() => copy(pesquisaUrl, 'pesquisa')}
+              className={`text-[10px] font-bold px-2.5 py-1.5 rounded border flex items-center gap-1 ${copied === 'pesquisa' ? 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10' : btnSecondary}`}
+              title="Copiar link"
+            >
+              {copied === 'pesquisa' ? <><Check size={11} /> Copiado</> : <><Copy size={11} /> Copiar</>}
+            </button>
+            <a
+              href={pesquisaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`text-[10px] font-bold px-2.5 py-1.5 rounded ${btnPrimary}`}
+              title="Abrir formulário em nova aba"
+            >
+              Abrir
+            </a>
+          </div>
+        </div>
+
+        <div className={`p-3 rounded-lg border ${rowBase}`}>
+          <div className="flex items-center gap-1.5 mb-2">
+            <MessageSquare size={12} className="text-sky-500" />
+            <span className="text-[10px] font-bold uppercase tracking-wider">Ouvidoria</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <code className={`flex-1 text-[10px] px-2 py-1.5 rounded font-mono truncate ${theme === 'dark' ? 'bg-[#0D0D0C]' : 'bg-white'}`}>
+              {ouvidoriaUrl}
+            </code>
+            <button
+              onClick={() => copy(ouvidoriaUrl, 'ouvidoria')}
+              className={`text-[10px] font-bold px-2.5 py-1.5 rounded border flex items-center gap-1 ${copied === 'ouvidoria' ? 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10' : btnSecondary}`}
+              title="Copiar link"
+            >
+              {copied === 'ouvidoria' ? <><Check size={11} /> Copiado</> : <><Copy size={11} /> Copiar</>}
+            </button>
+            <a
+              href={ouvidoriaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`text-[10px] font-bold px-2.5 py-1.5 rounded ${btnPrimary}`}
+              title="Abrir formulário em nova aba"
+            >
+              Abrir
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
