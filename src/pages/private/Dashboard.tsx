@@ -5054,7 +5054,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     { label: 'CPF', field: 'cpf' },
                     { label: 'RG', field: 'rg' },
                     { label: 'Data Nascimento', field: 'data_nascimento', type: 'date' },
-                    { label: 'Sexo', field: 'sexo', type: 'select', opts: ['Feminino', 'Masculino', 'Outro'] },
+                    { label: 'Gênero', field: 'genero', type: 'select', opts: [
+                      { value: 'F', label: 'Feminino' },
+                      { value: 'M', label: 'Masculino' },
+                      { value: 'O', label: 'Outro' },
+                      { value: 'NI', label: 'Prefiro não declarar' }
+                    ] },
                     { label: 'Estado Civil', field: 'estado_civil', type: 'select', opts: ['Solteiro(a)', 'Casado(a)', 'Divorciado(a)', 'Viúvo(a)', 'União Estável'] },
                     { label: 'Telefone', field: 'telefone' },
                     { label: 'E-mail Pessoal', field: 'email_pessoal', span: 2 },
@@ -5076,6 +5081,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     const val = isEditingDrawer
                       ? (drawerEditData[field] !== undefined ? drawerEditData[field] : activeColaboradorForDrawer[field])
                       : activeColaboradorForDrawer[field];
+                    // opts pode ser string[] (label = value) ou {value,label}[]
+                    // — genero grava sigla ('M','F','O','NI') mas mostra por
+                    // extenso ("Feminino") tanto no select quanto no modo leitura.
+                    const normalizedOpts: { value: string; label: string }[] = type === 'select'
+                      ? (opts as any[]).map(o => typeof o === 'string' ? { value: o, label: o } : o)
+                      : [];
+                    const displayVal = type === 'select'
+                      ? (normalizedOpts.find(o => o.value === val)?.label ?? val)
+                      : val;
                     return (
                       <div key={field} className={span === 2 ? 'col-span-2' : ''}>
                         <label className="block text-[9px] font-bold uppercase opacity-50 mb-0.5">{label}</label>
@@ -5084,7 +5098,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <select value={val || ''} onChange={e => setDrawerEditData((p: any) => ({ ...p, [field]: e.target.value }))}
                               className={`w-full text-xs p-1.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10 bg-white'}`}>
                               <option value="">—</option>
-                              {opts.map((o: string) => <option key={o}>{o}</option>)}
+                              {normalizedOpts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
                           ) : (
                             <input type={type || 'text'} value={val || ''} onChange={e => setDrawerEditData((p: any) => ({ ...p, [field]: e.target.value }))}
@@ -5094,7 +5108,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <p className="text-xs font-semibold py-0.5">
                             {type === 'date' && val
                               ? new Date(val + 'T12:00:00').toLocaleDateString('pt-BR')
-                              : (val || <span className="opacity-30 italic">—</span>)}
+                              : (displayVal || <span className="opacity-30 italic">—</span>)}
                           </p>
                         )}
                       </div>
