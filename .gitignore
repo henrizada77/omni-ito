@@ -13,3 +13,6 @@ dist
 .ag-kit-backups
 scratch_*
 *.local
+
+# Supabase CLI local state
+supabase/.temp/

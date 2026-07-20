@@ -31,6 +31,7 @@ const APP_ROUTES: { path: string; allowedRoles: Role[] }[] = [
   { path: '/app/avaliacoes', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/cargos', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/feedback', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/ponto', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/agenda', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/analytics', allowedRoles: ['coordenadora_rh', 'ti'] }
 ];

@@ -210,6 +210,34 @@ export const MESES_PT_BR = [
   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
 ];
 
+// Substitui as {{variáveis}} do modelo com os dados do token de admissão.
+// Usado tanto na pré-visualização quanto no texto enviado à edge function
+// gerar-contrato-pdf (que renderiza esse texto no PDF assinado). Manter os dois
+// usando esta mesma função evita o preview divergir do documento final.
+export function buildContractText(
+  template: string | null | undefined,
+  tokenRow: Record<string, any> | null | undefined,
+  details: Record<string, any> | null | undefined
+): string {
+  if (!template) return '';
+  const today = new Date();
+  const cpf = tokenRow?.candidato_cpf || details?.cpf || '';
+  return template
+    .replace(/{{nome}}/g, tokenRow?.candidato_nome || details?.nome || '_______')
+    .replace(/{{cpf}}/g, cpf || '_______')
+    .replace(/{{setor}}/g, tokenRow?.candidato_setor || details?.setor || '_______')
+    .replace(/{{cargo}}/g, tokenRow?.candidato_cargo || details?.cargo || '_______')
+    .replace(/{{cbo}}/g, details?.cbo || '_______')
+    .replace(/{{atribuicoes}}/g, details?.atribuicoes || '_______')
+    .replace(/{{salario}}/g, details?.salario || '_______')
+    .replace(/{{salario_extenso}}/g, details?.salario_extenso || '_______')
+    .replace(/{{endereco}}/g, details?.endereco || '_______')
+    .replace(/{{data_admissao}}/g, details?.data_admissao || '_______')
+    .replace(/{{dia}}/g, String(today.getDate()))
+    .replace(/{{mes}}/g, MESES_PT_BR[today.getMonth()])
+    .replace(/{{ano}}/g, String(today.getFullYear()));
+}
+
 export const DEFAULT_MODELS = [
   { id: '1', titulo: 'Termo de Uso de Imagem', conteudo: 'Eu, {{nome}}, portador do CPF {{cpf}}, autorizo o Instituto Thiago Omena no setor de {{setor}}...' },
   { id: '2', titulo: 'Contrato de Experiência', conteudo: CONTRATO_EXPERIENCIA_TEXT },
