@@ -41,6 +41,7 @@ import BenefitsManager from '../../components/benefits/BenefitsManager';
 import CargosManager from '../../components/cargos/CargosManager';
 import FeedbackManager from '../../components/feedback/FeedbackManager';
 import PontoManager from '../../components/ponto/PontoManager';
+import RiscoManager from '../../components/risco/RiscoManager';
 import CopilotWidget from '../../components/copilot/CopilotWidget';
 
 export default function Dashboard({ theme, setTheme, user, role }: DashboardProps) {
@@ -2017,6 +2018,22 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   }, [colaboradoresList, dbAdvertencias]);
 
   // Sidebar Links array builder
+  // Badge da sidebar: nº de alertas de pulse ainda não vistos (só faz sentido
+  // para o RH; para o `ti` o RLS devolve 0).
+  const [pulseAlertasNovos, setPulseAlertasNovos] = useState(0);
+  useEffect(() => {
+    if (!hasFullAccess) return;
+    let active = true;
+    (async () => {
+      const { count } = await supabase
+        .from('pulse_alertas')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'novo');
+      if (active) setPulseAlertasNovos(count || 0);
+    })();
+    return () => { active = false; };
+  }, [hasFullAccess]);
+
   const sidebarLinks = [
     ...(hasFullAccess ? [
       { path: '/app/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
@@ -2029,14 +2046,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       { path: '/app/cargos', label: 'Cargos & Carreira', icon: <Briefcase size={16} /> },
       { path: '/app/feedback', label: 'Voz do Time', icon: <MessageSquare size={16} /> },
       { path: '/app/ponto', label: 'Espelho de Ponto', icon: <Clock size={16} /> },
+      { path: '/app/riscos', label: 'Mapa de Riscos', icon: <Shield size={16} /> },
       { path: '/app/agenda', label: 'Agenda RH', icon: <Calendar size={16} /> }
     ] : []),
     { path: '/app/analytics', label: 'Analytics', icon: <TrendingUp size={16} /> }
   ];
 
   const renderSidebarContent = () => (
-    <div className="flex flex-col justify-between h-full">
-      <div className="space-y-8">
+    <div className="flex flex-col h-full">
+      <div className="space-y-8 flex-1 min-h-0 overflow-y-auto sidebar-scroll pr-1 -mr-1">
 
         {/* Branding header */}
         <div className="flex items-center gap-3">
@@ -2051,6 +2069,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         <nav className="flex flex-col gap-1.5">
           {sidebarLinks.map((link) => {
             const isActive = activePath === link.path;
+            const badge = link.path === '/app/feedback' ? pulseAlertasNovos : 0;
             return (
               <button
                 key={link.path}
@@ -2074,6 +2093,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 )}
                 {link.icon}
                 <span>{link.label}</span>
+                {badge > 0 && (
+                  <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {badge}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -2081,7 +2105,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       </div>
 
       {/* User Section Bottom */}
-      <div className="pt-6 border-t border-white/5 space-y-4">
+      <div className="pt-6 mt-6 border-t border-white/5 space-y-4 shrink-0">
 
         {/* Toggle Theme inline */}
         <div className="flex items-center justify-between text-xs opacity-75">
@@ -4695,6 +4719,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
             {activePath === '/app/ponto' && hasFullAccess && (
               <PontoManager theme={theme} />
+            )}
+
+            {activePath === '/app/riscos' && hasFullAccess && (
+              <RiscoManager theme={theme} />
             )}
 
             {activePath === '/app/agenda' && hasFullAccess && (

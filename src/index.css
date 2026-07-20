@@ -219,3 +219,23 @@ body.dark option:checked {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(229, 223, 211, 0.3);
 }
+
+/* Sidebar: barra de rolagem fina que só aparece no hover, para a lista de
+   módulos (que já passou de 12 itens) deslizar sem poluir a navegação. */
+.sidebar-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  transition: scrollbar-color 0.3s ease;
+}
+.sidebar-scroll:hover {
+  scrollbar-color: rgba(229, 223, 211, 0.25) transparent;
+}
+.sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: transparent;
+}
+.sidebar-scroll:hover::-webkit-scrollbar-thumb {
+  background: rgba(229, 223, 211, 0.2);
+}

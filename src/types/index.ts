@@ -311,6 +311,28 @@ export interface IndicadorTrabalhista {
   criado_em: string;
 }
 
+// Pulse semanal — humor 1=😞 2=😕 3=🙂 4=😀
+export interface PulseResposta {
+  id: string;
+  device_id: string;
+  humor: number;
+  setor?: string;
+  semana_iso: string;
+  criado_em: string;
+}
+
+export type PulseAlertaStatus = 'novo' | 'visto' | 'resolvido';
+
+export interface PulseAlerta {
+  id: string;
+  device_id: string;
+  setor?: string;
+  semana_iso: string;
+  semanas: string[];
+  status: PulseAlertaStatus;
+  criado_em: string;
+}
+
 export interface CandidateReviewData {
   nome: string;
   cpf: string;

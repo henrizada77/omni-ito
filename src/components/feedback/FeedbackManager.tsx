@@ -15,21 +15,46 @@ import {
   Filter,
   Link as LinkIcon,
   Copy,
-  Check
+  Check,
+  Smile,
+  CalendarCheck,
+  BellRing
 } from 'lucide-react';
 import type {
   PesquisaSatisfacao,
   OuvidoriaManifestacao,
   StatusOuvidoria,
   TipoOuvidoria,
-  CategoriaSatisfacao
+  CategoriaSatisfacao,
+  PulseResposta,
+  PulseAlerta,
+  PulseAlertaStatus
 } from '../../types';
 
 interface FeedbackManagerProps {
   theme: 'dark' | 'light';
 }
 
-type SubTab = 'pesquisa' | 'ouvidoria';
+type SubTab = 'pulse' | 'pesquisa' | 'ouvidoria';
+
+const HUMOR_META: Record<number, { emoji: string; label: string; color: string }> = {
+  4: { emoji: '😀', label: 'Ótima', color: 'bg-emerald-500' },
+  3: { emoji: '🙂', label: 'Boa', color: 'bg-sky-500' },
+  2: { emoji: '😕', label: 'Mais ou menos', color: 'bg-amber-500' },
+  1: { emoji: '😞', label: 'Difícil', color: 'bg-rose-500' }
+};
+
+const PULSE_ALERTA_STATUS_LABEL: Record<PulseAlertaStatus, string> = {
+  novo: 'Novo',
+  visto: 'Visto',
+  resolvido: 'Resolvido'
+};
+
+const PULSE_ALERTA_STATUS_STYLE: Record<PulseAlertaStatus, string> = {
+  novo: 'bg-rose-500/10 text-rose-400 border-rose-500/20',
+  visto: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
+  resolvido: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+};
 
 const OUVIDORIA_TIPO_ICON: Record<TipoOuvidoria, any> = {
   Elogio: ThumbsUp,
@@ -62,12 +87,16 @@ const TIPO_STYLE: Record<TipoOuvidoria, string> = {
 const CATEGORIAS_SAT: CategoriaSatisfacao[] = ['Geral', 'Ambiente', 'Liderança', 'Benefícios', 'Carreira', 'Comunicação'];
 
 export default function FeedbackManager({ theme }: FeedbackManagerProps) {
-  const [subTab, setSubTab] = useState<SubTab>('pesquisa');
+  const [subTab, setSubTab] = useState<SubTab>('pulse');
   const [loading, setLoading] = useState(true);
   const [pesquisas, setPesquisas] = useState<PesquisaSatisfacao[]>([]);
   const [manifestacoes, setManifestacoes] = useState<OuvidoriaManifestacao[]>([]);
+  const [pulseRespostas, setPulseRespostas] = useState<PulseResposta[]>([]);
+  const [pulseAlertas, setPulseAlertas] = useState<PulseAlerta[]>([]);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  const alertasNovos = useMemo(() => pulseAlertas.filter(a => a.status === 'novo').length, [pulseAlertas]);
 
   const cardBg = theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm';
   const inputBg = theme === 'dark' ? 'bg-[#0D0D0C] border-white/10 focus:border-[#E5DFD3]/40' : 'bg-white border-black/10 focus:border-black/40';
@@ -77,14 +106,20 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const [pRes, mRes] = await Promise.all([
+      const [pRes, mRes, prRes, paRes] = await Promise.all([
         supabase.from('pesquisas_satisfacao').select('*').order('criado_em', { ascending: false }),
-        supabase.from('ouvidoria_manifestacoes').select('*').order('criado_em', { ascending: false })
+        supabase.from('ouvidoria_manifestacoes').select('*').order('criado_em', { ascending: false }),
+        supabase.from('pulse_respostas').select('*').order('criado_em', { ascending: false }),
+        supabase.from('pulse_alertas').select('*').order('criado_em', { ascending: false })
       ]);
       if (pRes.error) throw pRes.error;
       if (mRes.error) throw mRes.error;
+      if (prRes.error) throw prRes.error;
+      if (paRes.error) throw paRes.error;
       setPesquisas((pRes.data as PesquisaSatisfacao[]) || []);
       setManifestacoes((mRes.data as OuvidoriaManifestacao[]) || []);
+      setPulseRespostas((prRes.data as PulseResposta[]) || []);
+      setPulseAlertas((paRes.data as PulseAlerta[]) || []);
     } catch (err: any) {
       console.error('FeedbackManager fetch:', err);
       setErrorMsg(err.message || 'Falha ao carregar dados.');
@@ -109,10 +144,23 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
             <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 10</span>
             <h3 className="text-xl font-bold">Voz do Time</h3>
           </div>
-          <p className="text-xs opacity-65 mt-1">Pesquisa de satisfação e canal de ouvidoria — ambos totalmente anônimos.</p>
+          <p className="text-xs opacity-65 mt-1">Pulse semanal, pesquisa de satisfação e ouvidoria — todos anônimos.</p>
         </div>
 
         <div className={`inline-flex p-1 rounded-xl border ${theme === 'dark' ? 'border-white/10 bg-[#0D0D0C]' : 'border-black/10 bg-white'}`}>
+          <button
+            onClick={() => setSubTab('pulse')}
+            className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase flex items-center gap-1.5 transition-colors relative ${
+              subTab === 'pulse' ? btnPrimary : 'opacity-60 hover:opacity-100'
+            }`}
+          >
+            <Smile size={13} /> Pulse
+            {alertasNovos > 0 && (
+              <span className="ml-0.5 min-w-[16px] h-4 px-1 rounded-full bg-rose-500 text-white text-[9px] font-bold flex items-center justify-center">
+                {alertasNovos}
+              </span>
+            )}
+          </button>
           <button
             onClick={() => setSubTab('pesquisa')}
             className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase flex items-center gap-1.5 transition-colors ${
@@ -150,6 +198,17 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
           <Loader2 size={20} className="animate-spin" />
           <span className="text-xs font-mono uppercase tracking-wider">Carregando...</span>
         </div>
+      ) : subTab === 'pulse' ? (
+        <PulseView
+          respostas={pulseRespostas}
+          alertas={pulseAlertas}
+          theme={theme}
+          onChange={fetchAll}
+          setErrorMsg={setErrorMsg}
+          setSuccessMsg={setSuccessMsg}
+          cardBg={cardBg}
+          btnSecondary={btnSecondary}
+        />
       ) : subTab === 'pesquisa' ? (
         <PesquisaView
           pesquisas={pesquisas}
@@ -173,6 +232,314 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
           btnSecondary={btnSecondary}
         />
       )}
+    </div>
+  );
+}
+
+// ============================================================================
+// PULSE SEMANAL
+// ============================================================================
+
+function isoWeekKey(date: Date): string {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - dayNum + 3);
+  const firstThursday = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  const firstDayNum = (firstThursday.getUTCDay() + 6) % 7;
+  firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNum + 3);
+  const week = 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 86400000));
+  return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
+}
+
+const weekLabel = (iso: string) => {
+  const m = iso.match(/^(\d{4})-W(\d{2})$/);
+  return m ? `Sem ${m[2]}/${m[1]}` : iso;
+};
+
+function PulseView({
+  respostas,
+  alertas,
+  theme,
+  onChange,
+  setErrorMsg,
+  setSuccessMsg,
+  cardBg,
+  btnSecondary
+}: {
+  respostas: PulseResposta[];
+  alertas: PulseAlerta[];
+  theme: 'dark' | 'light';
+  onChange: () => Promise<void>;
+  setErrorMsg: (m: string) => void;
+  setSuccessMsg: (m: string) => void;
+  cardBg: string;
+  btnSecondary: string;
+}) {
+  const [saving, setSaving] = useState<string | null>(null);
+  const semanaAtual = isoWeekKey(new Date());
+
+  const respSemana = useMemo(
+    () => respostas.filter(r => r.semana_iso === semanaAtual),
+    [respostas, semanaAtual]
+  );
+
+  const distSemana = useMemo(() => {
+    const dist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0 };
+    respSemana.forEach(r => { if (dist[r.humor] !== undefined) dist[r.humor]++; });
+    return dist;
+  }, [respSemana]);
+
+  const mediaSemana = respSemana.length > 0
+    ? respSemana.reduce((a, r) => a + r.humor, 0) / respSemana.length
+    : 0;
+
+  // Tendência: últimas 8 semanas com resposta (média de humor + total).
+  const tendencia = useMemo(() => {
+    const porSemana: Record<string, { soma: number; total: number }> = {};
+    respostas.forEach(r => {
+      if (!porSemana[r.semana_iso]) porSemana[r.semana_iso] = { soma: 0, total: 0 };
+      porSemana[r.semana_iso].soma += r.humor;
+      porSemana[r.semana_iso].total++;
+    });
+    return Object.entries(porSemana)
+      .map(([semana, v]) => ({ semana, media: v.soma / v.total, total: v.total }))
+      .sort((a, b) => (a.semana < b.semana ? 1 : -1))
+      .slice(0, 8)
+      .reverse();
+  }, [respostas]);
+
+  const alertasOrdenados = useMemo(() => {
+    const rank: Record<PulseAlertaStatus, number> = { novo: 0, visto: 1, resolvido: 2 };
+    return [...alertas].sort((a, b) =>
+      rank[a.status] - rank[b.status] || (a.criado_em < b.criado_em ? 1 : -1)
+    );
+  }, [alertas]);
+
+  const mudarStatusAlerta = async (a: PulseAlerta, novo: PulseAlertaStatus) => {
+    setSaving(a.id);
+    try {
+      const { error } = await supabase.from('pulse_alertas').update({ status: novo }).eq('id', a.id);
+      if (error) throw error;
+      setSuccessMsg(`Alerta marcado como "${PULSE_ALERTA_STATUS_LABEL[novo]}".`);
+      await onChange();
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Falha ao atualizar alerta.');
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <PulseLinkCard cardBg={cardBg} btnSecondary={btnSecondary} />
+
+      {/* Alertas 3×😞 */}
+      <div className={`p-5 rounded-2xl border ${cardBg}`}>
+        <div className="flex items-center gap-2 mb-3">
+          <BellRing size={15} className="text-rose-400" />
+          <h4 className="text-xs font-bold uppercase tracking-wider opacity-75">
+            Alertas de risco de clima (😞 3 semanas seguidas)
+          </h4>
+        </div>
+        {alertasOrdenados.length === 0 ? (
+          <div className="py-6 text-center text-xs italic opacity-50">
+            Nenhum alerta. Ninguém acumulou três semanas seguidas de 😞.
+          </div>
+        ) : (
+          <div className="space-y-2.5">
+            {alertasOrdenados.map(a => (
+              <div
+                key={a.id}
+                className={`p-3.5 rounded-xl border ${
+                  a.status === 'novo'
+                    ? 'border-rose-500/30 bg-rose-500/[0.06]'
+                    : theme === 'dark' ? 'border-white/10 bg-white/[0.02]' : 'border-black/10 bg-black/[0.02]'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-lg leading-none">😞</span>
+                      <span className="text-sm font-bold">
+                        {a.setor ? `Alguém do setor ${a.setor}` : 'Colaborador (setor não informado)'}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider border ${PULSE_ALERTA_STATUS_STYLE[a.status]}`}>
+                        {PULSE_ALERTA_STATUS_LABEL[a.status]}
+                      </span>
+                    </div>
+                    <p className="text-[11px] opacity-65 mt-1">
+                      Respondeu “semana difícil” em {Array.isArray(a.semanas) ? a.semanas.map(weekLabel).join(' · ') : weekLabel(a.semana_iso)}.
+                    </p>
+                    <p className="text-[10px] opacity-40 font-mono mt-1">
+                      Detectado em {new Date(a.criado_em).toLocaleDateString('pt-BR')} · anônimo (sem nome/e-mail)
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    {a.status !== 'visto' && a.status !== 'resolvido' && (
+                      <button
+                        onClick={() => mudarStatusAlerta(a, 'visto')}
+                        disabled={saving === a.id}
+                        className={`text-[10px] font-bold px-3 py-1.5 rounded border ${btnSecondary} disabled:opacity-50`}
+                      >
+                        Marcar visto
+                      </button>
+                    )}
+                    {a.status !== 'resolvido' && (
+                      <button
+                        onClick={() => mudarStatusAlerta(a, 'resolvido')}
+                        disabled={saving === a.id}
+                        className="text-[10px] font-bold px-3 py-1.5 rounded border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50 flex items-center gap-1"
+                      >
+                        {saving === a.id ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                        Resolver
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* KPIs da semana */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className={`p-4 rounded-2xl border ${cardBg}`}>
+          <div className="text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1">Respostas nesta semana</div>
+          <div className="text-3xl font-extrabold font-mono">{respSemana.length}</div>
+          <div className="text-[9px] opacity-50 mt-1">{weekLabel(semanaAtual)}</div>
+        </div>
+        <div className={`p-4 rounded-2xl border ${cardBg}`}>
+          <div className="text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1">Humor médio</div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold font-mono">{mediaSemana > 0 ? mediaSemana.toFixed(1) : '—'}</span>
+            {mediaSemana > 0 && <span className="text-2xl leading-none">{HUMOR_META[Math.round(mediaSemana)]?.emoji}</span>}
+          </div>
+          <div className="text-[9px] opacity-50 mt-1">1 (😞) a 4 (😀)</div>
+        </div>
+        <div className={`p-4 rounded-2xl border ${cardBg}`}>
+          <div className="text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1">Total histórico</div>
+          <div className="text-3xl font-extrabold font-mono">{respostas.length}</div>
+          <div className="text-[9px] opacity-50 mt-1">todas as semanas</div>
+        </div>
+        <div className={`p-4 rounded-2xl border ${cardBg}`}>
+          <div className="text-[10px] uppercase font-bold tracking-wider opacity-60 mb-1">Alertas ativos</div>
+          <div className={`text-3xl font-extrabold font-mono ${alertas.some(a => a.status !== 'resolvido') ? 'text-rose-400' : ''}`}>
+            {alertas.filter(a => a.status !== 'resolvido').length}
+          </div>
+          <div className="text-[9px] opacity-50 mt-1">😞 recorrente</div>
+        </div>
+      </div>
+
+      {/* Distribuição da semana */}
+      <div className={`p-5 rounded-2xl border ${cardBg}`}>
+        <div className="flex items-center gap-2 mb-3">
+          <Smile size={14} className="opacity-60" />
+          <h4 className="text-xs font-bold uppercase tracking-wider opacity-75">Como está a semana ({weekLabel(semanaAtual)})</h4>
+        </div>
+        {respSemana.length === 0 ? (
+          <div className="py-6 text-center text-xs italic opacity-50">Nenhuma resposta nesta semana ainda.</div>
+        ) : (
+          <div className="space-y-2">
+            {[4, 3, 2, 1].map(h => {
+              const count = distSemana[h] || 0;
+              const pct = respSemana.length > 0 ? (count / respSemana.length) * 100 : 0;
+              return (
+                <div key={h} className="flex items-center gap-3 text-xs">
+                  <span className="text-xl leading-none w-7">{HUMOR_META[h].emoji}</span>
+                  <span className="w-24 opacity-70 text-[11px]">{HUMOR_META[h].label}</span>
+                  <div className="flex-1 h-2.5 rounded-full bg-white/5 overflow-hidden">
+                    <div className={`h-full ${HUMOR_META[h].color} transition-all`} style={{ width: `${pct}%` }} />
+                  </div>
+                  <span className="font-mono opacity-70 w-8 text-right">{count}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Tendência por semana */}
+      <div className={`p-5 rounded-2xl border ${cardBg}`}>
+        <div className="flex items-center gap-2 mb-4">
+          <CalendarCheck size={14} className="opacity-60" />
+          <h4 className="text-xs font-bold uppercase tracking-wider opacity-75">Tendência (últimas semanas)</h4>
+        </div>
+        {tendencia.length === 0 ? (
+          <div className="py-6 text-center text-xs italic opacity-50">Ainda sem histórico.</div>
+        ) : (
+          <div className="flex items-end justify-between gap-2 h-40">
+            {tendencia.map(t => {
+              const alturaPct = (t.media / 4) * 100;
+              const rounded = Math.round(t.media);
+              return (
+                <div key={t.semana} className="flex-1 flex flex-col items-center gap-1.5 h-full justify-end">
+                  <span className="text-[10px] opacity-60 font-mono">{t.media.toFixed(1)}</span>
+                  <div className="w-full flex flex-col justify-end" style={{ height: '100%' }}>
+                    <div
+                      className={`w-full rounded-t-md ${HUMOR_META[rounded]?.color || 'bg-white/20'} transition-all`}
+                      style={{ height: `${Math.max(6, alturaPct)}%` }}
+                      title={`${t.total} resposta(s)`}
+                    />
+                  </div>
+                  <span className="text-base leading-none">{HUMOR_META[rounded]?.emoji}</span>
+                  <span className="text-[8px] opacity-50 font-mono text-center leading-tight">{weekLabel(t.semana)}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Card de link público do pulse
+function PulseLinkCard({
+  cardBg,
+  btnSecondary
+}: {
+  cardBg: string;
+  btnSecondary: string;
+}) {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const url = `${origin}/pulse`;
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch { /* clipboard bloqueado — link visível em texto */ }
+  };
+
+  return (
+    <div className={`p-4 rounded-2xl border ${cardBg} flex flex-col sm:flex-row sm:items-center gap-3`}>
+      <div className="flex items-center gap-2 flex-1 min-w-0">
+        <span className="text-xl leading-none">🙂</span>
+        <div className="min-w-0">
+          <div className="text-[11px] font-bold uppercase tracking-wider">Link do Pulse Semanal</div>
+          <code className={`block text-[10px] font-mono truncate opacity-70`}>{url}</code>
+        </div>
+      </div>
+      <p className="text-[10px] opacity-55 sm:max-w-[180px]">Divulgue toda sexta (WhatsApp/QR). 1 resposta por semana, anônima.</p>
+      <div className="flex gap-2 shrink-0">
+        <button
+          onClick={copy}
+          className={`text-[10px] font-bold px-2.5 py-1.5 rounded border flex items-center gap-1 ${copied ? 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10' : btnSecondary}`}
+        >
+          {copied ? <><Check size={11} /> Copiado</> : <><Copy size={11} /> Copiar</>}
+        </button>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`text-[10px] font-bold px-2.5 py-1.5 rounded border ${btnSecondary}`}
+        >
+          Abrir
+        </a>
+      </div>
     </div>
   );
 }
