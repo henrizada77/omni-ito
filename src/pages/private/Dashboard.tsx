@@ -24,11 +24,12 @@ import {
   Calendar,
   Award,
   Briefcase,
-  MessageSquare
+  MessageSquare,
+  Clock
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
-import { MESES_PT_BR, DEFAULT_MODELS } from '../../data/contractTemplates';
+import { MESES_PT_BR, DEFAULT_MODELS, buildContractText } from '../../data/contractTemplates';
 
 import OverviewPanel from '../../components/analytics/OverviewPanel';
 import TurnoverPanel from '../../components/analytics/TurnoverPanel';
@@ -39,6 +40,8 @@ import FormManager from '../../components/documents/FormManager';
 import BenefitsManager from '../../components/benefits/BenefitsManager';
 import CargosManager from '../../components/cargos/CargosManager';
 import FeedbackManager from '../../components/feedback/FeedbackManager';
+import PontoManager from '../../components/ponto/PontoManager';
+import CopilotWidget from '../../components/copilot/CopilotWidget';
 
 export default function Dashboard({ theme, setTheme, user, role }: DashboardProps) {
   const location = useLocation();
@@ -955,6 +958,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           signatureRepresentativeBase64: representativeSignatureBase64,
           coordinatorEmail: user.email,
           pdfTemplateBase64: details.pdf_template_base64 || null,
+          contractText: buildContractText(details.pdf_template_base64, selectedTokenRow, details),
           documentName: `contrato_${cpf.replace(/\D/g, '')}_consolidado`,
           colabSignaturePosition: details.colab_signature_position || null,
           repSignaturePosition: details.rep_signature_position || null
@@ -2024,6 +2028,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       { path: '/app/avaliacoes', label: 'Avaliações', icon: <Award size={16} /> },
       { path: '/app/cargos', label: 'Cargos & Carreira', icon: <Briefcase size={16} /> },
       { path: '/app/feedback', label: 'Voz do Time', icon: <MessageSquare size={16} /> },
+      { path: '/app/ponto', label: 'Espelho de Ponto', icon: <Clock size={16} /> },
       { path: '/app/agenda', label: 'Agenda RH', icon: <Calendar size={16} /> }
     ] : []),
     { path: '/app/analytics', label: 'Analytics', icon: <TrendingUp size={16} /> }
@@ -4688,6 +4693,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               <FeedbackManager theme={theme} />
             )}
 
+            {activePath === '/app/ponto' && hasFullAccess && (
+              <PontoManager theme={theme} />
+            )}
+
             {activePath === '/app/agenda' && hasFullAccess && (
               <div className="space-y-6 animate-fadeIn">
                 {/* Header */}
@@ -4948,7 +4957,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       </div>
 
-
+      {/* Copiloto de RH — flutuante, disponível em todos os módulos (só RH) */}
+      {hasFullAccess && <CopilotWidget theme={theme} />}
 
       {/* 5. Side Drawer Onyx for Dossier/Prontuário */}
       {activeColaboradorForDrawer && (

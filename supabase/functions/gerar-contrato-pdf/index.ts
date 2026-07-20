@@ -5,21 +5,82 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { PDFDocument, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
 
-// Origens liberadas, separadas por vírgula. Configure com:
-//   npx supabase secrets set ALLOWED_ORIGINS="https://SEU-DOMINIO.vercel.app"
-// O localhost do Vite entra sempre, para o dev não precisar de segredo.
-// Antes isto era uma lista fixa em que o domínio de produção nunca foi
-// preenchido — ficou 'https://seu-sistema-rh.vercel.app' até hoje.
-const allowedOrigins = [
-  'http://localhost:5173',
-  ...(Deno.env.get('ALLOWED_ORIGINS') ?? '')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean)
-];
+// Domínios extras liberados, além do localhost e dos deploys da Vercel (que
+// são reconhecidos por padrão abaixo). Use isto para um domínio PRÓPRIO de
+// produção. Separe por vírgula:
+//   npx supabase secrets set ALLOWED_ORIGINS="https://rh.itoinstituto.com.br"
+const explicitAllowedOrigins = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+/**
+ * Decide se a origem pode ler a resposta (CORS). Reconhece, sem precisar de
+ * segredo: localhost em qualquer porta (dev) e qualquer deploy *.vercel.app
+ * (produção e previews). Domínio próprio entra via ALLOWED_ORIGINS.
+ *
+ * Por que liberar *.vercel.app é seguro aqui: CORS não autentica nada — só diz
+ * quais origens de NAVEGADOR podem ler a resposta (curl/Postman ignoram). Quem
+ * protege este endpoint é a validação de token+CPF (candidato) ou JWT (RH/TI)
+ * mais abaixo. Uma origem liberada sem token/CPF válido só recebe 401.
+ */
+const isAllowedOrigin = (origin: string | null): boolean => {
+  if (!origin) return false;
+  if (explicitAllowedOrigins.includes(origin)) return true;
+  try {
+    const u = new URL(origin);
+    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') return true;
+    if (u.protocol === 'https:' && u.hostname.endsWith('.vercel.app')) return true;
+  } catch {
+    // origin malformada — nega
+  }
+  return false;
+};
 
 /** Só os dígitos do CPF. Aceita null/undefined sem estourar. */
 const cpfDigits = (value: unknown): string => String(value ?? '').replace(/\D/g, '');
+
+// O Helvetica padrão do pdf-lib usa WinAnsi e NÃO codifica travessão, aspas
+// curvas nem reticências Unicode (comuns nos modelos). Troca por equivalentes
+// ASCII e substitui qualquer resto fora de Latin-1 por '?', para não estourar.
+const toWinAnsi = (s: string): string => s
+  .replace(/[–—]/g, '-')
+  .replace(/[‘’′]/g, "'")
+  .replace(/[“”]/g, '"')
+  .replace(/…/g, '...')
+  .replace(/ /g, ' ')
+  .replace(/[^\x00-\xFF]/g, '?');
+
+// Renderiza um contrato de TEXTO (com variáveis já substituídas) em páginas A4,
+// com quebra por palavra e paginação. Antes, modelos de texto caíam num
+// certificado genérico porque atob() falhava — agora o documento escolhido é
+// de fato desenhado no PDF.
+async function renderContractText(pdfDoc: PDFDocument, font: any, rawText: string) {
+  const PW = 595, PH = 842, M = 50, SIZE = 10, LH = 14, MAXW = PW - M * 2;
+  let page = pdfDoc.addPage([PW, PH]);
+  let y = PH - M;
+  const newPage = () => { page = pdfDoc.addPage([PW, PH]); y = PH - M; };
+  const draw = (line: string) => {
+    if (y < M + 20) newPage();
+    try { page.drawText(line, { x: M, y, size: SIZE, font }); } catch { /* char não encodável */ }
+    y -= LH;
+  };
+  const paragraphs = toWinAnsi(rawText).split('\n');
+  for (const para of paragraphs) {
+    if (para.trim() === '') { y -= LH; if (y < M + 20) newPage(); continue; }
+    const words = para.split(/\s+/);
+    let line = '';
+    for (const word of words) {
+      const test = line ? line + ' ' + word : word;
+      let w = MAXW;
+      try { w = font.widthOfTextAtSize(test, SIZE); } catch { w = test.length * SIZE * 0.5; }
+      if (w > MAXW && line) { draw(line); line = word; } else { line = test; }
+    }
+    if (line) draw(line);
+  }
+  // Deixa a última página com espaço para as assinaturas + carimbo do rodapé.
+  if (y < 200) newPage();
+}
 
 const getCorsHeaders = (origin: string | null) => {
   const headers: Record<string, string> = {
@@ -33,8 +94,8 @@ const getCorsHeaders = (origin: string | null) => {
   // Origem desconhecida não recebe Access-Control-Allow-Origin nenhum. Antes,
   // ela recebia o primeiro item da lista, o que só produzia um erro de CORS
   // confuso no navegador em vez de uma recusa explícita.
-  if (origin && allowedOrigins.includes(origin)) {
-    headers['Access-Control-Allow-Origin'] = origin;
+  if (isAllowedOrigin(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin as string;
   }
 
   return headers;
@@ -59,6 +120,7 @@ serve(async (req) => {
       signatureRepresentativeBase64,
       coordinatorEmail,
       pdfTemplateBase64,
+      contractText, // texto do contrato de TEXTO, já com variáveis substituídas
       documentName,
       colabSignaturePosition,
       repSignaturePosition
@@ -136,28 +198,32 @@ serve(async (req) => {
     // 3. Initialize pdf-lib document
     let pdfDoc: PDFDocument;
 
+    // Detecta se o template é um PDF real (base64 → %PDF) ou um contrato de TEXTO.
+    let isRealPdf = false;
     if (pdfTemplateBase64) {
-      try {
-        // Decode base64 PDF template
-        const pdfBytes = Uint8Array.from(atob(pdfTemplateBase64), c => c.charCodeAt(0))
-        pdfDoc = await PDFDocument.load(pdfBytes)
-      } catch (err: any) {
-        // Fallback for DOCX or corrupt PDF: generate signing wrapper
-        console.log("PDF load failed, falling back to signature certificate:", err.message)
-        pdfDoc = await PDFDocument.create()
-        const page = pdfDoc.addPage([600, 800])
-        const font = await pdfDoc.embedFont("Helvetica")
+      try { isRealPdf = atob(String(pdfTemplateBase64).slice(0, 8)).startsWith('%PDF'); } catch { isRealPdf = false; }
+    }
 
-        const text = `REGISTRO E CERTIFICADO DE ASSINATURA DIGITAL\n\nEste documento certifica a assinatura digital do modelo de contrato:\n"${documentName || 'Contrato de Admissão'}"\n\nNome do Colaborador: ${candidateName}\nCPF: ${candidateCpf}\nSetor: Admissional\n\nAs assinaturas eletrônicas e registros de auditoria foram vinculados a este certificado.`;
-        page.drawText(text, { x: 50, y: 700, size: 11, font, lineHeight: 18 })
-      }
+    const textoContrato = (contractText && String(contractText).trim())
+      ? String(contractText)
+      : (!isRealPdf && pdfTemplateBase64 ? String(pdfTemplateBase64) : '');
+
+    if (isRealPdf) {
+      // Template é PDF de verdade (upload): carrega e assina em cima dele.
+      const pdfBytes = Uint8Array.from(atob(pdfTemplateBase64), c => c.charCodeAt(0))
+      pdfDoc = await PDFDocument.load(pdfBytes)
+    } else if (textoContrato.trim()) {
+      // Modelo de TEXTO: renderiza o contrato escolhido (com variáveis já
+      // preenchidas) em vez do antigo certificado genérico.
+      pdfDoc = await PDFDocument.create()
+      const bodyFont = await pdfDoc.embedFont("Helvetica")
+      await renderContractText(pdfDoc, bodyFont, textoContrato)
     } else {
-      // Fallback: Create blank PDF if no base64 is provided
+      // Sem template algum: certificado genérico mínimo.
       pdfDoc = await PDFDocument.create()
       const page = pdfDoc.addPage([600, 800])
       const font = await pdfDoc.embedFont("Helvetica")
-
-      const text = `CONTRATO DE ADMISSÃO\n\nEu, ${candidateName}, portador do CPF ${candidateCpf}, declaro estar de acordo com os termos deste Instituto.\n\nAssinaturas Eletrônicas Registradas abaixo:`;
+      const text = `CONTRATO DE ADMISSAO\n\nEu, ${candidateName}, portador do CPF ${candidateCpf}, declaro estar de acordo com os termos deste Instituto.\n\nAssinaturas Eletronicas Registradas abaixo:`;
       page.drawText(text, { x: 50, y: 700, size: 11, font, lineHeight: 15 })
     }
 

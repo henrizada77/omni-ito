@@ -10,6 +10,7 @@ import {
   PenTool
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { buildContractText } from '../../data/contractTemplates';
 import AdmissionForm from '../../components/documents/AdmissionForm';
 
 interface AdmissaoCandidatoProps {
@@ -61,37 +62,9 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
   const [tokenDetails, setTokenDetails] = useState<any>(null);
   const [tokenRow, setTokenRow] = useState<any>(null);
 
-  const renderTemplateText = () => {
-    if (!tokenDetails?.pdf_template_base64) return '';
-    const today = new Date();
-    const meses = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    const cpf = tokenRow?.candidato_cpf || tokenDetails.cpf || '';
-    const sector = tokenRow?.candidato_setor || tokenDetails.setor || '';
-    const cbo = tokenDetails.cbo || '';
-    const atribuicoes = tokenDetails.atribuicoes || '';
-    const salario = tokenDetails.salario || '';
-    const salarioExtenso = tokenDetails.salario_extenso || '';
-    const endereco = tokenDetails.endereco || '';
-    const admissao = tokenDetails.data_admissao || '';
-
-    return tokenDetails.pdf_template_base64
-      .replace(/{{nome}}/g, nome || '_______')
-      .replace(/{{cpf}}/g, cpf || '_______')
-      .replace(/{{setor}}/g, sector || '_______')
-      .replace(/{{cargo}}/g, cargo || '_______')
-      .replace(/{{cbo}}/g, cbo || '_______')
-      .replace(/{{atribuicoes}}/g, atribuicoes || '_______')
-      .replace(/{{salario}}/g, salario || '_______')
-      .replace(/{{salario_extenso}}/g, salarioExtenso || '_______')
-      .replace(/{{endereco}}/g, endereco || '_______')
-      .replace(/{{data_admissao}}/g, admissao || '_______')
-      .replace(/{{dia}}/g, today.getDate().toString())
-      .replace(/{{mes}}/g, meses[today.getMonth()])
-      .replace(/{{ano}}/g, today.getFullYear().toString());
-  };
+  // Mesma substituição que a edge function usa para o PDF final — assim a
+  // pré-visualização em texto bate exatamente com o documento assinado.
+  const renderTemplateText = () => buildContractText(tokenDetails?.pdf_template_base64, tokenRow, tokenDetails);
 
   // Signature states
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -197,6 +170,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
           candidateCpf: tokenData.candidato_cpf || details.cpf || '000.000.000-00',
           signatureBase64: null,
           pdfTemplateBase64: details.pdf_template_base64 || null,
+          contractText: buildContractText(details.pdf_template_base64, tokenData, details),
           documentName: 'contrato_admissao_rascunho'
         })
       });
@@ -291,6 +265,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
         signatureBase64,
         coordinatorEmail: tokenRow.criado_por || 'rh@thiagoomena.com.br',
         pdfTemplateBase64: details.pdf_template_base64 || null,
+        contractText: buildContractText(details.pdf_template_base64, tokenRow, details),
         documentName: `contrato_${cpf.replace(/\D/g, '')}_assinado`,
         colabSignaturePosition: details.colab_signature_position || null,
         repSignaturePosition: details.rep_signature_position || null
