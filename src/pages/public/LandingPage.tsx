@@ -199,6 +199,20 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
               de login. RH divulga o link direto pela equipe. */}
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Link
+              to="/pulse"
+              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
+                theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
+              }`}
+            >
+              <div className="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-lg leading-none">
+                🙂
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-bold">Pulse Semanal</div>
+                <div className="text-[10px] opacity-60">Como foi sua semana? · 30 segundos</div>
+              </div>
+            </Link>
+            <Link
               to="/pesquisa"
               className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
                 theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
