@@ -74,12 +74,14 @@ async function renderContractText(pdfDoc: PDFDocument, font: any, rawText: strin
   let pendingUnderscore: { x: number; y: number; page: number } | null = null;
 
   const newPage = () => { page = pdfDoc.addPage([PW, PH]); pageIndex++; y = PH - M; };
-  // Empregador (rep) vs Empregado (colab). Cuidado: "empregado" é substring de
-  // "empregador", então o colaborador é EMPREGADO NÃO seguido de R — assim
-  // "EMPREGADOR"/"EMPREGADORA" (empregador) não são confundidos com "EMPREGADO"/
-  // "EMPREGADO(A)" (empregado).
+  // Empregador (rep) vs Empregado/Colaborador (colab). Cuidado: "empregado" é
+  // substring de "empregador", então o colaborador é EMPREGADO NÃO seguido de R
+  // (assim "EMPREGADOR"/"EMPREGADORA" não são confundidos com "EMPREGADO(A)").
+  // Também aceita "COLABORADOR" como rótulo do colaborador.
   const partyOf = (t: string): 'rep' | 'colab' | null =>
-    /EMPREGADOR/i.test(t) ? 'rep' : (/EMPREGADO(?!R)/i.test(t) ? 'colab' : null);
+    /EMPREGADOR/i.test(t) ? 'rep'
+      : (/EMPREGADO(?!R)/i.test(t) || /COLABORADOR/i.test(t)) ? 'colab'
+      : null;
   const setAnchor = (party: 'rep' | 'colab', x: number, lineY: number, pg: number) => {
     const anc: SigAnchor = { x, y: lineY, page: pg + 1, w: ANC_W, h: ANC_H };
     if (party === 'rep') { if (!anchors.rep) anchors.rep = anc; }
