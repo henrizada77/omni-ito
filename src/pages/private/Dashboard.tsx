@@ -263,12 +263,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           ? uploadedPdfBase64
           : (savedModel ? savedModel.conteudo : null),
         template_id: selectedModeloId,
-        colab_signature_position: selectedModeloId === 'upload'
-          ? colabSigPos
-          : (savedModel?.assinatura_coordenadas || { x: 80, y: 150, page: 1 }),
-        rep_signature_position: selectedModeloId === 'upload'
-          ? repSigPos
-          : (savedModel?.assinatura_rep_coordenadas || { x: 380, y: 150, page: 1 })
+        // Modelo de TEXTO: paginação é dinâmica, então coordenada fixa não faz
+        // sentido — mandamos null e a Edge Function ancora a assinatura na linha
+        // "EMPREGADO(A)"/"EMPREGADORA" do próprio contrato. Coordenada explícita
+        // fica só para PDF carregado (upload), onde o layout é fixo.
+        colab_signature_position: selectedModeloId === 'upload' ? colabSigPos : null,
+        rep_signature_position: selectedModeloId === 'upload' ? repSigPos : null
       };
 
       const expiraEm = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();

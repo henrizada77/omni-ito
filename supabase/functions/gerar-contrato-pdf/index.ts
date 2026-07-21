@@ -55,16 +55,53 @@ const toWinAnsi = (s: string): string => s
 // com quebra por palavra e paginação. Antes, modelos de texto caíam num
 // certificado genérico porque atob() falhava — agora o documento escolhido é
 // de fato desenhado no PDF.
-async function renderContractText(pdfDoc: PDFDocument, font: any, rawText: string) {
+// Coordenada onde desenhar a assinatura, no sistema do pdf-lib (page 1-based).
+interface SigAnchor { x: number; y: number; page: number; w: number; h: number }
+
+async function renderContractText(pdfDoc: PDFDocument, font: any, rawText: string): Promise<{ colab: SigAnchor | null; rep: SigAnchor | null }> {
   const PW = 595, PH = 842, M = 50, SIZE = 10, LH = 14, MAXW = PW - M * 2;
   let page = pdfDoc.addPage([PW, PH]);
+  let pageIndex = 0;
   let y = PH - M;
-  const newPage = () => { page = pdfDoc.addPage([PW, PH]); y = PH - M; };
+
+  // Onde as assinaturas devem cair: detectadas a partir das próprias linhas de
+  // assinatura do contrato (runs de "___" associadas a EMPREGADO(A)/EMPREGADORA),
+  // para a assinatura ficar NA linha certa em vez de num rodapé fixo. Suporta os
+  // dois layouts dos modelos: "EMPREGADO(A): ____" (rótulo e linha juntos) e
+  // "____" seguido de "EMPREGADO(A)" na linha de baixo (modelo com testemunhas).
+  const anchors: { colab: SigAnchor | null; rep: SigAnchor | null } = { colab: null, rep: null };
+  const ANC_W = 120, ANC_H = 34;
+  let pendingUnderscore: { x: number; y: number; page: number } | null = null;
+
+  const newPage = () => { page = pdfDoc.addPage([PW, PH]); pageIndex++; y = PH - M; };
+  const partyOf = (t: string): 'rep' | 'colab' | null =>
+    /EMPREGADORA/i.test(t) ? 'rep' : (/EMPREGADO/i.test(t) ? 'colab' : null);
+  const setAnchor = (party: 'rep' | 'colab', x: number, lineY: number, pg: number) => {
+    const anc: SigAnchor = { x, y: lineY, page: pg + 1, w: ANC_W, h: ANC_H };
+    if (party === 'rep') { if (!anchors.rep) anchors.rep = anc; }
+    else { if (!anchors.colab) anchors.colab = anc; }
+  };
+
   const draw = (line: string) => {
     if (y < M + 20) newPage();
     try { page.drawText(line, { x: M, y, size: SIZE, font }); } catch { /* char não encodável */ }
+
+    const usMatch = line.match(/_{6,}/);
+    const party = partyOf(line);
+    if (usMatch) {
+      const prefix = line.slice(0, usMatch.index || 0);
+      let xStart = M;
+      try { xStart = M + font.widthOfTextAtSize(prefix, SIZE); } catch { xStart = M; }
+      if (party) { setAnchor(party, xStart, y, pageIndex); pendingUnderscore = null; }
+      else { pendingUnderscore = { x: xStart, y, page: pageIndex }; }
+    } else if (party && pendingUnderscore) {
+      setAnchor(party, pendingUnderscore.x, pendingUnderscore.y, pendingUnderscore.page);
+      pendingUnderscore = null;
+    }
+
     y -= LH;
   };
+
   const paragraphs = toWinAnsi(rawText).split('\n');
   for (const para of paragraphs) {
     if (para.trim() === '') { y -= LH; if (y < M + 20) newPage(); continue; }
@@ -78,8 +115,27 @@ async function renderContractText(pdfDoc: PDFDocument, font: any, rawText: strin
     }
     if (line) draw(line);
   }
-  // Deixa a última página com espaço para as assinaturas + carimbo do rodapé.
-  if (y < 200) newPage();
+
+  // Modelo sem nenhuma linha de assinatura (ex.: contrato que só diz "assinam o
+  // presente instrumento"): acrescenta um bloco padrão, para a assinatura não
+  // cair num rodapé fixo desalinhado.
+  if (!anchors.colab) {
+    if (y < 160) newPage();
+    y -= LH * 3;
+    const lineY = y;
+    const col2 = M + 270;
+    try {
+      page.drawText('___________________________________', { x: M, y: lineY, size: SIZE, font });
+      page.drawText('___________________________________', { x: col2, y: lineY, size: SIZE, font });
+      page.drawText('EMPREGADO(A)', { x: M, y: lineY - LH, size: SIZE, font });
+      page.drawText('EMPREGADORA', { x: col2, y: lineY - LH, size: SIZE, font });
+    } catch { /* ignore */ }
+    anchors.colab = { x: M, y: lineY, page: pageIndex + 1, w: ANC_W, h: ANC_H };
+    if (!anchors.rep) anchors.rep = { x: col2, y: lineY, page: pageIndex + 1, w: ANC_W, h: ANC_H };
+    y -= LH * 2;
+  }
+
+  return anchors;
 }
 
 const getCorsHeaders = (origin: string | null) => {
@@ -197,6 +253,8 @@ serve(async (req) => {
 
     // 3. Initialize pdf-lib document
     let pdfDoc: PDFDocument;
+    // Âncoras de assinatura vindas do texto do contrato (só para modelos de TEXTO).
+    let contractAnchors: { colab: SigAnchor | null; rep: SigAnchor | null } = { colab: null, rep: null };
 
     // Detecta se o template é um PDF real (base64 → %PDF) ou um contrato de TEXTO.
     let isRealPdf = false;
@@ -217,7 +275,7 @@ serve(async (req) => {
       // preenchidas) em vez do antigo certificado genérico.
       pdfDoc = await PDFDocument.create()
       const bodyFont = await pdfDoc.embedFont("Helvetica")
-      await renderContractText(pdfDoc, bodyFont, textoContrato)
+      contractAnchors = await renderContractText(pdfDoc, bodyFont, textoContrato)
     } else {
       // Sem template algum: certificado genérico mínimo.
       pdfDoc = await PDFDocument.create()
@@ -230,6 +288,18 @@ serve(async (req) => {
     const pages = pdfDoc.getPages()
     const lastPage = pages[pages.length - 1]
     const { width } = lastPage.getSize()
+
+    // Posição efetiva das assinaturas.
+    // Para contrato de TEXTO a âncora detectada (linha "EMPREGADO(A)"/
+    // "EMPREGADORA") tem PRIORIDADE e ignora qualquer coordenada recebida:
+    // a paginação do texto é dinâmica, então coordenada fixa (inclusive as
+    // legadas {x:80,y:150} gravadas em tokens antigos) nunca é confiável.
+    // Para PDF real (upload), contractAnchors é null e usamos a coordenada
+    // explícita, como antes.
+    const explicitColab = (colabSignaturePosition && typeof colabSignaturePosition.x === 'number') ? colabSignaturePosition : null;
+    const explicitRep = (repSignaturePosition && typeof repSignaturePosition.x === 'number') ? repSignaturePosition : null;
+    const effColabPos: any = contractAnchors.colab || explicitColab;
+    const effRepPos: any = contractAnchors.rep || explicitRep;
 
     // 4. Embed Candidate signature image if provided
     let signatureImage = null;
@@ -253,16 +323,16 @@ serve(async (req) => {
     let drewCandidateOnCoords = false;
     let drewRepOnCoords = false;
 
-    // Draw Candidate signature on custom coordinates if provided
-    if (signatureImage && colabSignaturePosition && typeof colabSignaturePosition.x === 'number' && typeof colabSignaturePosition.y === 'number') {
+    // Draw Candidate signature on custom coordinates / detected anchor
+    if (signatureImage && effColabPos && typeof effColabPos.x === 'number' && typeof effColabPos.y === 'number') {
       try {
-        const pageIdx = Math.max(0, Math.min(pages.length - 1, (colabSignaturePosition.page || 1) - 1));
+        const pageIdx = Math.max(0, Math.min(pages.length - 1, (effColabPos.page || 1) - 1));
         const targetPage = pages[pageIdx];
         targetPage.drawImage(signatureImage, {
-          x: colabSignaturePosition.x,
-          y: colabSignaturePosition.y,
-          width: 140,
-          height: 55
+          x: effColabPos.x,
+          y: effColabPos.y,
+          width: effColabPos.w || 140,
+          height: effColabPos.h || 55
         });
         drewCandidateOnCoords = true;
       } catch (err: any) {
@@ -270,16 +340,16 @@ serve(async (req) => {
       }
     }
 
-    // Draw RH Representative signature on custom coordinates if provided
-    if (repSignatureImage && repSignaturePosition && typeof repSignaturePosition.x === 'number' && typeof repSignaturePosition.y === 'number') {
+    // Draw RH Representative signature on custom coordinates / detected anchor
+    if (repSignatureImage && effRepPos && typeof effRepPos.x === 'number' && typeof effRepPos.y === 'number') {
       try {
-        const pageIdx = Math.max(0, Math.min(pages.length - 1, (repSignaturePosition.page || 1) - 1));
+        const pageIdx = Math.max(0, Math.min(pages.length - 1, (effRepPos.page || 1) - 1));
         const targetPage = pages[pageIdx];
         targetPage.drawImage(repSignatureImage, {
-          x: repSignaturePosition.x,
-          y: repSignaturePosition.y,
-          width: 140,
-          height: 55
+          x: effRepPos.x,
+          y: effRepPos.y,
+          width: effRepPos.w || 140,
+          height: effRepPos.h || 55
         });
         drewRepOnCoords = true;
       } catch (err: any) {
