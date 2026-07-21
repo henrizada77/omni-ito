@@ -333,6 +333,27 @@ export interface PulseAlerta {
   criado_em: string;
 }
 
+// Lançamentos da folha de pagamento (anotações do mês)
+export type CategoriaFolha =
+  | 'Desconto' | 'Adiantamento' | 'Insalubridade' | 'Periculosidade'
+  | 'Hora Extra' | 'Inclusão' | 'Falta' | 'Outro';
+
+export type StatusFolha = 'pendente' | 'enviado';
+
+export interface FolhaLancamento {
+  id: string;
+  colaborador_id?: string;
+  categoria: CategoriaFolha;
+  valor?: number;
+  descricao: string;
+  competencia: string; // 'YYYY-MM'
+  status: StatusFolha;
+  criado_por?: string;
+  criado_em: string;
+  enviado_em?: string;
+  atualizado_em: string;
+}
+
 export interface CandidateReviewData {
   nome: string;
   cpf: string;

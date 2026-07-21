@@ -74,8 +74,12 @@ async function renderContractText(pdfDoc: PDFDocument, font: any, rawText: strin
   let pendingUnderscore: { x: number; y: number; page: number } | null = null;
 
   const newPage = () => { page = pdfDoc.addPage([PW, PH]); pageIndex++; y = PH - M; };
+  // Empregador (rep) vs Empregado (colab). Cuidado: "empregado" é substring de
+  // "empregador", então o colaborador é EMPREGADO NÃO seguido de R — assim
+  // "EMPREGADOR"/"EMPREGADORA" (empregador) não são confundidos com "EMPREGADO"/
+  // "EMPREGADO(A)" (empregado).
   const partyOf = (t: string): 'rep' | 'colab' | null =>
-    /EMPREGADORA/i.test(t) ? 'rep' : (/EMPREGADO/i.test(t) ? 'colab' : null);
+    /EMPREGADOR/i.test(t) ? 'rep' : (/EMPREGADO(?!R)/i.test(t) ? 'colab' : null);
   const setAnchor = (party: 'rep' | 'colab', x: number, lineY: number, pg: number) => {
     const anc: SigAnchor = { x, y: lineY, page: pg + 1, w: ANC_W, h: ANC_H };
     if (party === 'rep') { if (!anchors.rep) anchors.rep = anc; }
@@ -86,7 +90,10 @@ async function renderContractText(pdfDoc: PDFDocument, font: any, rawText: strin
     if (y < M + 20) newPage();
     try { page.drawText(line, { x: M, y, size: SIZE, font }); } catch { /* char não encodável */ }
 
-    const usMatch = line.match(/_{6,}/);
+    // Só um run LONGO de underscores é linha de assinatura. Campos de variável
+    // em branco viram '_______' (7 chars) e NÃO podem ser confundidos com a
+    // linha de assinatura (que tem ~35). Por isso o limiar alto (15+).
+    const usMatch = line.match(/_{15,}/);
     const party = partyOf(line);
     if (usMatch) {
       const prefix = line.slice(0, usMatch.index || 0);
@@ -95,7 +102,12 @@ async function renderContractText(pdfDoc: PDFDocument, font: any, rawText: strin
       if (party) { setAnchor(party, xStart, y, pageIndex); pendingUnderscore = null; }
       else { pendingUnderscore = { x: xStart, y, page: pageIndex }; }
     } else if (party && pendingUnderscore) {
+      // Rótulo EMPREGADO(A)/EMPREGADORA logo após a linha de assinatura.
       setAnchor(party, pendingUnderscore.x, pendingUnderscore.y, pendingUnderscore.page);
+      pendingUnderscore = null;
+    } else {
+      // Linha comum quebra a associação pendente (evita casar a linha de
+      // assinatura com um "EMPREGADO(A)" distante do corpo do contrato).
       pendingUnderscore = null;
     }
 
@@ -136,6 +148,33 @@ async function renderContractText(pdfDoc: PDFDocument, font: any, rawText: strin
   }
 
   return anchors;
+}
+
+// Marca d'água "papel timbrado": desenha a logo ITO (círculo + monograma) bem
+// desbotada, centralizada, em qualquer página. Reproduzida em vetor (sem asset
+// externo), então imprime nítida em qualquer tamanho. Chamada em todas as
+// páginas do PDF, depois do conteúdo — a opacidade baixa não atrapalha a leitura.
+function drawLetterhead(page: any) {
+  try {
+    const { width, height } = page.getSize();
+    const cx = width / 2, cy = height / 2;
+    const box = Math.min(width, height) * 0.62; // ~62% da folha
+    const U = box / 100;
+    const R = 47 * U;
+    const ink = rgb(0, 0, 0);
+    const op = 0.05; // 5% de preto = ghost/desbotado
+    const px = (sx: number) => cx + (sx - 50) * U;
+    const pyTop = (sy: number) => cy - (sy - 50) * U; // SVG y-down → PDF y-up
+    const rect = (sx: number, sy: number, sw: number, sh: number) =>
+      page.drawRectangle({ x: px(sx), y: pyTop(sy) - sh * U, width: sw * U, height: sh * U, color: ink, opacity: op });
+
+    page.drawCircle({ x: cx, y: cy, size: R, borderColor: ink, borderWidth: 2.2 * U, borderOpacity: op, opacity: 0 });
+    rect(31, 29, 3.2, 42);    // trilho esquerdo
+    rect(65.8, 29, 3.2, 42);  // trilho direito
+    rect(42, 29, 16, 3.2);    // serifa superior do "I"
+    rect(42, 67.8, 16, 3.2);  // serifa inferior do "I"
+    rect(48.4, 40, 3.2, 20);  // haste do "I"
+  } catch { /* logo é decorativa: nunca falha a geração por causa dela */ }
 }
 
 const getCorsHeaders = (origin: string | null) => {
@@ -473,6 +512,10 @@ serve(async (req) => {
       lineHeight: 8.5,
       color: (signatureBase64 && repSignatureImage) ? rgb(0.3, 0.5, 0.3) : (signatureBase64 ? rgb(0.35, 0.35, 0.35) : rgb(0.7, 0.2, 0.2))
     })
+
+    // 8.5 Marca d'água (papel timbrado) em todas as páginas — depois do conteúdo
+    // e da assinatura; opacidade baixa não atrapalha a leitura.
+    for (const p of pdfDoc.getPages()) drawLetterhead(p)
 
     // 9. Save the PDF binary bytes
     const pdfResultBytes = await pdfDoc.save()
