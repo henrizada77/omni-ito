@@ -4,6 +4,7 @@ import {
   Shield,
   Signature,
   Printer,
+  Receipt,
   GitMerge,
   AlertTriangle,
   Moon,
@@ -43,6 +44,8 @@ import CargosManager from '../../components/cargos/CargosManager';
 import FeedbackManager from '../../components/feedback/FeedbackManager';
 import PontoManager from '../../components/ponto/PontoManager';
 import RiscoManager from '../../components/risco/RiscoManager';
+import FolhaManager from '../../components/folha/FolhaManager';
+import LetterheadWatermark from '../../components/common/LetterheadWatermark';
 import CopilotWidget from '../../components/copilot/CopilotWidget';
 
 export default function Dashboard({ theme, setTheme, user, role }: DashboardProps) {
@@ -2115,6 +2118,23 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     return () => { active = false; };
   }, [hasFullAccess]);
 
+  // Badge da sidebar: lançamentos da folha pendentes na competência atual.
+  const [folhaPendentes, setFolhaPendentes] = useState(0);
+  useEffect(() => {
+    if (!hasFullAccess) return;
+    let active = true;
+    (async () => {
+      const comp = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+      const { count } = await supabase
+        .from('folha_lancamentos')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pendente')
+        .eq('competencia', comp);
+      if (active) setFolhaPendentes(count || 0);
+    })();
+    return () => { active = false; };
+  }, [hasFullAccess, activePath]);
+
   const sidebarLinks = [
     ...(hasFullAccess ? [
       { path: '/app/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
@@ -2128,6 +2148,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       { path: '/app/feedback', label: 'Voz do Time', icon: <MessageSquare size={16} /> },
       { path: '/app/ponto', label: 'Espelho de Ponto', icon: <Clock size={16} /> },
       { path: '/app/riscos', label: 'Mapa de Riscos', icon: <Shield size={16} /> },
+      { path: '/app/folha', label: 'Lançamentos da Folha', icon: <Receipt size={16} /> },
       { path: '/app/agenda', label: 'Agenda RH', icon: <Calendar size={16} /> }
     ] : []),
     { path: '/app/analytics', label: 'Analytics', icon: <TrendingUp size={16} /> }
@@ -2150,7 +2171,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         <nav className="flex flex-col gap-1.5">
           {sidebarLinks.map((link) => {
             const isActive = activePath === link.path;
-            const badge = link.path === '/app/feedback' ? pulseAlertasNovos : 0;
+            const badge = link.path === '/app/feedback'
+              ? pulseAlertasNovos
+              : link.path === '/app/folha'
+                ? folhaPendentes
+                : 0;
             return (
               <button
                 key={link.path}
@@ -4831,6 +4856,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               <RiscoManager theme={theme} />
             )}
 
+            {activePath === '/app/folha' && hasFullAccess && (
+              <FolhaManager theme={theme} userEmail={user?.email || ''} />
+            )}
+
             {activePath === '/app/agenda' && hasFullAccess && (
               <div className="space-y-6 animate-fadeIn">
                 {/* Header */}
@@ -6149,10 +6178,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             }
           `}</style>
           
-          <div className={`w-full max-w-4xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
+          <div className={`relative w-full max-w-4xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
             theme === 'dark' ? 'bg-[#121211] border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
           }`}>
-            
+            <LetterheadWatermark />
+
             {/* Header */}
             <div className="border-b border-white/10 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:border-black">
               <div>
@@ -6740,10 +6770,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             }
           `}</style>
           
-          <div className={`w-full max-w-2xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
+          <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
             theme === 'dark' ? 'bg-[#121211] border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
           }`}>
-            
+            <LetterheadWatermark />
+
             {/* Header de Tela */}
             <div className="border-b border-white/10 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
               <div>
