@@ -2,7 +2,7 @@
 
 export type Role = 'coordenadora_rh' | 'ti';
 export type Theme = 'dark' | 'light';
-export type ColaboradorStatus = 'pendente' | 'ativo' | 'desligado';
+export type ColaboradorStatus = 'pendente' | 'ativo' | 'desligado' | 'em_ferias';
 export type Genero = 'M' | 'F';
 export type TipoDesligamento = 'Voluntario' | 'Involuntario';
 export type TipoOcorrencia =
@@ -73,6 +73,8 @@ export interface Colaborador {
   documentos_anexos?: Record<string, string>;
   data_aso_vencimento?: string;
   data_ferias_vencimento?: string;
+  ferias_inicio?: string;
+  ferias_dias?: number;
   data_aniversario?: string;
   email_pessoal?: string;
   logradouro?: string;
