@@ -21,7 +21,7 @@ interface HealthSafetyPanelProps {
 }
 
 export default function HealthSafetyPanel({ theme, colaboradoresList, ocorrenciasList, indicadoresList }: HealthSafetyPanelProps) {
-  const activeCount = colaboradoresList.filter(c => c.status === 'ativo').length;
+  const activeCount = colaboradoresList.filter(c => c.status === 'ativo' || c.status === 'em_ferias').length;
   
   // 1. Absenteísmo Geral (%)
   const totalExpectedHours = activeCount * 160;

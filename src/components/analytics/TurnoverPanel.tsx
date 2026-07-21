@@ -22,7 +22,7 @@ interface TurnoverPanelProps {
 }
 
 export default function TurnoverPanel({ theme, colaboradoresList }: TurnoverPanelProps) {
-  const activeColabs = colaboradoresList.filter(c => c.status === 'ativo');
+  const activeColabs = colaboradoresList.filter(c => c.status === 'ativo' || c.status === 'em_ferias');
   const activeCount = activeColabs.length;
   const desligados = colaboradoresList.filter(c => c.status === 'desligado');
   const desligadosCount = desligados.length;

@@ -31,7 +31,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
-import { MESES_PT_BR, DEFAULT_MODELS, buildContractText } from '../../data/contractTemplates';
+import { MESES_PT_BR, DEFAULT_MODELS, buildContractText, getEmpregadora } from '../../data/contractTemplates';
 
 import OverviewPanel from '../../components/analytics/OverviewPanel';
 import TurnoverPanel from '../../components/analytics/TurnoverPanel';
@@ -303,7 +303,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         });
       }
     } catch (err: any) {
-      alert('Erro ao gerar link de assinatura: ' + err.message);
+      notify('Erro ao gerar link de assinatura: ' + err.message);
     } finally {
       setIsGeneratingLink(false);
     }
@@ -353,6 +353,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [quickFeriasDate, setQuickFeriasDate] = useState('');
   const [quickFeriasInicio, setQuickFeriasInicio] = useState('');
   const [quickFeriasDias, setQuickFeriasDias] = useState('');
+
+  // Toast padrão do app (substitui os notify() nativos). Mesma assinatura de
+  // notify(msg): infere sucesso/erro pelo texto e some sozinho.
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const toastTimer = useRef<number | null>(null);
+  const notify = (msg: string) => {
+    const type: 'success' | 'error' =
+      /erro|falha|não foi|nao foi|inválid|invalid|não conseg|nao conseg|obrigat|informe/i.test(msg) ? 'error' : 'success';
+    setToast({ msg, type });
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 4000);
+  };
   const [isSavingQuickDates, setIsSavingQuickDates] = useState(false);
 
   // Avaliações Panel Filters
@@ -619,7 +631,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     // sem que o PDF fosse gerado, e o hash não corresponde a documento algum.
     // Nada novo é gravado assim desde a correção, mas os antigos seguem no banco.
     if (url.includes('token=dummy')) {
-      alert(
+      notify(
         'Este contrato não tem valor probatório: foi registrado sem que o PDF chegasse a ser gerado, ' +
         'e o hash gravado não corresponde a nenhum documento. O contrato precisa ser assinado novamente.'
       );
@@ -637,9 +649,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       }
     } catch (err: any) {
       if (err.message?.includes('Object not found') || err.message?.includes('not_found') || err.message?.includes('The resource could not be found')) {
-        alert('Aviso: O arquivo físico deste documento não foi encontrado na Storage. Isto geralmente ocorre com documentos de teste ou simulados localmente.');
+        notify('Aviso: O arquivo físico deste documento não foi encontrado na Storage. Isto geralmente ocorre com documentos de teste ou simulados localmente.');
       } else {
-        alert('Erro ao carregar documento da Storage: ' + err.message);
+        notify('Erro ao carregar documento da Storage: ' + err.message);
       }
     }
   };
@@ -791,10 +803,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         await logAuditoria('GERACAO_TOKEN_ADMISSAO', { email: newCandidateEmail, link: inviteLink });
 
         await navigator.clipboard.writeText(inviteLink);
-        alert('Link de Admissão gerado e copiado para a área de transferência!');
+        notify('Link de Admissão gerado e copiado para a área de transferência!');
       }
     } catch (err: any) {
-      alert('Erro ao gerar link de admissão: ' + err.message);
+      notify('Erro ao gerar link de admissão: ' + err.message);
     }
   };
 
@@ -866,12 +878,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setExistingData(candidateData);
       setIsMerged(true);
       await logAuditoria('HOMOLOGACAO_ADMISSAO', { candidato: candidateData.nome, setor: candidateData.setor });
-      alert('Cadastro do colaborador homologado e mesclado com sucesso na Ficha Ativa!');
+      notify('Cadastro do colaborador homologado e mesclado com sucesso na Ficha Ativa!');
 
       fetchTokensList();
       fetchColaboradoresList();
     } catch (err: any) {
-      alert('Erro ao homologar cadastro: ' + err.message);
+      notify('Erro ao homologar cadastro: ' + err.message);
     }
   };
 
@@ -1007,12 +1019,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         .eq('cpf', cpf);
 
       await logAuditoria('FINALIZACAO_ADMISSAO_CONJUNTA', { candidato: selectedTokenRow.candidato_nome, cpf, document_hash: res.documentHash });
-      alert('Contrato assinado bilateralmente com sucesso! Admissão concluída.');
+      notify('Contrato assinado bilateralmente com sucesso! Admissão concluída.');
 
       fetchTokensList();
       fetchColaboradoresList();
     } catch (err: any) {
-      alert('Erro ao finalizar admissão: ' + err.message);
+      notify('Erro ao finalizar admissão: ' + err.message);
     } finally {
       setIsFinishingAdmission(false);
     }
@@ -1038,10 +1050,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (signDoc?.url_arquivo) {
         handleViewDocument(signDoc.url_arquivo);
       } else {
-        alert('O contrato assinado pelo colaborador ainda não está disponível.');
+        notify('O contrato assinado pelo colaborador ainda não está disponível.');
       }
     } catch (err: any) {
-      alert('Não foi possível abrir o contrato assinado: ' + (err.message || err));
+      notify('Não foi possível abrir o contrato assinado: ' + (err.message || err));
     }
   };
 
@@ -1088,11 +1100,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         cpf
       });
 
-      alert('Admissão concluída. O contrato assinado pelo colaborador está salvo — imprima para o RH assinar fisicamente.');
+      notify('Admissão concluída. O contrato assinado pelo colaborador está salvo — imprima para o RH assinar fisicamente.');
       fetchTokensList();
       fetchColaboradoresList();
     } catch (err: any) {
-      alert('Erro ao concluir admissão: ' + (err.message || err));
+      notify('Erro ao concluir admissão: ' + (err.message || err));
     } finally {
       setIsFinishingAdmission(false);
     }
@@ -1108,7 +1120,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       if (error) throw error;
       if (!data || data.length === 0) {
-        alert("Nenhum log disponível para exportação.");
+        notify("Nenhum log disponível para exportação.");
         return;
       }
 
@@ -1138,7 +1150,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       await logAuditoria('EXPORTAR_LOGS_CSV');
     } catch (err: any) {
-      alert("Erro ao exportar logs: " + err.message);
+      notify("Erro ao exportar logs: " + err.message);
     }
   };
 
@@ -1213,7 +1225,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         data: ocData
       });
 
-      alert('Ocorrência de jornada registrada com sucesso!');
+      notify('Ocorrência de jornada registrada com sucesso!');
 
       // Reset form
       setOcTipo('Atraso');
@@ -1230,7 +1242,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       fetchDashboardKpis();
       fetchAnalyticsData();
     } catch (err: any) {
-      alert('Erro ao registrar ocorrência: ' + err.message);
+      notify('Erro ao registrar ocorrência: ' + err.message);
     } finally {
       setIsSubmittingOcorrencia(false);
     }
@@ -1253,7 +1265,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         }));
 
       if (!user?.email) {
-        alert('Operação não autorizada. Faça login novamente.');
+        notify('Operação não autorizada. Faça login novamente.');
         return;
       }
       const avaliadorEmail = user.email;
@@ -1281,7 +1293,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         data_falta: advDataFalta
       });
 
-      alert('Advertência registrada com sucesso!');
+      notify('Advertência registrada com sucesso!');
 
       setAdvDataFalta(new Date().toISOString().split('T')[0]);
       setAdvDescricaoSituacao('');
@@ -1291,7 +1303,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setShowAdvertenciaModal(true);
 
     } catch (err: any) {
-      alert('Erro ao registrar advertência: ' + err.message);
+      notify('Erro ao registrar advertência: ' + err.message);
     } finally {
       setIsSavingAdvertencia(false);
     }
@@ -1300,7 +1312,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const handleCadastrarColaborador = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cadastroNome.trim() || !cadastroCpf.trim() || !cadastroCargo.trim() || !cadastroAdmissao) {
-      alert('Por favor, preencha todos os campos obrigatórios.');
+      notify('Por favor, preencha todos os campos obrigatórios.');
       return;
     }
     setIsSavingCadastro(true);
@@ -1325,7 +1337,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       });
       if (error) throw error;
       await logAuditoria('CADASTRO_DIRETO_COLABORADOR', { nome: cadastroNome, cpf: cadastroCpf, setor: cadastroSetor });
-      alert(`Colaborador ${cadastroNome.trim()} cadastrado com sucesso!`);
+      notify(`Colaborador ${cadastroNome.trim()} cadastrado com sucesso!`);
       // Reset form
       setCadastroNome('');
       setCadastroCpf('');
@@ -1337,7 +1349,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       fetchColaboradoresList();
       setColabSubTab('quadro');
     } catch (err: any) {
-      alert('Erro ao cadastrar colaborador: ' + err.message);
+      notify('Erro ao cadastrar colaborador: ' + err.message);
     } finally {
       setIsSavingCadastro(false);
     }
@@ -1408,6 +1420,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   // --- MÓDULO 3: ONBOARDING ---
   const [colaboradoresList, setColaboradoresList] = useState<any[]>([]);
+  const [loadingColabs, setLoadingColabs] = useState(true);
   const [selectedColaboradorId, setSelectedColaboradorId] = useState<string>('');
   const [selectedSector, setSelectedSector] = useState('Biomedicina');
 
@@ -1430,6 +1443,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [onboardingSuccessMessage, setOnboardingSuccessMessage] = useState(false);
 
   const fetchColaboradoresList = async () => {
+    setLoadingColabs(true);
     try {
       const [colabsRes, benefitsRes, assocRes, planosRes, avaliacoesRes] = await Promise.all([
         supabase.from('colaboradores').select('*').order('nome', { ascending: true }),
@@ -1476,6 +1490,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
     } catch (err) {
       console.error('Error fetching colaboradores and benefits:', err);
+    } finally {
+      setLoadingColabs(false);
     }
   };
 
@@ -1609,7 +1625,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       ]);
 
       const totalColabs = colabsQ.data?.length ?? 0;
-      const efetivados = colabsQ.data?.filter(c => c.status === 'ativo' && c.data_admissao <= date90Ago).length ?? 0;
+      const efetivados = colabsQ.data?.filter(c => (c.status === 'ativo' || c.status === 'em_ferias') && c.data_admissao <= date90Ago).length ?? 0;
 
       setKpiAtivos(totalColabs);
       setKpiEfetivados(efetivados);
@@ -1650,7 +1666,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       fetchColaboradoresList();
       fetchDashboardKpis();
     } catch (err: any) {
-      alert('Erro ao salvar: ' + err.message);
+      notify('Erro ao salvar: ' + err.message);
     } finally {
       setIsSavingDrawer(false);
     }
@@ -1659,7 +1675,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const handleOffboardColaborador = async () => {
     if (!activeColaboradorForDrawer) return;
     if (!offboardDate || !offboardType) {
-      alert('Por favor, preencha a data e o tipo de desligamento.');
+      notify('Por favor, preencha a data e o tipo de desligamento.');
       return;
     }
 
@@ -1710,7 +1726,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       ));
 
       setIsOffboardingMode(false);
-      alert(`Colaborador ${activeColaboradorForDrawer.nome} desligado com sucesso!`);
+      notify(`Colaborador ${activeColaboradorForDrawer.nome} desligado com sucesso!`);
 
       // 5. Refresh lists
       fetchColaboradoresList();
@@ -1718,7 +1734,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       fetchAnalyticsData();
     } catch (err: any) {
       console.error(err);
-      alert('Erro ao desligar colaborador: ' + err.message);
+      notify('Erro ao desligar colaborador: ' + err.message);
     } finally {
       setIsSavingOffboard(false);
     }
@@ -1772,10 +1788,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         nota: avgNota
       });
 
-      alert(`Avaliação de desempenho lançada com sucesso com média ${avgNota.toFixed(1)}!`);
+      notify(`Avaliação de desempenho lançada com sucesso com média ${avgNota.toFixed(1)}!`);
       setShowEvalModal(false);
     } catch (err: any) {
-      alert('Erro ao registrar avaliação: ' + err.message);
+      notify('Erro ao registrar avaliação: ' + err.message);
     } finally {
       setIsSavingAvaliacao(false);
     }
@@ -1807,12 +1823,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         c.id === selectedColabForQuickUpdate.id ? { ...c, ...updateData } : c
       ));
 
-      alert('Datas atualizadas com sucesso!');
+      notify('Datas atualizadas com sucesso!');
       setSelectedColabForQuickUpdate(null);
       fetchDashboardKpis();
     } catch (err: any) {
       console.error(err);
-      alert('Erro ao salvar datas: ' + err.message);
+      notify('Erro ao salvar datas: ' + err.message);
     } finally {
       setIsSavingQuickDates(false);
     }
@@ -1834,9 +1850,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   // das férias para (início + 12 meses).
   const handleColocarEmFerias = async () => {
     if (!selectedColabForQuickUpdate) return;
-    if (!quickFeriasInicio) { alert('Informe a data de início das férias.'); return; }
+    if (!quickFeriasInicio) { notify('Informe a data de início das férias.'); return; }
     const dias = parseInt(quickFeriasDias, 10);
-    if (!dias || dias <= 0) { alert('Informe quantos dias de férias.'); return; }
+    if (!dias || dias <= 0) { notify('Informe quantos dias de férias.'); return; }
     setIsSavingQuickDates(true);
     try {
       const novoVencimento = addMonthsISO(quickFeriasInicio, 12);
@@ -1850,12 +1866,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (error) throw error;
       await logAuditoria('COLABORADOR_EM_FERIAS', { colaborador_id: selectedColabForQuickUpdate.id, inicio: quickFeriasInicio, dias });
       setColaboradoresList(prev => prev.map(c => c.id === selectedColabForQuickUpdate.id ? { ...c, ...updateData } : c));
-      alert('Colaborador em férias. Vencimento atualizado para ' + new Date(novoVencimento + 'T12:00:00').toLocaleDateString('pt-BR') + '.');
+      notify('Colaborador em férias. Vencimento atualizado para ' + new Date(novoVencimento + 'T12:00:00').toLocaleDateString('pt-BR') + '.');
       setSelectedColabForQuickUpdate(null);
       fetchDashboardKpis();
     } catch (err: any) {
       console.error(err);
-      alert('Erro ao colocar em férias: ' + err.message);
+      notify('Erro ao colocar em férias: ' + err.message);
     } finally {
       setIsSavingQuickDates(false);
     }
@@ -1872,12 +1888,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (error) throw error;
       await logAuditoria('COLABORADOR_RETORNO_FERIAS', { colaborador_id: selectedColabForQuickUpdate.id });
       setColaboradoresList(prev => prev.map(c => c.id === selectedColabForQuickUpdate.id ? { ...c, status: 'ativo' } : c));
-      alert('Colaborador retornou das férias (Ativo).');
+      notify('Colaborador retornou das férias (Ativo).');
       setSelectedColabForQuickUpdate(null);
       fetchDashboardKpis();
     } catch (err: any) {
       console.error(err);
-      alert('Erro ao registrar retorno: ' + err.message);
+      notify('Erro ao registrar retorno: ' + err.message);
     } finally {
       setIsSavingQuickDates(false);
     }
@@ -1920,7 +1936,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         window.open(data.signedUrl, '_blank');
       }
     } catch (err: any) {
-      alert('Erro ao carregar anexo: ' + err.message);
+      notify('Erro ao carregar anexo: ' + err.message);
     }
   };
 
@@ -1973,14 +1989,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         caminho: storagePath
       });
 
-      alert('Documento enviado com sucesso para a ficha!');
+      notify('Documento enviado com sucesso para a ficha!');
       setUploadFile(null);
 
       const fileInput = document.getElementById('drawer-file-upload-input') as HTMLInputElement;
       if (fileInput) fileInput.value = '';
 
     } catch (err: any) {
-      alert('Erro ao enviar documento: ' + err.message);
+      notify('Erro ao enviar documento: ' + err.message);
     } finally {
       setIsUploadingFile(false);
     }
@@ -2970,7 +2986,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               setShowNewModeloForm(false); setNewModeloTitulo(''); setNewModeloConteudo('');
                               setUploadedPdfBase64(''); setUploadedPdfName('');
                               fetchModelos();
-                            } catch (e: any) { alert('Erro: ' + e.message); }
+                            } catch (e: any) { notify('Erro: ' + e.message); }
                             finally { setIsSavingModelo(false); }
                           }}
                           className={`text-xs px-5 py-2 rounded-lg font-bold ${theme === 'dark' ? 'bg-[#E5DFD3] text-black' : 'bg-[#0A0A0A] text-white'} disabled:opacity-50`}>
@@ -3081,7 +3097,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 <button
                                   onClick={() => {
                                     navigator.clipboard.writeText(generatedSignLink);
-                                    alert('Link copiado para a área de transferência!');
+                                    notify('Link copiado para a área de transferência!');
                                   }}
                                   className={`text-[9px] px-2.5 rounded font-bold border transition-colors ${
                                     theme === 'dark' ? 'border-[#E5DFD3]/30 hover:bg-[#E5DFD3]/5 text-[#E5DFD3]' : 'border-black/30 hover:bg-black/5 text-black'
@@ -3496,7 +3512,16 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           ) : (
                             <tr>
                               <td colSpan={9} className="text-center p-8 opacity-50 italic">
-                                Nenhum colaborador encontrado com os filtros selecionados.
+                                {loadingColabs ? (
+                                  <div className="space-y-2 py-1">
+                                    {[0, 1, 2, 3, 4].map(i => <div key={i} className="h-9 rounded-lg skeleton" />)}
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center gap-2 py-6 not-italic">
+                                    <Users size={24} className="opacity-40" />
+                                    <span className="opacity-60">Nenhum colaborador encontrado com os filtros selecionados.</span>
+                                  </div>
+                                )}
                               </td>
                             </tr>
                           )}
@@ -4448,7 +4473,16 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               {filtered.length === 0 ? (
                                 <tr>
                                   <td colSpan={5} className="p-8 text-center opacity-40 italic">
-                                    Nenhum colaborador encontrado com os filtros selecionados.
+                                    {loadingColabs ? (
+                                  <div className="space-y-2 py-1">
+                                    {[0, 1, 2, 3, 4].map(i => <div key={i} className="h-9 rounded-lg skeleton" />)}
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center gap-2 py-6 not-italic">
+                                    <Users size={24} className="opacity-40" />
+                                    <span className="opacity-60">Nenhum colaborador encontrado com os filtros selecionados.</span>
+                                  </div>
+                                )}
                                   </td>
                                 </tr>
                               ) : (
@@ -4682,7 +4716,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                   // Exclude coordinators as per instructions
                   const activeColabs = colaboradoresList.filter(c =>
-                    c.status === 'ativo' &&
+                    (c.status === 'ativo' || c.status === 'em_ferias') &&
                     !(c.cargo?.toLowerCase().includes('coordenador') || c.cargo?.toLowerCase().includes('coordenadora'))
                   );
 
@@ -4958,7 +4992,16 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               ) : (
                                 <tr>
                                   <td colSpan={7} className="p-8 text-center opacity-50 italic">
-                                    Nenhum colaborador encontrado com os filtros selecionados.
+                                    {loadingColabs ? (
+                                  <div className="space-y-2 py-1">
+                                    {[0, 1, 2, 3, 4].map(i => <div key={i} className="h-9 rounded-lg skeleton" />)}
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center gap-2 py-6 not-italic">
+                                    <Users size={24} className="opacity-40" />
+                                    <span className="opacity-60">Nenhum colaborador encontrado com os filtros selecionados.</span>
+                                  </div>
+                                )}
                                   </td>
                                 </tr>
                               )}
@@ -5254,6 +5297,22 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       {/* Copiloto de RH — flutuante, disponível em todos os módulos (só RH) */}
       {hasFullAccess && <CopilotWidget theme={theme} />}
+
+      {/* Toast global (substitui os alert() nativos) */}
+      {toast && (
+        <div
+          onClick={() => setToast(null)}
+          className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] max-w-[90vw] px-4 py-2.5 rounded-lg text-xs font-semibold shadow-xl border cursor-pointer toast-in flex items-center gap-2 ${
+            toast.type === 'error'
+              ? 'bg-rose-500 text-white border-rose-600'
+              : 'bg-emerald-500 text-white border-emerald-600'
+          }`}
+          role="status"
+        >
+          {toast.type === 'error' ? <AlertTriangle size={14} className="shrink-0" /> : <CheckCircle size={14} className="shrink-0" />}
+          <span>{toast.msg}</span>
+        </div>
+      )}
 
       {/* 5. Side Drawer Onyx for Dossier/Prontuário */}
       {activeColaboradorForDrawer && (
@@ -6939,8 +6998,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             <div className="hidden print:block border-b-2 border-black pb-4 mb-6">
               <div className="flex justify-between items-center mb-3">
                 <div>
-                  <h1 className="text-sm font-bold tracking-wider uppercase text-black">BIOLIFE CLÍNICA MÉDICA LTDA</h1>
-                  <p className="text-[9px] text-black/60 font-mono">CNPJ: 37.037.182/0001-85 | Rua Olavo Macedo Ribeiro, 320, Jatiúca, Maceió - AL</p>
+                  <h1 className="text-sm font-bold tracking-wider uppercase text-black">{getEmpregadora(activeColaboradorForDrawer?.setor).razao}</h1>
+                  <p className="text-[9px] text-black/60 font-mono">CNPJ: {getEmpregadora(activeColaboradorForDrawer?.setor).cnpj} | Rua Olavo Macedo Ribeiro, 320, Jatiúca, Maceió - AL</p>
                 </div>
                 <div className="text-right">
                   <span className="text-[9px] font-bold uppercase border border-black px-2.5 py-1">Controle Interno - RH</span>

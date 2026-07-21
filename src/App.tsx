@@ -90,6 +90,24 @@ export default function App() {
     };
   }, []);
 
+  // Auto-logout por inatividade (micro compartilhado: próximo usuário não herda
+  // a sessão de quem esqueceu de sair). 1h sem atividade encerra a sessão.
+  useEffect(() => {
+    if (!user) return;
+    const LIMITE_MS = 60 * 60 * 1000;
+    let ultimaAtividade = Date.now();
+    const bump = () => { ultimaAtividade = Date.now(); };
+    const eventos = ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'];
+    eventos.forEach(e => window.addEventListener(e, bump, { passive: true }));
+    const iv = window.setInterval(() => {
+      if (Date.now() - ultimaAtividade > LIMITE_MS) supabase.auth.signOut();
+    }, 30000);
+    return () => {
+      eventos.forEach(e => window.removeEventListener(e, bump));
+      window.clearInterval(iv);
+    };
+  }, [user]);
+
   const fetchUserProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase

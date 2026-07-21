@@ -40,7 +40,7 @@ interface OverviewPanelProps {
 
 export default function OverviewPanel({ theme, colaboradoresList, ocorrenciasList, indicadoresList, benefitsList, associationsList }: OverviewPanelProps) {
   // Calculations
-  const activeColabs = colaboradoresList.filter(c => c.status === 'ativo');
+  const activeColabs = colaboradoresList.filter(c => c.status === 'ativo' || c.status === 'em_ferias');
   const activeCount = activeColabs.length;
   const desligadosCount = colaboradoresList.filter(c => c.status === 'desligado').length;
   
