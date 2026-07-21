@@ -63,10 +63,14 @@ PRIORIZAÇÃO
 Classifique mentalmente cada recomendação por impacto, esforço, urgência e risco. Nunca entregue lista longa sem prioridade. Se houver muitas opções, escolha as 3 de maior impacto, diga por que vêm antes e por onde começar.
 
 COMO ESCREVE
-Português brasileiro, direto, natural, prático, pouca formalidade. Sem frases vazias nem clichês. Evite: "É importante destacar", "Vale ressaltar", "Nesse contexto", "Depende", "Cada caso é um caso", "Alinhamento", "Sinergia", "Stakeholders", "Mindset", "Paradigma", "Empoderar" — só use se for mesmo necessário. Frases curtas. Exemplos da rotina da clínica.
+Português brasileiro, direto, natural, prático, pouca formalidade. OBJETIVA e concisa acima de tudo — corte tudo que não muda a decisão. Sem frases vazias nem clichês. Evite: "É importante destacar", "Vale ressaltar", "Nesse contexto", "Depende", "Cada caso é um caso", "Alinhamento", "Sinergia", "Stakeholders", "Mindset", "Paradigma", "Empoderar" — só use se for mesmo necessário. Frases curtas. Exemplos da rotina da clínica.
 
-ESTRUTURA DA RESPOSTA
-Diagnóstico (o problema real) → Princípio (a lógica da decisão) → Como fazer (passo a passo cabível numa equipe pequena) → Erros comuns (onde clínicas erram) → Recomendação ("Se eu estivesse na sua cadeira, eu faria X") → Próximo passo (a ação de hoje, apontando o módulo do Omni ITO quando fizer sentido).
+TAMANHO E ESTRUTURA DA RESPOSTA (prioridade máxima: seja CURTA)
+Padrão é resposta CURTA e objetiva. Responda no menor tamanho que resolve — na maioria das vezes 2 a 5 frases bastam. Comece pela resposta/recomendação, sem preâmbulo, sem introdução, sem repetir a pergunta.
+NÃO use seções fixas, cabeçalhos nem seis blocos por padrão. Para perguntas simples, responda em texto corrido, direto.
+Só abra em passos (diagnóstico, como fazer, próximo passo) quando for uma DECISÃO realmente complexa OU quando o usuário pedir o detalhe — e, mesmo aí, use poucos bullets curtos, não parágrafos longos.
+Termine com a recomendação em uma linha ("Se eu estivesse na sua cadeira, eu faria X") e, quando fizer sentido, o próximo passo em uma linha (apontando o módulo do Omni ITO).
+Se faltar contexto, faça 1 pergunta objetiva em vez de despejar um texto genérico e longo. Nunca encha linguiça: se já respondeu, pare.
 
 PRECISÃO E SEGURANÇA JURÍDICA
 Nunca invente leis, números de NR, artigos, percentuais, estatísticas ou jurisprudência. Quando houver incerteza jurídica ou técnica, seja transparente: diga que o ponto exige validação com a contabilidade/jurídico. Sua credibilidade vale mais que responder rápido.
@@ -122,7 +126,7 @@ serve(async (req) => {
 
     const messages = [{ role: 'system', content: SYSTEM_PROMPT }, ...history];
 
-    const upstream = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const callUpstream = () => fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -133,10 +137,31 @@ serve(async (req) => {
       body: JSON.stringify({ model, messages, stream: true, temperature: 0.6 })
     });
 
+    // Modelos :free do OpenRouter dão 429 por limite COMPARTILHADO/cota diária,
+    // não por volume do usuário. Um retry curto absorve os picos momentâneos.
+    let upstream = await callUpstream();
+    for (let tent = 0; tent < 2 && upstream.status === 429; tent++) {
+      await new Promise((r) => setTimeout(r, 1500));
+      upstream = await callUpstream();
+    }
+
     if (!upstream.ok || !upstream.body) {
       const detail = await upstream.text().catch(() => '');
-      console.error('OpenRouter erro:', upstream.status, detail);
-      return errJson({ error: 'O copiloto não conseguiu responder agora. Tente novamente em instantes.' }, 502);
+      const s = upstream.status;
+      console.error('OpenRouter erro:', s, detail);
+      // Mensagem específica por causa, para o RH saber o que fazer sem depender
+      // dos logs da função.
+      let msg = 'O copiloto não conseguiu responder agora. Tente novamente em instantes.';
+      if (s === 429) {
+        msg = 'O modelo gratuito de IA atingiu o limite de uso do OpenRouter (limite compartilhado entre usuários / cota diária da conta) — não é pelo seu volume. Aguarde alguns minutos, ou adicione crédito no OpenRouter e configure um modelo pago no secret OPENROUTER_MODEL para acabar com isso.';
+      } else if (s === 402) {
+        msg = 'A conta do provedor de IA (OpenRouter) está sem créditos. Adicione créditos ou use um modelo gratuito no secret OPENROUTER_MODEL.';
+      } else if (s === 401 || s === 403) {
+        msg = 'A chave do provedor de IA (OPENROUTER_API_KEY) é inválida ou expirou. Gere uma nova em openrouter.ai e atualize o secret.';
+      } else if (s === 404 || s === 400) {
+        msg = `O modelo de IA configurado não está disponível (${model}). Ajuste o secret OPENROUTER_MODEL para um modelo válido do OpenRouter.`;
+      }
+      return errJson({ error: msg, upstreamStatus: s }, 502);
     }
 
     // Repassa o SSE do OpenRouter direto para o navegador.
