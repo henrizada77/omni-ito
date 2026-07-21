@@ -376,6 +376,18 @@ export const MESES_PT_BR = [
 // Usado tanto na pré-visualização quanto no texto enviado à edge function
 // gerar-contrato-pdf (que renderiza esse texto no PDF assinado). Manter os dois
 // usando esta mesma função evita o preview divergir do documento final.
+
+// Empregadora por setor. Colaboradores do Smartshape assinam pela SMART SHAPE
+// MACEIO LTDA (CNPJ próprio); os demais, pela BIOLIFE. Fonte única, usada tanto
+// na troca dentro do contrato (buildContractText) quanto no cabeçalho de
+// impressão da advertência.
+const EMPREGADORA_PADRAO = { razao: 'BIOLIFE CLÍNICA MÉDICA LTDA', cnpj: '37.037.182/0001-85' };
+const EMPREGADORA_SMART = { razao: 'SMART SHAPE MACEIO LTDA.', cnpj: '43.817.982/0001-11' };
+
+export function getEmpregadora(setor?: string | null): { razao: string; cnpj: string } {
+  return String(setor || '').toLowerCase().includes('smart') ? EMPREGADORA_SMART : EMPREGADORA_PADRAO;
+}
+
 export function buildContractText(
   template: string | null | undefined,
   tokenRow: Record<string, any> | null | undefined,
@@ -403,11 +415,12 @@ export function buildContractText(
   // SMART SHAPE MACEIO LTDA (CNPJ próprio), não pela BIOLIFE. Troca só a razão
   // social e o CNPJ em qualquer modelo — sem editar cada um. O endereço é
   // mantido (se o Smartshape tiver sede diferente, ajustar aqui).
-  const setor = String(tokenRow?.candidato_setor || details?.setor || '').toLowerCase();
-  if (setor.includes('smart')) {
+  const setor = tokenRow?.candidato_setor || details?.setor || '';
+  if (String(setor).toLowerCase().includes('smart')) {
+    const emp = getEmpregadora(setor);
     out = out
-      .replace(/BIOLIFE\s+CL[IÍ]NICA\s+M[EÉ]DICA\s+LTDA\.?/gi, 'SMART SHAPE MACEIO LTDA.')
-      .replace(/37\.037\.182\/0001-85/g, '43.817.982/0001-11');
+      .replace(/BIOLIFE\s+CL[IÍ]NICA\s+M[EÉ]DICA\s+LTDA\.?/gi, emp.razao)
+      .replace(/37\.037\.182\/0001-85/g, emp.cnpj);
   }
   return out;
 }

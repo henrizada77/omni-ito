@@ -44,7 +44,7 @@ interface CompensationsPanelProps {
 }
 
 export default function CompensationsPanel({ theme, colaboradoresList, benefitsList, associationsList, pesquisasSatisfacao, cargosReferencia }: CompensationsPanelProps) {
-  const activeColabs = colaboradoresList.filter(c => c.status === 'ativo');
+  const activeColabs = colaboradoresList.filter(c => c.status === 'ativo' || c.status === 'em_ferias');
 
   // Salary parser: handles "R$ 2.500,00" → 2500
   const parseSalary = (salaryStr: string): number => {
