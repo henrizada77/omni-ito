@@ -351,6 +351,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [selectedColabForQuickUpdate, setSelectedColabForQuickUpdate] = useState<any>(null);
   const [quickAsoDate, setQuickAsoDate] = useState('');
   const [quickFeriasDate, setQuickFeriasDate] = useState('');
+  const [quickFeriasInicio, setQuickFeriasInicio] = useState('');
+  const [quickFeriasDias, setQuickFeriasDias] = useState('');
   const [isSavingQuickDates, setIsSavingQuickDates] = useState(false);
 
   // Avaliações Panel Filters
@@ -1816,6 +1818,71 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     }
   };
 
+  // Soma meses/dias a uma data 'YYYY-MM-DD' e devolve 'YYYY-MM-DD'.
+  const addMonthsISO = (dateStr: string, months: number) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    d.setMonth(d.getMonth() + months);
+    return d.toISOString().split('T')[0];
+  };
+  const addDaysISO = (dateStr: string, days: number) => {
+    const d = new Date(dateStr + 'T12:00:00');
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+  };
+
+  // Coloca o colaborador em férias: grava início + dias e empurra o vencimento
+  // das férias para (início + 12 meses).
+  const handleColocarEmFerias = async () => {
+    if (!selectedColabForQuickUpdate) return;
+    if (!quickFeriasInicio) { alert('Informe a data de início das férias.'); return; }
+    const dias = parseInt(quickFeriasDias, 10);
+    if (!dias || dias <= 0) { alert('Informe quantos dias de férias.'); return; }
+    setIsSavingQuickDates(true);
+    try {
+      const novoVencimento = addMonthsISO(quickFeriasInicio, 12);
+      const updateData = {
+        status: 'em_ferias',
+        ferias_inicio: quickFeriasInicio,
+        ferias_dias: dias,
+        data_ferias_vencimento: novoVencimento
+      };
+      const { error } = await supabase.from('colaboradores').update(updateData).eq('id', selectedColabForQuickUpdate.id);
+      if (error) throw error;
+      await logAuditoria('COLABORADOR_EM_FERIAS', { colaborador_id: selectedColabForQuickUpdate.id, inicio: quickFeriasInicio, dias });
+      setColaboradoresList(prev => prev.map(c => c.id === selectedColabForQuickUpdate.id ? { ...c, ...updateData } : c));
+      alert('Colaborador em férias. Vencimento atualizado para ' + new Date(novoVencimento + 'T12:00:00').toLocaleDateString('pt-BR') + '.');
+      setSelectedColabForQuickUpdate(null);
+      fetchDashboardKpis();
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao colocar em férias: ' + err.message);
+    } finally {
+      setIsSavingQuickDates(false);
+    }
+  };
+
+  // Retorno de férias: volta o status para 'ativo' (o registro de férias fica
+  // como histórico nos campos ferias_inicio/ferias_dias).
+  const handleRetornarFerias = async () => {
+    if (!selectedColabForQuickUpdate) return;
+    if (!confirm('Confirmar retorno das férias? O status volta para Ativo.')) return;
+    setIsSavingQuickDates(true);
+    try {
+      const { error } = await supabase.from('colaboradores').update({ status: 'ativo' }).eq('id', selectedColabForQuickUpdate.id);
+      if (error) throw error;
+      await logAuditoria('COLABORADOR_RETORNO_FERIAS', { colaborador_id: selectedColabForQuickUpdate.id });
+      setColaboradoresList(prev => prev.map(c => c.id === selectedColabForQuickUpdate.id ? { ...c, status: 'ativo' } : c));
+      alert('Colaborador retornou das férias (Ativo).');
+      setSelectedColabForQuickUpdate(null);
+      fetchDashboardKpis();
+    } catch (err: any) {
+      console.error(err);
+      alert('Erro ao registrar retorno: ' + err.message);
+    } finally {
+      setIsSavingQuickDates(false);
+    }
+  };
+
   const fetchAnalyticsData = async () => {
     try {
       const [logsRes, colabsRes, ocorrenciasRes, indicadoresRes, benefitsRes, assocRes, pesquisasRes, cargosRes] = await Promise.all([
@@ -1981,6 +2048,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         } else {
           if (filterStatus === 'Ativo') {
             matchesStatus = c.status === 'ativo';
+          } else if (filterStatus === 'Em Férias') {
+            matchesStatus = c.status === 'em_ferias';
           } else if (filterStatus === 'Onboarding') {
             matchesStatus = c.status === 'pendente';
           } else {
@@ -3325,6 +3394,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             {[
                               { value: 'Todos', label: 'Todos os Status' },
                               { value: 'Ativo', label: 'Ativo' },
+                              { value: 'Em Férias', label: 'Em Férias' },
                               { value: 'Onboarding', label: 'Onboarding' }
                             ].map((opt) => (
                               <option
@@ -3414,9 +3484,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                       ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500'
                                       : c.status === 'desligado'
                                         ? 'bg-rose-500/10 border-rose-500/20 text-rose-500'
-                                        : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                                        : c.status === 'em_ferias'
+                                          ? 'bg-sky-500/10 border-sky-500/20 text-sky-400'
+                                          : 'bg-amber-500/10 border-amber-500/20 text-amber-500'
                                     }`}>
-                                    {c.status === 'ativo' ? 'Ativo' : c.status === 'desligado' ? 'Desligado' : 'Onboarding'}
+                                    {c.status === 'ativo' ? 'Ativo' : c.status === 'desligado' ? 'Desligado' : c.status === 'em_ferias' ? 'Em Férias' : 'Onboarding'}
                                   </span>
                                 </td>
                               </tr>
@@ -4213,7 +4285,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     return { label: 'Em Dia', color: 'emerald', days };
                   };
 
-                  const activeColabs = colaboradoresList.filter(c => c.status === 'ativo');
+                  const activeColabs = colaboradoresList.filter(c => c.status === 'ativo' || c.status === 'em_ferias');
 
                   let asoVencido = 0;
                   let asoAVencer = 0;
@@ -4397,6 +4469,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                           <div className="truncate max-w-[180px]">
                                             <span className="font-semibold block truncate">{c.nome}</span>
                                             <span className="text-[10px] opacity-50 block truncate">{c.cargo} • {c.setor}</span>
+                                            {c.status === 'em_ferias' && (
+                                              <span className="inline-block mt-0.5 text-[8px] font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 rounded-full">
+                                                🏖 Em férias{c.ferias_inicio && c.ferias_dias ? ` · retorna ${new Date(addDaysISO(c.ferias_inicio, c.ferias_dias) + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}
+                                              </span>
+                                            )}
                                           </div>
                                         </div>
                                       </td>
@@ -4445,6 +4522,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                               setSelectedColabForQuickUpdate(c);
                                               setQuickAsoDate(c.data_aso_vencimento || '');
                                               setQuickFeriasDate(c.data_ferias_vencimento || '');
+                                              setQuickFeriasInicio(c.ferias_inicio || '');
+                                              setQuickFeriasDias(c.ferias_dias ? String(c.ferias_dias) : '');
                                             }}
                                             className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-[#E5DFD3]' : 'border-black/10 hover:bg-black/5 text-[#0A0A0A]'
                                               }`}
@@ -4508,6 +4587,59 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
                                     }`}
                                 />
+                              </div>
+
+                              {/* Férias */}
+                              <div className="pt-3 border-t border-white/10">
+                                {selectedColabForQuickUpdate.status === 'em_ferias' ? (
+                                  <div className="space-y-2">
+                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">🏖 Em Férias</span>
+                                    <p className="text-[10px] opacity-70 leading-relaxed">
+                                      {selectedColabForQuickUpdate.ferias_inicio ? `Desde ${new Date(selectedColabForQuickUpdate.ferias_inicio + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}
+                                      {selectedColabForQuickUpdate.ferias_dias ? ` · ${selectedColabForQuickUpdate.ferias_dias} dias` : ''}
+                                      {selectedColabForQuickUpdate.ferias_inicio && selectedColabForQuickUpdate.ferias_dias
+                                        ? ` · retorno previsto ${new Date(addDaysISO(selectedColabForQuickUpdate.ferias_inicio, selectedColabForQuickUpdate.ferias_dias) + 'T12:00:00').toLocaleDateString('pt-BR')}`
+                                        : ''}
+                                    </p>
+                                    <button
+                                      onClick={handleRetornarFerias}
+                                      disabled={isSavingQuickDates}
+                                      className="w-full py-2 rounded font-bold text-xs border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50"
+                                    >
+                                      ↩ Retornar de férias (voltar a Ativo)
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <label className="block text-[9px] font-bold uppercase opacity-65">Colocar em férias</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                      <input
+                                        type="date"
+                                        value={quickFeriasInicio}
+                                        onChange={e => setQuickFeriasInicio(e.target.value)}
+                                        title="Início das férias"
+                                        className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`}
+                                      />
+                                      <input
+                                        type="number"
+                                        min="1"
+                                        placeholder="Dias"
+                                        value={quickFeriasDias}
+                                        onChange={e => setQuickFeriasDias(e.target.value)}
+                                        title="Dias de férias"
+                                        className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`}
+                                      />
+                                    </div>
+                                    <p className="text-[9px] opacity-50">O vencimento das férias será atualizado para o início + 12 meses.</p>
+                                    <button
+                                      onClick={handleColocarEmFerias}
+                                      disabled={isSavingQuickDates}
+                                      className="w-full py-2 rounded font-bold text-xs bg-sky-500/15 text-sky-400 border border-sky-500/25 hover:bg-sky-500/25 disabled:opacity-50"
+                                    >
+                                      🏖 Colocar em férias
+                                    </button>
+                                  </div>
+                                )}
                               </div>
 
                               <div className="flex gap-2 pt-2">
