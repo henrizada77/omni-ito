@@ -384,7 +384,7 @@ export function buildContractText(
   if (!template) return '';
   const today = new Date();
   const cpf = tokenRow?.candidato_cpf || details?.cpf || '';
-  return template
+  let out = template
     .replace(/{{nome}}/g, tokenRow?.candidato_nome || details?.nome || '_______')
     .replace(/{{cpf}}/g, cpf || '_______')
     .replace(/{{setor}}/g, tokenRow?.candidato_setor || details?.setor || '_______')
@@ -398,6 +398,18 @@ export function buildContractText(
     .replace(/{{dia}}/g, String(today.getDate()))
     .replace(/{{mes}}/g, MESES_PT_BR[today.getMonth()])
     .replace(/{{ano}}/g, String(today.getFullYear()));
+
+  // Empregadora por setor: colaboradores do Smartshape assinam pela
+  // SMART SHAPE MACEIO LTDA (CNPJ próprio), não pela BIOLIFE. Troca só a razão
+  // social e o CNPJ em qualquer modelo — sem editar cada um. O endereço é
+  // mantido (se o Smartshape tiver sede diferente, ajustar aqui).
+  const setor = String(tokenRow?.candidato_setor || details?.setor || '').toLowerCase();
+  if (setor.includes('smart')) {
+    out = out
+      .replace(/BIOLIFE\s+CL[IÍ]NICA\s+M[EÉ]DICA\s+LTDA\.?/gi, 'SMART SHAPE MACEIO LTDA.')
+      .replace(/37\.037\.182\/0001-85/g, '43.817.982/0001-11');
+  }
+  return out;
 }
 
 export const DEFAULT_MODELS = [
