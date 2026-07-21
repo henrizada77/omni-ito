@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Shield,
   Signature,
+  Printer,
   GitMerge,
   AlertTriangle,
   Moon,
@@ -1007,6 +1008,86 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       fetchColaboradoresList();
     } catch (err: any) {
       alert('Erro ao finalizar admissão: ' + err.message);
+    } finally {
+      setIsFinishingAdmission(false);
+    }
+  };
+
+  // Abre/imprime o contrato já assinado pelo COLABORADOR para o token
+  // selecionado — usado quando o RH prefere assinar fisicamente no papel.
+  const handlePrintCandidateSigned = async () => {
+    try {
+      const selectedTokenRow = tokensList.find(t => t.id === selectedTokenId);
+      if (!selectedTokenRow) return;
+      const details = selectedTokenRow.detalhes || {};
+      const cpf = selectedTokenRow.candidato_cpf || details.cpf || '';
+      const { data: signDoc, error } = await supabase
+        .from('documentos_assinados')
+        .select('url_arquivo')
+        .eq('colaborador_cpf', cpf)
+        .in('status', ['aguardando_rh', 'finalizado'])
+        .order('assinado_em', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      if (signDoc?.url_arquivo) {
+        handleViewDocument(signDoc.url_arquivo);
+      } else {
+        alert('O contrato assinado pelo colaborador ainda não está disponível.');
+      }
+    } catch (err: any) {
+      alert('Não foi possível abrir o contrato assinado: ' + (err.message || err));
+    }
+  };
+
+  // Conclui a admissão SEM a assinatura digital do RH no portal: o contrato
+  // assinado pelo colaborador vira o documento final, e o RH assina na cópia
+  // impressa. Torna a assinatura do RH no portal opcional.
+  const handleConcludeWithoutDigitalRep = async () => {
+    const selectedTokenRow = tokensList.find(t => t.id === selectedTokenId);
+    if (!selectedTokenRow) return;
+    if (!confirm(
+      'Concluir a admissão SEM assinatura digital do RH?\n\n' +
+      'O contrato assinado pelo colaborador é marcado como final e fica salvo. ' +
+      'Imprima-o para o RH assinar fisicamente. Esta ação não pode ser desfeita pelo portal.'
+    )) return;
+
+    setIsFinishingAdmission(true);
+    try {
+      const details = selectedTokenRow.detalhes || {};
+      const cpf = selectedTokenRow.candidato_cpf || details.cpf || '';
+
+      const { data: signDoc, error: docErr } = await supabase
+        .from('documentos_assinados')
+        .select('id')
+        .eq('colaborador_cpf', cpf)
+        .eq('status', 'aguardando_rh')
+        .maybeSingle();
+      if (docErr || !signDoc) throw new Error('Contrato assinado pelo colaborador não encontrado.');
+
+      const { error: updErr } = await supabase
+        .from('documentos_assinados')
+        .update({ status: 'finalizado' })
+        .eq('id', signDoc.id);
+      if (updErr) throw updErr;
+
+      await supabase
+        .from('admission_tokens')
+        .update({ status: 'concluido', usado_em: new Date().toISOString() })
+        .eq('id', selectedTokenId);
+
+      await supabase.from('colaboradores').update({ depily: true }).eq('cpf', cpf);
+
+      await logAuditoria('ADMISSAO_CONCLUIDA_ASSINATURA_FISICA', {
+        candidato: selectedTokenRow.candidato_nome,
+        cpf
+      });
+
+      alert('Admissão concluída. O contrato assinado pelo colaborador está salvo — imprima para o RH assinar fisicamente.');
+      fetchTokensList();
+      fetchColaboradoresList();
+    } catch (err: any) {
+      alert('Erro ao concluir admissão: ' + (err.message || err));
     } finally {
       setIsFinishingAdmission(false);
     }
@@ -3698,12 +3779,37 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 }`}>
                                 <div className="space-y-1">
                                   <h5 className="text-xs font-bold text-amber-500 flex items-center gap-1.5">
-                                    <Signature size={14} /> Assinatura Conjunta do Representante Legal (RH)
+                                    <Signature size={14} /> Assinatura do RH — <span className="opacity-70 font-semibold">opcional</span>
                                   </h5>
                                   <p className="text-[10px] opacity-60">
-                                    O candidato já assinou o termo. Desenhe sua assinatura corporativa abaixo para consolidar o contrato de trabalho de forma final.
+                                    O colaborador já assinou e o contrato está salvo. Você pode assinar digitalmente aqui,
+                                    <strong> ou imprimir o contrato assinado e assinar no papel</strong> — nesse caso, use “Concluir no papel”.
                                   </p>
                                 </div>
+
+                                {/* Opção de assinatura física */}
+                                <div className={`p-3 rounded-lg border flex flex-col sm:flex-row sm:items-center gap-2 ${theme === 'dark' ? 'border-white/10 bg-white/[0.03]' : 'border-black/10 bg-black/[0.02]'}`}>
+                                  <div className="flex items-center gap-1.5 text-[10px] opacity-70 flex-1">
+                                    <Printer size={13} /> Prefere assinar no papel? Imprima o contrato do colaborador e conclua.
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={handlePrintCandidateSigned}
+                                    className={`text-[10px] px-3 py-1.5 rounded border font-bold flex items-center gap-1.5 ${theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-white' : 'border-black/10 hover:bg-black/5 text-black'}`}
+                                  >
+                                    <Printer size={12} /> Imprimir contrato assinado
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleConcludeWithoutDigitalRep}
+                                    disabled={isFinishingAdmission}
+                                    className="text-[10px] px-3 py-1.5 rounded border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 font-bold disabled:opacity-50 flex items-center gap-1.5"
+                                  >
+                                    <CheckCircle size={12} /> Concluir no papel
+                                  </button>
+                                </div>
+
+                                <div className="text-[9px] uppercase tracking-wider opacity-40 pt-1">Ou assine digitalmente abaixo</div>
 
                                 <div className={`relative border rounded-xl overflow-hidden ${theme === 'dark' ? 'bg-[#121211] border-white/15' : 'bg-black/5 border-black/15'
                                   }`}>
@@ -5185,10 +5291,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               </span>
                               <span className="text-[10px] opacity-45">Assinado {new Date(doc.assinado_em || '').toLocaleDateString('pt-BR')}</span>
                             </div>
-                            <button onClick={() => handleViewDocument(doc.url_arquivo)}
-                              className={`p-1 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-[#E5DFD3]' : 'text-[#0A0A0A]'}`}>
-                              <ExternalLink size={13} />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button onClick={() => handleViewDocument(doc.url_arquivo)}
+                                title="Abrir / imprimir para assinatura física"
+                                className={`p-1 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-[#E5DFD3]' : 'text-[#0A0A0A]'}`}>
+                                <Printer size={13} />
+                              </button>
+                              <button onClick={() => handleViewDocument(doc.url_arquivo)}
+                                title="Abrir documento"
+                                className={`p-1 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-[#E5DFD3]' : 'text-[#0A0A0A]'}`}>
+                                <ExternalLink size={13} />
+                              </button>
+                            </div>
                           </div>
                         ))}
                       </div>
