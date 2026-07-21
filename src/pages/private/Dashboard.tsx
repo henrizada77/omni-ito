@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Shield,
@@ -33,18 +33,21 @@ import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
 import { MESES_PT_BR, DEFAULT_MODELS, buildContractText, getEmpregadora } from '../../data/contractTemplates';
 
-import OverviewPanel from '../../components/analytics/OverviewPanel';
-import TurnoverPanel from '../../components/analytics/TurnoverPanel';
-import HealthSafetyPanel from '../../components/analytics/HealthSafetyPanel';
-import CompensationsPanel from '../../components/analytics/CompensationsPanel';
-import LegalPanel from '../../components/analytics/LegalPanel';
-import FormManager from '../../components/documents/FormManager';
-import BenefitsManager from '../../components/benefits/BenefitsManager';
-import CargosManager from '../../components/cargos/CargosManager';
-import FeedbackManager from '../../components/feedback/FeedbackManager';
-import PontoManager from '../../components/ponto/PontoManager';
-import RiscoManager from '../../components/risco/RiscoManager';
-import FolhaManager from '../../components/folha/FolhaManager';
+// Carregados sob demanda (code-splitting): os painéis de Analytics puxam o
+// Recharts (pesado) e cada Manager é um módulo grande. Assim o bundle inicial
+// do Dashboard fica menor e a tela abre mais rápido; cada um baixa ao entrar.
+const OverviewPanel = lazy(() => import('../../components/analytics/OverviewPanel'));
+const TurnoverPanel = lazy(() => import('../../components/analytics/TurnoverPanel'));
+const HealthSafetyPanel = lazy(() => import('../../components/analytics/HealthSafetyPanel'));
+const CompensationsPanel = lazy(() => import('../../components/analytics/CompensationsPanel'));
+const LegalPanel = lazy(() => import('../../components/analytics/LegalPanel'));
+const FormManager = lazy(() => import('../../components/documents/FormManager'));
+const BenefitsManager = lazy(() => import('../../components/benefits/BenefitsManager'));
+const CargosManager = lazy(() => import('../../components/cargos/CargosManager'));
+const FeedbackManager = lazy(() => import('../../components/feedback/FeedbackManager'));
+const PontoManager = lazy(() => import('../../components/ponto/PontoManager'));
+const RiscoManager = lazy(() => import('../../components/risco/RiscoManager'));
+const FolhaManager = lazy(() => import('../../components/folha/FolhaManager'));
 import LetterheadWatermark from '../../components/common/LetterheadWatermark';
 import CopilotWidget from '../../components/copilot/CopilotWidget';
 
@@ -2387,6 +2390,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       <div className="flex-1 flex flex-col min-h-screen justify-between md:pl-64">
 
         <main className="max-w-6xl w-full mx-auto px-6 py-8 flex-1">
+         <Suspense fallback={<div className="py-24 flex justify-center opacity-60"><div className="w-6 h-6 border-2 border-current border-t-transparent rounded-full animate-spin" /></div>}>
 
           <div className={`rounded-2xl border p-6 md:p-8 transition-colors ${theme === 'dark' ? 'glass-card-dark' : 'glass-card-light'
             }`}>
@@ -5284,6 +5288,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             )}
 
           </div>
+         </Suspense>
         </main>
 
         {/* Footer */}
