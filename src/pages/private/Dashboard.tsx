@@ -1602,6 +1602,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePath]);
 
+  // Carrega a lista uma vez no mount para o RH: o painel "Em Férias Agora"
+  // (Dashboard) e o card de aniversariantes (Agenda) dependem dela mesmo quando
+  // a tela é aberta direto, sem passar por Colaboradores.
+  useEffect(() => {
+    if (hasFullAccess) fetchColaboradoresList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasFullAccess]);
+
   useEffect(() => {
     if (onboardingProgress === 100 && onboardingStatus === 'ativo') {
       setOnboardingSuccessMessage(true);
@@ -5489,7 +5497,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           const aniversariantes = colaboradoresList
                             .filter(c => c && (c.status === 'ativo' || c.status === 'em_ferias') && (c.data_aniversario || c.data_nascimento))
                             .map(c => {
-                              const d = new Date((c.data_aniversario || c.data_nascimento) + 'T12:00:00');
+                              // aceita 'YYYY-MM-DD' ou timestamp completo — usa só a parte da data
+                              const raw = String(c.data_aniversario || c.data_nascimento).slice(0, 10);
+                              const d = new Date(raw + 'T12:00:00');
                               return { c, d };
                             })
                             .filter(({ d }) => !isNaN(d.getTime()) && d.getMonth() === currentMonth)
