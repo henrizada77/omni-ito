@@ -363,6 +363,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [offboardReason, setOffboardReason] = useState('');
   const [isSavingOffboard, setIsSavingOffboard] = useState(false);
   const [desligamentosList, setDesligamentosList] = useState<any[]>([]);
+  const [entrevistaDraft, setEntrevistaDraft] = useState({ motivo_real: 'Remuneração', motivo_texto: '', pontos_positivos: '', pontos_melhorar: '', recomendaria: '7', comentarios: '' });
+  const [isSavingEntrevista, setIsSavingEntrevista] = useState(false);
 
   // Férias & ASO Panel States
   const [searchQueryFeriasAso, setSearchQueryFeriasAso] = useState('');
@@ -5999,6 +6001,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   {/* Seção de Desligamento */}
                   <div className="pt-4 border-t border-white/10 space-y-4">
                     {activeColaboradorForDrawer.status === 'desligado' ? (
+                      <>
                       <div className={`p-4 rounded-xl border text-xs space-y-2 ${theme === 'dark' ? 'bg-rose-500/5 border-rose-500/10 text-[#E5DFD3]' : 'bg-rose-500/5 border-rose-500/10 text-rose-800'
                         }`}>
                         <div className="flex items-center gap-1.5 text-rose-500 font-bold uppercase tracking-wider text-[10px]">
@@ -6021,6 +6024,64 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           )}
                         </div>
                       </div>
+                      {(() => {
+                        const deslig = desligamentosList.find((d: any) => d.colaborador_id === activeColaboradorForDrawer.id);
+                        if (!deslig) return null;
+                        if (deslig.entrevista_realizada_em) {
+                          return (
+                            <div className={`p-4 rounded-xl border space-y-2 text-xs ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'}`}>
+                              <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">✓ Entrevista de Desligamento — {new Date(deslig.entrevista_realizada_em).toLocaleDateString('pt-BR')}</h5>
+                              <p><b>Motivo real:</b> {deslig.entrevista_motivo_real || '—'}</p>
+                              <p><b>Pontos positivos:</b> {deslig.entrevista_pontos_positivos || '—'}</p>
+                              <p><b>A melhorar:</b> {deslig.entrevista_pontos_melhorar || '—'}</p>
+                              <p><b>Recomendaria (0–10):</b> {deslig.entrevista_recomendaria ?? '—'}</p>
+                              {deslig.entrevista_comentarios && <p className="italic opacity-80">"{deslig.entrevista_comentarios}"</p>}
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'}`}>
+                            <h5 className="text-[10px] font-bold uppercase tracking-wider text-amber-500">🗒 Entrevista de Desligamento — pendente</h5>
+                            <div className="space-y-2 text-xs">
+                              <select value={entrevistaDraft.motivo_real} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_real: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`}>
+                                {['Remuneração', 'Liderança', 'Carreira', 'Clima', 'Pessoal', 'Outro'].map(m => <option key={m} value={m}>{m}</option>)}
+                              </select>
+                              <input placeholder="Detalhe do motivo (opcional)" value={entrevistaDraft.motivo_texto} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_texto: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <textarea rows={2} placeholder="O que funcionou bem?" value={entrevistaDraft.pontos_positivos} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_positivos: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <textarea rows={2} placeholder="O que a clínica pode melhorar?" value={entrevistaDraft.pontos_melhorar} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_melhorar: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <div>
+                                <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Recomendaria trabalhar aqui? (0–10)</label>
+                                <input type="number" min={0} max={10} value={entrevistaDraft.recomendaria} onChange={e => setEntrevistaDraft(p => ({ ...p, recomendaria: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              </div>
+                              <textarea rows={2} placeholder="Comentários finais (opcional)" value={entrevistaDraft.comentarios} onChange={e => setEntrevistaDraft(p => ({ ...p, comentarios: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <button
+                                disabled={isSavingEntrevista}
+                                onClick={async () => {
+                                  setIsSavingEntrevista(true);
+                                  try {
+                                    const nota = parseInt(entrevistaDraft.recomendaria, 10);
+                                    const { error } = await supabase.from('desligamentos').update({
+                                      entrevista_realizada_em: new Date().toISOString(),
+                                      entrevista_motivo_real: entrevistaDraft.motivo_texto.trim() ? `${entrevistaDraft.motivo_real} — ${entrevistaDraft.motivo_texto.trim()}` : entrevistaDraft.motivo_real,
+                                      entrevista_pontos_positivos: entrevistaDraft.pontos_positivos.trim() || null,
+                                      entrevista_pontos_melhorar: entrevistaDraft.pontos_melhorar.trim() || null,
+                                      entrevista_recomendaria: isNaN(nota) ? null : Math.max(0, Math.min(10, nota)),
+                                      entrevista_comentarios: entrevistaDraft.comentarios.trim() || null
+                                    }).eq('id', deslig.id);
+                                    if (error) throw error;
+                                    await logAuditoria('ENTREVISTA_DESLIGAMENTO_REGISTRADA', { desligamento_id: deslig.id, colaborador_id: deslig.colaborador_id });
+                                    notify('Entrevista registrada.');
+                                    fetchColaboradoresList();
+                                  } catch (err: any) { notify('Erro ao salvar entrevista: ' + err.message); }
+                                  finally { setIsSavingEntrevista(false); }
+                                }}
+                                className="w-full py-2 rounded-lg font-bold text-xs bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                              >{isSavingEntrevista ? 'Salvando…' : '✓ Registrar Entrevista'}</button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      </>
                     ) : isOffboardingMode ? (
                       <div className={`p-4 rounded-xl border space-y-3.5 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
                         }`}>
