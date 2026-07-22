@@ -213,7 +213,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [generatedSignLink, setGeneratedSignLink] = useState('');
 
-  const handleSelectColaboradorForDoc = (colabId: string) => {
+  const handleSelectColaboradorForDoc = async (colabId: string) => {
     const colab = colaboradoresList.find((c: any) => c.id === colabId);
     if (colab) {
       setSelectedColaboradorForDocId(colabId);
@@ -236,6 +236,20 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       ].filter(Boolean).join(', ');
       setVarEndereco(addrParts || '');
       setVarAdmissao(colab.data_admissao || '');
+
+      // Descritivo do cargo → CBO e atribuições automáticos (do catálogo de
+      // cargos, casando pelo título). Editável depois. Evita redigitar.
+      if (colab.cargo) {
+        const { data: cargoRow } = await supabase
+          .from('cargos').select('cbo, atribuicoes').eq('titulo', colab.cargo).limit(1).maybeSingle();
+        setVarCbo(cargoRow?.cbo || '');
+        setVarAtribuicoes(
+          Array.isArray(cargoRow?.atribuicoes) ? cargoRow!.atribuicoes.join('\n') : (cargoRow?.atribuicoes || '')
+        );
+      } else {
+        setVarCbo('');
+        setVarAtribuicoes('');
+      }
     } else {
       setSelectedColaboradorForDocId('');
     }
