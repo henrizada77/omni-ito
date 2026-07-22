@@ -2277,8 +2277,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     // calendário. Projetamos dia/mês no ano em exibição (currentYear).
     // A data vem de 3 origens: coluna data_aniversario (cadastro rápido),
     // coluna data_nascimento, ou o JSON ficha_admissao.data_nascimento.
+    // Inclui 'pendente': quem entra pela ficha de admissão fica em onboarding
+    // (o trigger rebaixa o status até os 8 itens fecharem) e é justamente quem
+    // tem data de nascimento — excluir 'pendente' zerava a lista inteira.
     colaboradoresList.forEach((col) => {
-      if (!col || (col.status !== 'ativo' && col.status !== 'em_ferias')) return;
+      if (!col || col.status === 'desligado') return;
       const nasc = col.data_aniversario || col.data_nascimento || col.ficha_admissao?.data_nascimento;
       if (!nasc) return;
       const d = new Date(String(nasc).slice(0, 10) + 'T12:00:00');
