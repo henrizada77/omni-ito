@@ -5494,11 +5494,17 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </h4>
                       <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1 scrollbar-thin">
                         {(() => {
+                          // A data de nascimento vem de 3 origens: cadastro rápido
+                          // (coluna data_aniversario), uma eventual coluna
+                          // data_nascimento, ou a ficha de admissão (JSON
+                          // ficha_admissao.data_nascimento — caso da maioria).
+                          const getNascimento = (c: any) =>
+                            c?.data_aniversario || c?.data_nascimento || c?.ficha_admissao?.data_nascimento || '';
                           const aniversariantes = colaboradoresList
-                            .filter(c => c && (c.status === 'ativo' || c.status === 'em_ferias') && (c.data_aniversario || c.data_nascimento))
+                            .filter(c => c && (c.status === 'ativo' || c.status === 'em_ferias') && getNascimento(c))
                             .map(c => {
                               // aceita 'YYYY-MM-DD' ou timestamp completo — usa só a parte da data
-                              const raw = String(c.data_aniversario || c.data_nascimento).slice(0, 10);
+                              const raw = String(getNascimento(c)).slice(0, 10);
                               const d = new Date(raw + 'T12:00:00');
                               return { c, d };
                             })
