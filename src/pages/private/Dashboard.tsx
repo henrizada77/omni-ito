@@ -718,6 +718,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeColaboradorForDrawer]);
 
+  useEffect(() => {
+    setEntrevistaDraft({ motivo_real: 'Remuneração', motivo_texto: '', pontos_positivos: '', pontos_melhorar: '', recomendaria: '7', comentarios: '' });
+  }, [activeColaboradorForDrawer?.id]);
+
   const fetchTokensList = async () => {
     try {
       const { data, error } = await supabase
@@ -6071,6 +6075,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     if (error) throw error;
                                     await logAuditoria('ENTREVISTA_DESLIGAMENTO_REGISTRADA', { desligamento_id: deslig.id, colaborador_id: deslig.colaborador_id });
                                     notify('Entrevista registrada.');
+                                    setEntrevistaDraft({ motivo_real: 'Remuneração', motivo_texto: '', pontos_positivos: '', pontos_melhorar: '', recomendaria: '7', comentarios: '' });
                                     fetchColaboradoresList();
                                   } catch (err: any) { notify('Erro ao salvar entrevista: ' + err.message); }
                                   finally { setIsSavingEntrevista(false); }
