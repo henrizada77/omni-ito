@@ -2272,6 +2272,29 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       }
     });
 
+    // 6. Aniversários — evento recorrente: a data guardada tem o ano de
+    // nascimento (ex.: 1995-07-14), que nunca bate com o ano exibido no
+    // calendário. Projetamos dia/mês no ano em exibição (currentYear).
+    // A data vem de 3 origens: coluna data_aniversario (cadastro rápido),
+    // coluna data_nascimento, ou o JSON ficha_admissao.data_nascimento.
+    colaboradoresList.forEach((col) => {
+      if (!col || (col.status !== 'ativo' && col.status !== 'em_ferias')) return;
+      const nasc = col.data_aniversario || col.data_nascimento || col.ficha_admissao?.data_nascimento;
+      if (!nasc) return;
+      const d = new Date(String(nasc).slice(0, 10) + 'T12:00:00');
+      if (isNaN(d.getTime())) return;
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      list.push({
+        id: `aniv-${col.id}`,
+        date: `${currentYear}-${mm}-${dd}`,
+        type: 'aniversario',
+        label: `Aniversário: ${col.nome} 🎂`,
+        desc: `${col.nome} (${col.cargo || 'colaborador'}) faz aniversário em ${dd}/${mm}.`,
+        colaborador: col
+      });
+    });
+
     // 5. Data de Advertências (data_falta)
     dbAdvertencias.forEach((adv) => {
       if (!adv || !adv.data_falta) return;
@@ -2290,7 +2313,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     });
 
     return list;
-  }, [colaboradoresList, dbAdvertencias]);
+  }, [colaboradoresList, dbAdvertencias, currentYear]);
 
   // Sidebar Links array builder
   // Badge da sidebar: nº de alertas de pulse ainda não vistos (só faz sentido
@@ -5362,6 +5385,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     else if (ev.type === 'experiencia') dotColor = 'bg-amber-500';
                                     else if (ev.type === 'advertencia') dotColor = 'bg-rose-500 animate-pulse';
                                     else if (ev.type === 'admissao') dotColor = 'bg-violet-500';
+                                    else if (ev.type === 'aniversario') dotColor = 'bg-pink-500';
 
                                     return (
                                       <span
@@ -5404,6 +5428,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                         <span>Advertência</span>
                       </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-pink-500" />
+                        <span>Aniversário</span>
+                      </div>
                     </div>
 
                   </div>
@@ -5445,6 +5473,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 cardColor = 'border-violet-500/20 bg-violet-500/5';
                                 badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/20';
                                 labelType = 'ADMISSÃO';
+                              } else if (ev.type === 'aniversario') {
+                                cardColor = 'border-pink-500/20 bg-pink-500/5';
+                                badgeColor = 'bg-pink-500/10 text-pink-400 border-pink-500/20';
+                                labelType = 'ANIVERSÁRIO 🎂';
                               }
 
                               return (
@@ -5494,25 +5526,25 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </h4>
                       <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1 scrollbar-thin">
                         {(() => {
-                          // A data de nascimento vem de 3 origens: cadastro rápido
-                          // (coluna data_aniversario), uma eventual coluna
-                          // data_nascimento, ou a ficha de admissão (JSON
-                          // ficha_admissao.data_nascimento — caso da maioria).
-                          const getNascimento = (c: any) =>
-                            c?.data_aniversario || c?.data_nascimento || c?.ficha_admissao?.data_nascimento || '';
-                          const aniversariantes = colaboradoresList
-                            .filter(c => c && (c.status === 'ativo' || c.status === 'em_ferias') && getNascimento(c))
-                            .map(c => {
-                              // aceita 'YYYY-MM-DD' ou timestamp completo — usa só a parte da data
-                              const raw = String(getNascimento(c)).slice(0, 10);
-                              const d = new Date(raw + 'T12:00:00');
-                              return { c, d };
-                            })
-                            .filter(({ d }) => !isNaN(d.getTime()) && d.getMonth() === currentMonth)
-                            .sort((a, b) => a.d.getDate() - b.d.getDate());
+                          // Mesma fonte dos dots do calendário (calendarEvents,
+                          // type 'aniversario'): se o dot aparece no grid, o
+                          // colaborador aparece aqui — sem lógica duplicada.
+                          const aniversariantes = calendarEvents
+                            .filter((ev: any) => ev.type === 'aniversario' && ev.colaborador)
+                            .map((ev: any) => ({ c: ev.colaborador, d: new Date(ev.date + 'T12:00:00') }))
+                            .filter(({ d }: any) => !isNaN(d.getTime()) && d.getMonth() === currentMonth)
+                            .sort((a: any, b: any) => a.d.getDate() - b.d.getDate());
 
                           if (aniversariantes.length === 0) {
-                            return <div className="py-6 text-center opacity-50 italic text-xs">Nenhum aniversariante neste mês.</div>;
+                            return (
+                              <div className="py-6 text-center opacity-50 italic text-xs">
+                                {loadingColabs
+                                  ? 'Carregando colaboradores…'
+                                  : colaboradoresList.length === 0
+                                    ? 'Lista de colaboradores não carregou — recarregue a página.'
+                                    : 'Nenhum aniversariante neste mês (ou sem data de nascimento cadastrada).'}
+                              </div>
+                            );
                           }
 
                           return aniversariantes.map(({ c, d }) => {
