@@ -362,7 +362,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [offboardModalidade, setOffboardModalidade] = useState<'trabalhado' | 'indenizado_ou_dispensado'>('indenizado_ou_dispensado');
   const [offboardReason, setOffboardReason] = useState('');
   const [isSavingOffboard, setIsSavingOffboard] = useState(false);
-  const [_desligamentosList, setDesligamentosList] = useState<any[]>([]);
+  const [desligamentosList, setDesligamentosList] = useState<any[]>([]);
 
   // Férias & ASO Panel States
   const [searchQueryFeriasAso, setSearchQueryFeriasAso] = useState('');
@@ -2774,6 +2774,46 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               <p className={`font-mono text-[9px] mt-1.5 ${theme === 'dark' ? 'text-teal-300' : 'text-teal-600'}`}>
                                 {retorno ? `retorna ${retorno}` : 'retorno não informado'}
                               </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* ── Rescisões a Pagar ── */}
+                {(() => {
+                  const pendentes = desligamentosList.filter((d: any) => d && !d.pagamento_efetuado_em);
+                  if (pendentes.length === 0) return null;
+                  const hoje = new Date().toISOString().split('T')[0];
+                  return (
+                    <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-rose-500/15 bg-[#111110]' : 'border-rose-200 bg-white'}`}>
+                      <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-200'}`}>
+                        <span className="text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">💸 Rescisões a Pagar</span>
+                        <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-100 text-rose-600'}`}>{pendentes.length}</span>
+                      </div>
+                      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {pendentes.map((d: any) => {
+                          const col = colaboradoresList.find((c: any) => c.id === d.colaborador_id);
+                          const vencido = d.data_limite_pagamento < hoje;
+                          return (
+                            <div key={d.id} className={`p-3 rounded-xl border text-xs ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-100'}`}>
+                              <p className="font-semibold truncate">{col?.nome || 'Colaborador'}</p>
+                              <p className={`font-mono text-[9px] mt-1 ${vencido ? 'text-rose-500 font-black' : (theme === 'dark' ? 'text-rose-300' : 'text-rose-600')}`}>
+                                {vencido ? '⚠ VENCIDO — ' : 'pagar até '}{new Date(d.data_limite_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}
+                              </p>
+                              <button
+                                onClick={async () => {
+                                  const { error } = await supabase.from('desligamentos')
+                                    .update({ pagamento_efetuado_em: new Date().toISOString().split('T')[0] })
+                                    .eq('id', d.id);
+                                  if (error) { notify('Erro ao marcar pagamento: ' + error.message); return; }
+                                  await logAuditoria('RESCISAO_PAGAMENTO_MARCADO', { desligamento_id: d.id, colaborador_id: d.colaborador_id });
+                                  fetchColaboradoresList();
+                                }}
+                                className={`mt-2 w-full py-1.5 rounded-lg text-[9px] font-bold tracking-widest uppercase border transition-colors ${theme === 'dark' ? 'border-rose-500/25 text-rose-300 hover:bg-rose-500/10' : 'border-rose-300 text-rose-600 hover:bg-rose-50'}`}
+                              >✓ Marcar pago</button>
                             </div>
                           );
                         })}
