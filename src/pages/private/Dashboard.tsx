@@ -1589,7 +1589,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   };
 
   useEffect(() => {
-    if (activePath === '/app/onboarding' || activePath === '/app/colaboradores' || activePath === '/app/beneficios') {
+    // Dashboard e Agenda também precisam da lista: o painel "Em Férias Agora" e
+    // o card de aniversariantes leem de colaboradoresList. Sem isso, ao abrir
+    // direto nessas telas (refresh/deep-link) a lista fica vazia.
+    if (
+      activePath === '/app/onboarding' || activePath === '/app/colaboradores' ||
+      activePath === '/app/beneficios' || activePath === '/app/dashboard' ||
+      activePath === '/app/agenda'
+    ) {
       fetchColaboradoresList();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1619,7 +1626,6 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [kpiAdmissoesP, setKpiAdmissoesP] = useState(0);
   const [kpiAsoVencer, setKpiAsoVencer] = useState<any[]>([]);
   const [kpiFeriasVencer, setKpiFeriasVencer] = useState<any[]>([]);
-  const [kpiEmFerias, setKpiEmFerias] = useState<any[]>([]);
   const [kpiExperienciaVencer, setKpiExperienciaVencer] = useState<any[]>([]);
   const [recentLogs, setRecentLogs] = useState<any[]>([]);
   // Drawer edit mode
@@ -1633,13 +1639,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       const date90Ago = new Date(Date.now() - 90 * 86400000).toISOString().split('T')[0];
       const date60Ago = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
 
-      const [colabsQ, contratos, admPend, asoQ, feriasQ, emFeriasQ, expQ, logs] = await Promise.all([
+      const [colabsQ, contratos, admPend, asoQ, feriasQ, expQ, logs] = await Promise.all([
         supabase.from('colaboradores').select('id, status, data_admissao').neq('status', 'desligado'),
         supabase.from('documentos_assinados').select('id', { count: 'exact', head: true }).eq('status', 'finalizado'),
         supabase.from('admission_tokens').select('id', { count: 'exact', head: true }).in('status', ['aguardando_homologacao', 'aguardando_assinatura', 'aguardando_assinatura_rh']),
         supabase.from('colaboradores').select('id, nome, cargo, setor, data_aso_vencimento').eq('status', 'ativo').lte('data_aso_vencimento', in30).order('data_aso_vencimento'),
         supabase.from('colaboradores').select('id, nome, cargo, setor, data_ferias_vencimento').eq('status', 'ativo').lte('data_ferias_vencimento', in30).order('data_ferias_vencimento'),
-        supabase.from('colaboradores').select('id, nome, cargo, setor, ferias_inicio, ferias_dias').eq('status', 'em_ferias').order('ferias_inicio'),
         supabase.from('colaboradores').select('id, nome, cargo, setor, data_admissao').neq('status', 'desligado').gte('data_admissao', date90Ago).lte('data_admissao', date60Ago).order('data_admissao'),
         supabase.from('logs_auditoria').select('usuario_email, acao, criado_em').order('criado_em', { ascending: false }).limit(5)
       ]);
@@ -1653,7 +1658,6 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setKpiAdmissoesP(admPend.count ?? 0);
       setKpiAsoVencer(asoQ.data ?? []);
       setKpiFeriasVencer(feriasQ.data ?? []);
-      setKpiEmFerias(emFeriasQ.data ?? []);
       setKpiExperienciaVencer(expQ.data ?? []);
       setRecentLogs(logs.data ?? []);
     } catch (err) {
@@ -2684,35 +2688,39 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 )}
 
                 {/* ── Em Férias Agora (informativo, não é penalidade) ── */}
-                {kpiEmFerias.length > 0 && (
-                  <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-teal-500/15 bg-[#111110]' : 'border-teal-200 bg-white'}`}>
-                    <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-200'}`}>
-                      <div className="flex items-center gap-2.5">
-                        <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm ${theme === 'dark' ? 'bg-teal-500/15' : 'bg-teal-100'}`}>🏖</div>
-                        <span className="text-[10px] font-black tracking-[0.15em] uppercase text-teal-400">Em Férias Agora</span>
+                {(() => {
+                  const emFeriasList = colaboradoresList.filter((c: any) => c && c.status === 'em_ferias');
+                  if (emFeriasList.length === 0) return null;
+                  return (
+                    <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-teal-500/15 bg-[#111110]' : 'border-teal-200 bg-white'}`}>
+                      <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-200'}`}>
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm ${theme === 'dark' ? 'bg-teal-500/15' : 'bg-teal-100'}`}>🏖</div>
+                          <span className="text-[10px] font-black tracking-[0.15em] uppercase text-teal-400">Em Férias Agora</span>
+                        </div>
+                        <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-teal-500/15 text-teal-400' : 'bg-teal-100 text-teal-600'}`}>
+                          {emFeriasList.length} colaborador{emFeriasList.length > 1 ? 'es' : ''}
+                        </span>
                       </div>
-                      <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-teal-500/15 text-teal-400' : 'bg-teal-100 text-teal-600'}`}>
-                        {kpiEmFerias.length} colaborador{kpiEmFerias.length > 1 ? 'es' : ''}
-                      </span>
+                      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {emFeriasList.map((c: any) => {
+                          const retorno = c.ferias_inicio && c.ferias_dias
+                            ? new Date(addDaysISO(c.ferias_inicio, c.ferias_dias) + 'T12:00:00').toLocaleDateString('pt-BR')
+                            : null;
+                          return (
+                            <div key={c.id} className={`p-3 rounded-xl border text-xs ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-100'}`}>
+                              <p className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</p>
+                              <p className={`text-[9px] mt-0.5 ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>{c.cargo || '—'}</p>
+                              <p className={`font-mono text-[9px] mt-1.5 ${theme === 'dark' ? 'text-teal-300' : 'text-teal-600'}`}>
+                                {retorno ? `retorna ${retorno}` : 'retorno não informado'}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {kpiEmFerias.map((c: any) => {
-                        const retorno = c.ferias_inicio && c.ferias_dias
-                          ? new Date(addDaysISO(c.ferias_inicio, c.ferias_dias) + 'T12:00:00').toLocaleDateString('pt-BR')
-                          : null;
-                        return (
-                          <div key={c.id} className={`p-3 rounded-xl border text-xs ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-100'}`}>
-                            <p className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</p>
-                            <p className={`text-[9px] mt-0.5 ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>{c.cargo || '—'}</p>
-                            <p className={`font-mono text-[9px] mt-1.5 ${theme === 'dark' ? 'text-teal-300' : 'text-teal-600'}`}>
-                              {retorno ? `retorna ${retorno}` : 'retorno não informado'}
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* ── Quick Actions + Recent Activity ── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -5479,9 +5487,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1 scrollbar-thin">
                         {(() => {
                           const aniversariantes = colaboradoresList
-                            .filter(c => c && (c.status === 'ativo' || c.status === 'em_ferias') && c.data_aniversario)
+                            .filter(c => c && (c.status === 'ativo' || c.status === 'em_ferias') && (c.data_aniversario || c.data_nascimento))
                             .map(c => {
-                              const d = new Date(c.data_aniversario + 'T12:00:00');
+                              const d = new Date((c.data_aniversario || c.data_nascimento) + 'T12:00:00');
                               return { c, d };
                             })
                             .filter(({ d }) => !isNaN(d.getTime()) && d.getMonth() === currentMonth)
