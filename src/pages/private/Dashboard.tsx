@@ -40,6 +40,7 @@ import { calcularPrazosDesligamento } from '../../utils/desligamento';
 // do Dashboard fica menor e a tela abre mais rápido; cada um baixa ao entrar.
 const OverviewPanel = lazy(() => import('../../components/analytics/OverviewPanel'));
 const TurnoverPanel = lazy(() => import('../../components/analytics/TurnoverPanel'));
+const ClimaPanel = lazy(() => import('../../components/analytics/ClimaPanel'));
 const HealthSafetyPanel = lazy(() => import('../../components/analytics/HealthSafetyPanel'));
 const CompensationsPanel = lazy(() => import('../../components/analytics/CompensationsPanel'));
 const LegalPanel = lazy(() => import('../../components/analytics/LegalPanel'));
@@ -1637,7 +1638,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [indicadoresTrabalhistas, setIndicadoresTrabalhistas] = useState<any[]>([]);
   const [pesquisasSatisfacao, setPesquisasSatisfacao] = useState<any[]>([]);
   const [cargosAnalytics, setCargosAnalytics] = useState<any[]>([]);
-  const [analyticsSubTab, setAnalyticsSubTab] = useState<'geral' | 'turnover' | 'saude' | 'compensacao' | 'juridico'>('geral');
+  const [analyticsSubTab, setAnalyticsSubTab] = useState<'geral' | 'turnover' | 'saude' | 'compensacao' | 'juridico' | 'clima'>('geral');
 
   // --- MÓDULO 5: DASHBOARD KPIs (dados reais) ---
   const [kpiAtivos, setKpiAtivos] = useState(0);
@@ -4402,6 +4403,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     {[
                       { key: 'geral', label: 'Geral' },
                       { key: 'turnover', label: 'Movimentação (Turnover)' },
+                      { key: 'clima', label: 'Clima & Frequência' },
                       { key: 'saude', label: 'Saúde & Frequência' },
                       { key: 'compensacao', label: 'Compensação & Paridade' },
                       { key: 'juridico', label: 'Segurança Jurídica' }
@@ -4478,6 +4480,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 {analyticsSubTab === 'turnover' && (
                   <TurnoverPanel
                     theme={theme}
+                    colaboradoresList={colaboradoresList}
+                  />
+                )}
+
+                {analyticsSubTab === 'clima' && (
+                  <ClimaPanel
+                    theme={theme}
+                    pesquisasList={pesquisasSatisfacao}
+                    ocorrenciasList={ocorrenciasAnalytics}
                     colaboradoresList={colaboradoresList}
                   />
                 )}
