@@ -27,7 +27,8 @@ import {
   Award,
   Briefcase,
   MessageSquare,
-  Clock
+  Clock,
+  BookOpen
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
@@ -213,7 +214,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const [generatedSignLink, setGeneratedSignLink] = useState('');
 
-  const handleSelectColaboradorForDoc = (colabId: string) => {
+  const handleSelectColaboradorForDoc = async (colabId: string) => {
     const colab = colaboradoresList.find((c: any) => c.id === colabId);
     if (colab) {
       setSelectedColaboradorForDocId(colabId);
@@ -236,6 +237,20 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       ].filter(Boolean).join(', ');
       setVarEndereco(addrParts || '');
       setVarAdmissao(colab.data_admissao || '');
+
+      // Descritivo do cargo → CBO e atribuições automáticos (do catálogo de
+      // cargos, casando pelo título). Editável depois. Evita redigitar.
+      if (colab.cargo) {
+        const { data: cargoRow } = await supabase
+          .from('cargos').select('cbo, atribuicoes').eq('titulo', colab.cargo).limit(1).maybeSingle();
+        setVarCbo(cargoRow?.cbo || '');
+        setVarAtribuicoes(
+          Array.isArray(cargoRow?.atribuicoes) ? cargoRow!.atribuicoes.join('\n') : (cargoRow?.atribuicoes || '')
+        );
+      } else {
+        setVarCbo('');
+        setVarAtribuicoes('');
+      }
     } else {
       setSelectedColaboradorForDocId('');
     }
@@ -1574,7 +1589,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   };
 
   useEffect(() => {
-    if (activePath === '/app/onboarding' || activePath === '/app/colaboradores' || activePath === '/app/beneficios') {
+    // Dashboard e Agenda também precisam da lista: o painel "Em Férias Agora" e
+    // o card de aniversariantes leem de colaboradoresList. Sem isso, ao abrir
+    // direto nessas telas (refresh/deep-link) a lista fica vazia.
+    if (
+      activePath === '/app/onboarding' || activePath === '/app/colaboradores' ||
+      activePath === '/app/beneficios' || activePath === '/app/dashboard' ||
+      activePath === '/app/agenda'
+    ) {
       fetchColaboradoresList();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1899,6 +1921,79 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       notify('Erro ao registrar retorno: ' + err.message);
     } finally {
       setIsSavingQuickDates(false);
+    }
+  };
+
+  // Day off de aniversário: grava o ano corrente como "concedido". O alerta some
+  // no ciclo atual e reaparece no próximo aniversário (ano seguinte).
+  const [concedendoDayOff, setConcedendoDayOff] = useState<string | null>(null);
+  const handleConcederDayOff = async (colabId: string) => {
+    const ano = new Date().getFullYear();
+    setConcedendoDayOff(colabId);
+    try {
+      const { error } = await supabase.from('colaboradores').update({ day_off_aniversario_ano: ano }).eq('id', colabId);
+      if (error) throw error;
+      await logAuditoria('DAY_OFF_ANIVERSARIO_CONCEDIDO', { colaborador_id: colabId, ano });
+      setColaboradoresList(prev => prev.map(c => c.id === colabId ? { ...c, day_off_aniversario_ano: ano } : c));
+      notify('Day off de aniversário concedido.');
+    } catch (err: any) {
+      console.error(err);
+      notify('Erro ao conceder day off: ' + err.message);
+    } finally {
+      setConcedendoDayOff(null);
+    }
+  };
+
+  // Manual de Cultura (documentos_institucionais, tipo = 'manual_cultura').
+  // Editado aqui pelo RH e lido publicamente em /cultura.
+  const [culturaTitulo, setCulturaTitulo] = useState('Manual de Cultura');
+  const [culturaConteudo, setCulturaConteudo] = useState('');
+  const [culturaLoading, setCulturaLoading] = useState(false);
+  const [culturaSaving, setCulturaSaving] = useState(false);
+  const [culturaAtualizadoEm, setCulturaAtualizadoEm] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (activePath !== '/app/cultura' || !hasFullAccess) return;
+    let active = true;
+    setCulturaLoading(true);
+    (async () => {
+      const { data } = await supabase
+        .from('documentos_institucionais')
+        .select('titulo, conteudo, atualizado_em')
+        .eq('tipo', 'manual_cultura')
+        .maybeSingle();
+      if (!active) return;
+      if (data) {
+        setCulturaTitulo(data.titulo || 'Manual de Cultura');
+        setCulturaConteudo(data.conteudo || '');
+        setCulturaAtualizadoEm(data.atualizado_em || null);
+      }
+      setCulturaLoading(false);
+    })();
+    return () => { active = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePath, hasFullAccess]);
+
+  const handleSaveCultura = async () => {
+    setCulturaSaving(true);
+    try {
+      const { error } = await supabase
+        .from('documentos_institucionais')
+        .upsert({
+          tipo: 'manual_cultura',
+          titulo: culturaTitulo.trim() || 'Manual de Cultura',
+          conteudo: culturaConteudo,
+          atualizado_por: user?.email || null
+        }, { onConflict: 'tipo' });
+      if (error) throw error;
+      await logAuditoria('MANUAL_CULTURA_ATUALIZADO', {});
+      setCulturaAtualizadoEm(new Date().toISOString());
+      notify('Manual de Cultura publicado.');
+    } catch (err: any) {
+      console.error(err);
+      notify('Erro ao salvar: ' + err.message);
+    } finally {
+      setCulturaSaving(false);
     }
   };
 
@@ -2237,7 +2332,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       { path: '/app/ponto', label: 'Espelho de Ponto', icon: <Clock size={16} /> },
       { path: '/app/riscos', label: 'Mapa de Riscos', icon: <Shield size={16} /> },
       { path: '/app/folha', label: 'Lançamentos da Folha', icon: <Receipt size={16} /> },
-      { path: '/app/agenda', label: 'Agenda RH', icon: <Calendar size={16} /> }
+      { path: '/app/agenda', label: 'Agenda RH', icon: <Calendar size={16} /> },
+      { path: '/app/cultura', label: 'Manual de Cultura', icon: <BookOpen size={16} /> }
     ] : []),
     { path: '/app/analytics', label: 'Analytics', icon: <TrendingUp size={16} /> }
   ];
@@ -2590,6 +2686,41 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     </div>
                   </div>
                 )}
+
+                {/* ── Em Férias Agora (informativo, não é penalidade) ── */}
+                {(() => {
+                  const emFeriasList = colaboradoresList.filter((c: any) => c && c.status === 'em_ferias');
+                  if (emFeriasList.length === 0) return null;
+                  return (
+                    <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-teal-500/15 bg-[#111110]' : 'border-teal-200 bg-white'}`}>
+                      <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-200'}`}>
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm ${theme === 'dark' ? 'bg-teal-500/15' : 'bg-teal-100'}`}>🏖</div>
+                          <span className="text-[10px] font-black tracking-[0.15em] uppercase text-teal-400">Em Férias Agora</span>
+                        </div>
+                        <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-teal-500/15 text-teal-400' : 'bg-teal-100 text-teal-600'}`}>
+                          {emFeriasList.length} colaborador{emFeriasList.length > 1 ? 'es' : ''}
+                        </span>
+                      </div>
+                      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {emFeriasList.map((c: any) => {
+                          const retorno = c.ferias_inicio && c.ferias_dias
+                            ? new Date(addDaysISO(c.ferias_inicio, c.ferias_dias) + 'T12:00:00').toLocaleDateString('pt-BR')
+                            : null;
+                          return (
+                            <div key={c.id} className={`p-3 rounded-xl border text-xs ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-100'}`}>
+                              <p className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</p>
+                              <p className={`text-[9px] mt-0.5 ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>{c.cargo || '—'}</p>
+                              <p className={`font-mono text-[9px] mt-1.5 ${theme === 'dark' ? 'text-teal-300' : 'text-teal-600'}`}>
+                                {retorno ? `retorna ${retorno}` : 'retorno não informado'}
+                              </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* ── Quick Actions + Recent Activity ── */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -4277,7 +4408,74 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
             {/* Módulo 6: Benefícios */}
             {activePath === '/app/beneficios' && hasFullAccess && (
-              <BenefitsManager theme={theme} />
+              <div className="space-y-8 animate-fadeIn">
+                {/* Relatório de Vale-Transporte (optantes + desconto em folha) */}
+                {(() => {
+                  const parseSalario = (s: string) => {
+                    const clean = String(s || '').replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
+                    return parseFloat(clean) || 0;
+                  };
+                  const optantes = colaboradoresList
+                    .filter(c => c && c.vt_opta && (c.status === 'ativo' || c.status === 'em_ferias'))
+                    .map(c => {
+                      const base = parseSalario(c.salario);
+                      const perc = c.vt_percentual ?? 6;
+                      return { c, base, perc, desconto: base * (perc / 100) };
+                    })
+                    .sort((a, b) => a.c.nome.localeCompare(b.c.nome));
+                  const totalDesconto = optantes.reduce((s, o) => s + o.desconto, 0);
+                  const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                  return (
+                    <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10 bg-white shadow-sm'}`}>
+                      <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}>
+                        <div className="flex items-center gap-2.5">
+                          <span className="text-base">🚌</span>
+                          <div>
+                            <h3 className="text-sm font-bold">Vale-Transporte — Desconto em Folha</h3>
+                            <p className="text-[10px] opacity-50">Optantes ativos · desconto = salário × percentual (teto legal 6%)</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-[9px] uppercase opacity-50 font-bold tracking-wider">Total mensal</p>
+                          <p className="text-lg font-black font-mono text-emerald-500">{brl(totalDesconto)}</p>
+                        </div>
+                      </div>
+                      {optantes.length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-xs">
+                            <thead>
+                              <tr className={`text-[9px] uppercase tracking-wider opacity-50 ${theme === 'dark' ? 'bg-white/[0.02]' : 'bg-black/[0.02]'}`}>
+                                <th className="text-left p-3 font-bold">Colaborador</th>
+                                <th className="text-left p-3 font-bold">Cargo</th>
+                                <th className="text-right p-3 font-bold">Salário base</th>
+                                <th className="text-right p-3 font-bold">%</th>
+                                <th className="text-right p-3 font-bold">Desconto</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {optantes.map(({ c, base, perc, desconto }) => (
+                                <tr key={c.id} className={`border-t ${theme === 'dark' ? 'border-white/5' : 'border-black/5'}`}>
+                                  <td className="p-3 font-semibold">{c.nome}</td>
+                                  <td className="p-3 opacity-70">{c.cargo || '—'}</td>
+                                  <td className="p-3 text-right font-mono opacity-80">{brl(base)}</td>
+                                  <td className="p-3 text-right font-mono opacity-80">{perc}%</td>
+                                  <td className="p-3 text-right font-mono font-bold text-emerald-500">{brl(desconto)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="py-10 text-center opacity-50 italic text-xs">
+                          Nenhum colaborador optante. Marque o opt-in no prontuário (aba Colaboradores).
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
+                <BenefitsManager theme={theme} />
+              </div>
             )}
 
             {/* Módulo 7: Férias & ASO */}
@@ -5280,10 +5478,114 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         })()}
                       </div>
                     </div>
+
+                    {/* Aniversariantes do mês + day off de aniversário */}
+                    <div className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
+                      <h4 className="text-xs font-bold uppercase tracking-wider opacity-60 mb-4 flex items-center gap-2">
+                        🎂 Aniversariantes de {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][currentMonth]}
+                      </h4>
+                      <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1 scrollbar-thin">
+                        {(() => {
+                          const aniversariantes = colaboradoresList
+                            .filter(c => c && (c.status === 'ativo' || c.status === 'em_ferias') && (c.data_aniversario || c.data_nascimento))
+                            .map(c => {
+                              const d = new Date((c.data_aniversario || c.data_nascimento) + 'T12:00:00');
+                              return { c, d };
+                            })
+                            .filter(({ d }) => !isNaN(d.getTime()) && d.getMonth() === currentMonth)
+                            .sort((a, b) => a.d.getDate() - b.d.getDate());
+
+                          if (aniversariantes.length === 0) {
+                            return <div className="py-6 text-center opacity-50 italic text-xs">Nenhum aniversariante neste mês.</div>;
+                          }
+
+                          return aniversariantes.map(({ c, d }) => {
+                            const concedido = c.day_off_aniversario_ano === currentYear;
+                            return (
+                              <div key={c.id} className={`p-3 rounded-xl border ${theme === 'dark' ? 'bg-white/[0.02] border-white/8' : 'bg-black/[0.01] border-black/8'}`}>
+                                <div className="flex items-center justify-between gap-2">
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-semibold truncate">{c.nome}</p>
+                                    <p className="text-[9px] opacity-50 mt-0.5">{c.cargo || '—'}</p>
+                                  </div>
+                                  <span className={`font-mono text-[10px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-pink-500/15 text-pink-300' : 'bg-pink-100 text-pink-600'}`}>
+                                    {String(d.getDate()).padStart(2, '0')}/{String(currentMonth + 1).padStart(2, '0')}
+                                  </span>
+                                </div>
+                                <div className="mt-2.5">
+                                  {concedido ? (
+                                    <span className={`inline-flex items-center gap-1 text-[9px] font-bold tracking-wide uppercase px-2 py-1 rounded-lg ${theme === 'dark' ? 'bg-emerald-500/12 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
+                                      ✓ Day off concedido em {currentYear}
+                                    </span>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleConcederDayOff(c.id)}
+                                      disabled={concedendoDayOff === c.id}
+                                      className={`w-full py-1.5 rounded-lg text-[9px] font-bold tracking-widest uppercase border transition-colors disabled:opacity-50 ${theme === 'dark' ? 'border-pink-500/25 text-pink-300 hover:bg-pink-500/10' : 'border-pink-300 text-pink-600 hover:bg-pink-50'}`}
+                                    >
+                                      {concedendoDayOff === c.id ? 'Concedendo…' : '🎁 Conceder day off'}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                    </div>
                   </div>
 
                 </div>
 
+              </div>
+            )}
+
+            {activePath === '/app/cultura' && hasFullAccess && (
+              <div className="space-y-6 animate-fadeIn max-w-4xl">
+                {/* Header */}
+                <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 9</span>
+                      <h3 className="text-xl font-bold">Manual de Cultura</h3>
+                    </div>
+                    <p className="text-xs opacity-65 mt-1">
+                      Conteúdo público, visível a qualquer pessoa em{' '}
+                      <a href="/cultura" target="_blank" rel="noreferrer" className="underline font-semibold">/cultura</a>. Edite abaixo e publique.
+                    </p>
+                  </div>
+                  <a href="/cultura" target="_blank" rel="noreferrer"
+                    className={`text-xs font-bold px-3 py-2 rounded-lg border transition-colors flex items-center gap-1.5 self-start ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'}`}>
+                    <ExternalLink size={13} /> Ver página pública
+                  </a>
+                </div>
+
+                <div className={`rounded-2xl border p-6 space-y-5 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase opacity-50 mb-1 tracking-wider">Título</label>
+                    <input value={culturaTitulo} onChange={e => setCulturaTitulo(e.target.value)}
+                      disabled={culturaLoading}
+                      className={`w-full text-sm p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-bold uppercase opacity-50 mb-1 tracking-wider">Conteúdo</label>
+                    <textarea value={culturaConteudo} onChange={e => setCulturaConteudo(e.target.value)}
+                      disabled={culturaLoading}
+                      rows={18}
+                      placeholder={culturaLoading ? 'Carregando…' : 'Escreva aqui os valores, missão, princípios e a cultura do Instituto. As quebras de linha são preservadas na página pública.'}
+                      className={`w-full text-sm p-3 rounded-lg border bg-transparent leading-relaxed resize-y ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
+                    <p className="text-[10px] opacity-40 mt-1">{culturaConteudo.length} caracteres · as quebras de linha são mantidas na leitura.</p>
+                  </div>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[10px] opacity-40 font-mono">
+                      {culturaAtualizadoEm ? `Última publicação: ${new Date(culturaAtualizadoEm).toLocaleString('pt-BR')}` : 'Ainda não publicado'}
+                    </span>
+                    <button onClick={handleSaveCultura} disabled={culturaSaving || culturaLoading}
+                      className={`py-2.5 px-5 rounded-lg font-bold text-xs transition-colors disabled:opacity-50 ${theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-white' : 'bg-[#0A0A0A] text-white hover:bg-black'}`}>
+                      {culturaSaving ? 'Publicando…' : '✓ Publicar Manual'}
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -5494,6 +5796,47 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       {isSavingDrawer ? 'Salvando...' : '✓ Salvar Alterações'}
                     </button>
                   )}
+                  {/* Vale-Transporte (opt-in + % de desconto) */}
+                  {(() => {
+                    const vtOpta = isEditingDrawer
+                      ? (drawerEditData.vt_opta !== undefined ? drawerEditData.vt_opta : activeColaboradorForDrawer.vt_opta)
+                      : activeColaboradorForDrawer.vt_opta;
+                    const vtPerc = isEditingDrawer
+                      ? (drawerEditData.vt_percentual !== undefined ? drawerEditData.vt_percentual : (activeColaboradorForDrawer.vt_percentual ?? 6))
+                      : (activeColaboradorForDrawer.vt_percentual ?? 6);
+                    return (
+                      <div className={`rounded-xl border p-4 space-y-2 ${theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
+                        <div className="flex items-center justify-between">
+                          <span className="text-[9px] uppercase opacity-50 font-bold tracking-wider">Vale-Transporte</span>
+                          <span className="text-sm">🚌</span>
+                        </div>
+                        {isEditingDrawer ? (
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-2 text-xs font-semibold cursor-pointer">
+                              <input type="checkbox" checked={!!vtOpta}
+                                onChange={e => setDrawerEditData((p: any) => ({ ...p, vt_opta: e.target.checked }))} />
+                              Colaborador optou pelo vale-transporte
+                            </label>
+                            {vtOpta && (
+                              <div>
+                                <label className="block text-[9px] font-bold uppercase opacity-50 mb-0.5">% de desconto em folha (teto legal 6%)</label>
+                                <input type="number" step="0.5" min="0" max="6" value={vtPerc}
+                                  onChange={e => setDrawerEditData((p: any) => ({ ...p, vt_percentual: parseFloat(e.target.value) || 0 }))}
+                                  className={`w-full text-xs p-1.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <p className="text-xs font-semibold">
+                            {vtOpta
+                              ? <span className="text-emerald-500">Optante · {vtPerc}% de desconto</span>
+                              : <span className="opacity-40 italic">Não optante</span>}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
+
                   {/* Tempo de Casa */}
                   <div className={`rounded-xl border p-4 flex items-center justify-between ${theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
                     <div>

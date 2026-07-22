@@ -8,6 +8,7 @@ import AdmissaoCandidato from './pages/public/AdmissaoCandidato';
 import PesquisaSatisfacao from './pages/public/PesquisaSatisfacao';
 import Ouvidoria from './pages/public/Ouvidoria';
 import PulseSemanal from './pages/public/PulseSemanal';
+import ManualCultura from './pages/public/ManualCultura';
 import ProtectedRoute from './components/ProtectedRoute';
 import AccessDenied403 from './pages/errors/AccessDenied403';
 import NotFound404 from './pages/errors/NotFound404';
@@ -36,6 +37,7 @@ const APP_ROUTES: { path: string; allowedRoles: Role[] }[] = [
   { path: '/app/riscos', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/folha', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/agenda', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/cultura', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/analytics', allowedRoles: ['coordenadora_rh', 'ti'] }
 ];
 
@@ -161,6 +163,11 @@ export default function App() {
         <Route
           path="/pulse"
           element={<PulseSemanal theme={theme} setTheme={setTheme} />}
+        />
+
+        <Route
+          path="/cultura"
+          element={<ManualCultura theme={theme} setTheme={setTheme} />}
         />
 
         {/* Private Admin Routes */}

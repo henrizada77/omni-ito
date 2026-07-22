@@ -240,6 +240,20 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
                 <div className="text-[10px] opacity-60">Elogio, sugestão, reclamação ou denúncia</div>
               </div>
             </Link>
+            <Link
+              to="/cultura"
+              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
+                theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
+              }`}
+            >
+              <div className="w-9 h-9 rounded-full bg-teal-500/10 border border-teal-500/25 flex items-center justify-center text-lg leading-none">
+                📖
+              </div>
+              <div className="text-left">
+                <div className="text-xs font-bold">Manual de Cultura</div>
+                <div className="text-[10px] opacity-60">Nossos valores e princípios</div>
+              </div>
+            </Link>
           </div>
         </div>
 
