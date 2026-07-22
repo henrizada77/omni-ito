@@ -33,6 +33,7 @@ import {
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
 import { MESES_PT_BR, DEFAULT_MODELS, buildContractText, getEmpregadora } from '../../data/contractTemplates';
+import { calcularPrazosDesligamento } from '../../utils/desligamento';
 
 // Carregados sob demanda (code-splitting): os painéis de Analytics puxam o
 // Recharts (pesado) e cada Manager é um módulo grande. Assim o bundle inicial
@@ -357,9 +358,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   // Offboarding form states
   const [isOffboardingMode, setIsOffboardingMode] = useState(false);
   const [offboardDate, setOffboardDate] = useState(new Date().toISOString().split('T')[0]);
-  const [offboardType, setOffboardType] = useState<'Voluntario' | 'Involuntario'>('Voluntario');
+  const [offboardTipo, setOffboardTipo] = useState<'sem_justa_causa' | 'pedido_demissao'>('sem_justa_causa');
+  const [offboardModalidade, setOffboardModalidade] = useState<'trabalhado' | 'indenizado_ou_dispensado'>('indenizado_ou_dispensado');
   const [offboardReason, setOffboardReason] = useState('');
   const [isSavingOffboard, setIsSavingOffboard] = useState(false);
+  const [desligamentosList, setDesligamentosList] = useState<any[]>([]);
 
   // Férias & ASO Panel States
   const [searchQueryFeriasAso, setSearchQueryFeriasAso] = useState('');
@@ -1463,12 +1466,13 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const fetchColaboradoresList = async () => {
     setLoadingColabs(true);
     try {
-      const [colabsRes, benefitsRes, assocRes, planosRes, avaliacoesRes] = await Promise.all([
+      const [colabsRes, benefitsRes, assocRes, planosRes, avaliacoesRes, desligRes] = await Promise.all([
         supabase.from('colaboradores').select('*').order('nome', { ascending: true }),
         supabase.from('beneficios').select('*'),
         supabase.from('colaborador_beneficios').select('*'),
         supabase.from('planos_carreira').select('*'),
-        supabase.from('avaliacoes_desempenho').select('*').order('data_avaliacao', { ascending: false })
+        supabase.from('avaliacoes_desempenho').select('*').order('data_avaliacao', { ascending: false }),
+        supabase.from('desligamentos').select('*').order('data_limite_pagamento')
       ]);
 
       if (colabsRes.error) throw colabsRes.error;
@@ -1491,6 +1495,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (assocRes.data) setDbColaboradorBeneficios(assocRes.data);
       if (planosRes.data) setDbPlanosCarreira(planosRes.data);
       if (avaliacoesRes.data) setDbAvaliacoesDesempenho(avaliacoesRes.data);
+      if (desligRes.data) setDesligamentosList(desligRes.data);
 
       let advertenciasData: any[] = [];
       try {
@@ -1707,7 +1712,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const handleOffboardColaborador = async () => {
     if (!activeColaboradorForDrawer) return;
-    if (!offboardDate || !offboardType) {
+    if (!offboardDate || !offboardTipo) {
       notify('Por favor, preencha a data e o tipo de desligamento.');
       return;
     }
@@ -1724,11 +1729,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       if (deleteAssocError) throw deleteAssocError;
 
-      // 2. Update status of the collaborator
+      // 2. Calculate legal deadlines (aviso prévio + CLT 477 §6º) and update status of the collaborator
+      const prazos = calcularPrazosDesligamento(
+        offboardTipo, offboardModalidade, offboardDate,
+        activeColaboradorForDrawer.data_admissao
+      );
       const updateData = {
         status: 'desligado',
-        tipo_desligamento: offboardType,
-        data_desligamento: offboardDate,
+        tipo_desligamento: offboardTipo === 'pedido_demissao' ? 'Voluntario' : 'Involuntario',
+        data_desligamento: prazos.dataTermino,
         motivo_desligamento: offboardReason.trim() || null
       };
 
@@ -1739,15 +1748,31 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       if (updateError) throw updateError;
 
-      // 3. Log Audit
+      // 3. Insert the deadlines record (no rollback if this fails — notify and continue)
+      const { error: desligError } = await supabase.from('desligamentos').insert({
+        colaborador_id: activeColaboradorForDrawer.id,
+        tipo: offboardTipo,
+        modalidade_aviso: offboardModalidade,
+        data_comunicacao: offboardDate,
+        dias_aviso: prazos.diasAviso,
+        data_termino: prazos.dataTermino,
+        data_limite_pagamento: prazos.dataLimitePagamento,
+        observacoes: offboardReason.trim() || null
+      });
+      if (desligError) notify('Colaborador desligado, mas falhou o registro de prazos: ' + desligError.message);
+
+      // 4. Log Audit
       await logAuditoria('DESLIGAMENTO_COLABORADOR', {
         colaborador_id: activeColaboradorForDrawer.id,
         nome: activeColaboradorForDrawer.nome,
-        tipo: offboardType,
-        data: offboardDate
+        tipo: offboardTipo,
+        modalidade: offboardModalidade,
+        data_comunicacao: offboardDate,
+        data_termino: prazos.dataTermino,
+        data_limite_pagamento: prazos.dataLimitePagamento
       });
 
-      // 4. Update the local active state for the drawer
+      // 5. Update the local active state for the drawer
       setActiveColaboradorForDrawer({
         ...activeColaboradorForDrawer,
         ...updateData
@@ -1761,7 +1786,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setIsOffboardingMode(false);
       notify(`Colaborador ${activeColaboradorForDrawer.nome} desligado com sucesso!`);
 
-      // 5. Refresh lists
+      // 6. Refresh lists (colaboradores e desligamentos)
       fetchColaboradoresList();
       fetchDashboardKpis();
       fetchAnalyticsData();
@@ -5963,7 +5988,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         </h5>
                         <div className="space-y-3 text-xs">
                           <div>
-                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data do Desligamento *</label>
+                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Comunicação *</label>
                             <input
                               type="date"
                               required
@@ -5976,15 +6001,38 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <div>
                             <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tipo de Desligamento *</label>
                             <select
-                              value={offboardType}
-                              onChange={e => setOffboardType(e.target.value as any)}
+                              value={offboardTipo}
+                              onChange={e => setOffboardTipo(e.target.value as any)}
                               className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
                                 }`}
                             >
-                              <option value="Voluntario" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Voluntário (Pedido de Demissão)</option>
-                              <option value="Involuntario" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Involuntário (Demissão pela Empresa)</option>
+                              <option value="sem_justa_causa" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Sem justa causa (empresa desliga)</option>
+                              <option value="pedido_demissao" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Pedido de demissão (colaborador sai)</option>
                             </select>
                           </div>
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Modalidade do Aviso *</label>
+                            <select
+                              value={offboardModalidade}
+                              onChange={e => setOffboardModalidade(e.target.value as any)}
+                              className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                }`}
+                            >
+                              <option value="indenizado_ou_dispensado" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Aviso indenizado / dispensado</option>
+                              <option value="trabalhado" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Aviso trabalhado</option>
+                            </select>
+                          </div>
+                          {offboardDate && (() => {
+                            const p = calcularPrazosDesligamento(offboardTipo, offboardModalidade, offboardDate, activeColaboradorForDrawer?.data_admissao);
+                            const fmt = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR');
+                            return (
+                              <div className={`p-3 rounded-lg border text-[10px] space-y-1 ${theme === 'dark' ? 'bg-amber-500/8 border-amber-500/20' : 'bg-amber-50 border-amber-200'}`}>
+                                <p><b>Aviso prévio:</b> {p.diasAviso} dias</p>
+                                <p><b>Término do contrato:</b> {fmt(p.dataTermino)}</p>
+                                <p><b>Pagamento das verbas até:</b> {fmt(p.dataLimitePagamento)} (CLT 477 §6º)</p>
+                              </div>
+                            );
+                          })()}
                           <div>
                             <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Motivo do Desligamento</label>
                             <textarea
