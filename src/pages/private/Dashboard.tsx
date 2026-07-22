@@ -362,7 +362,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [offboardModalidade, setOffboardModalidade] = useState<'trabalhado' | 'indenizado_ou_dispensado'>('indenizado_ou_dispensado');
   const [offboardReason, setOffboardReason] = useState('');
   const [isSavingOffboard, setIsSavingOffboard] = useState(false);
-  const [desligamentosList, setDesligamentosList] = useState<any[]>([]);
+  const [_desligamentosList, setDesligamentosList] = useState<any[]>([]);
 
   // Férias & ASO Panel States
   const [searchQueryFeriasAso, setSearchQueryFeriasAso] = useState('');
@@ -701,7 +701,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setIsRegisteringOcorrencia(false);
       setIsOffboardingMode(false);
       setOffboardDate(new Date().toISOString().split('T')[0]);
-      setOffboardType('Voluntario');
+      setOffboardTipo('sem_justa_causa');
+      setOffboardModalidade('indenizado_ou_dispensado');
       setOffboardReason('');
       setShowEvalModal(false);
       setSelectedEvalForModal(null);
