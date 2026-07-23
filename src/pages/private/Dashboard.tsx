@@ -364,6 +364,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [offboardReason, setOffboardReason] = useState('');
   const [isSavingOffboard, setIsSavingOffboard] = useState(false);
   const [desligamentosList, setDesligamentosList] = useState<any[]>([]);
+  const [movimentacoesList, setMovimentacoesList] = useState<any[]>([]);
   const [entrevistaDraft, setEntrevistaDraft] = useState({ motivo_real: 'Remuneração', motivo_texto: '', pontos_positivos: '', pontos_melhorar: '', recomendaria: '7', comentarios: '' });
   const [isSavingEntrevista, setIsSavingEntrevista] = useState(false);
 
@@ -1474,13 +1475,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const fetchColaboradoresList = async () => {
     setLoadingColabs(true);
     try {
-      const [colabsRes, benefitsRes, assocRes, planosRes, avaliacoesRes, desligRes] = await Promise.all([
+      const [colabsRes, benefitsRes, assocRes, planosRes, avaliacoesRes, desligRes, movRes] = await Promise.all([
         supabase.from('colaboradores').select('*').order('nome', { ascending: true }),
         supabase.from('beneficios').select('*'),
         supabase.from('colaborador_beneficios').select('*'),
         supabase.from('planos_carreira').select('*'),
         supabase.from('avaliacoes_desempenho').select('*').order('data_avaliacao', { ascending: false }),
-        supabase.from('desligamentos').select('*').order('data_limite_pagamento')
+        supabase.from('desligamentos').select('*').order('data_limite_pagamento'),
+        supabase.from('movimentacoes_pessoal').select('*')
       ]);
 
       if (colabsRes.error) throw colabsRes.error;
@@ -1504,6 +1506,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (planosRes.data) setDbPlanosCarreira(planosRes.data);
       if (avaliacoesRes.data) setDbAvaliacoesDesempenho(avaliacoesRes.data);
       if (desligRes.data) setDesligamentosList(desligRes.data);
+      if (movRes.data) setMovimentacoesList(movRes.data);
 
       let advertenciasData: any[] = [];
       try {
@@ -4481,6 +4484,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   <TurnoverPanel
                     theme={theme}
                     colaboradoresList={colaboradoresList}
+                    movimentacoesList={movimentacoesList}
                   />
                 )}
 
