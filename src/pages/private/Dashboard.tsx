@@ -2739,7 +2739,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <h4 className={`text-[9px] font-black tracking-[0.15em] uppercase ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Fim de Experiência</h4>
                           </div>
                           {kpiExperienciaVencer.map((c: any) => {
-                            const dateAdm = new Date(c.data_admissao);
+                            const dateAdm = new Date(c.data_admissao + 'T12:00:00');
                             const dateFim = !isNaN(dateAdm.getTime()) ? new Date(dateAdm.getTime() + 90 * 86400000) : null;
                             const dateStr = dateFim && !isNaN(dateFim.getTime()) ? dateFim.toLocaleDateString('pt-BR') : '—';
                             return (
@@ -3733,7 +3733,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 <td className="p-3 opacity-80">{c.setor}</td>
                                 <td className="p-3 font-mono opacity-70">
                                   {(() => {
-                                    const d = new Date(c.data_admissao);
+                                    const d = new Date(c.data_admissao + 'T12:00:00');
                                     return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
                                   })()}
                                 </td>
