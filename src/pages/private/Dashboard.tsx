@@ -28,7 +28,8 @@ import {
   Briefcase,
   MessageSquare,
   Clock,
-  BookOpen
+  BookOpen,
+  UserPlus
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
@@ -51,6 +52,7 @@ const FeedbackManager = lazy(() => import('../../components/feedback/FeedbackMan
 const PontoManager = lazy(() => import('../../components/ponto/PontoManager'));
 const RiscoManager = lazy(() => import('../../components/risco/RiscoManager'));
 const FolhaManager = lazy(() => import('../../components/folha/FolhaManager'));
+const VagasManager = lazy(() => import('../../components/vagas/VagasManager'));
 import LetterheadWatermark from '../../components/common/LetterheadWatermark';
 import CopilotWidget from '../../components/copilot/CopilotWidget';
 
@@ -2388,6 +2390,21 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     return () => { active = false; };
   }, [hasFullAccess, activePath]);
 
+  // Badge da sidebar: solicitações de vaga com status 'nova'.
+  const [vagasNovas, setVagasNovas] = useState(0);
+  useEffect(() => {
+    if (!hasFullAccess) return;
+    let active = true;
+    (async () => {
+      const { count } = await supabase
+        .from('solicitacoes_vaga')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'nova');
+      if (active) setVagasNovas(count || 0);
+    })();
+    return () => { active = false; };
+  }, [hasFullAccess, activePath]);
+
   const sidebarLinks = [
     ...(hasFullAccess ? [
       { path: '/app/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
@@ -2399,6 +2416,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       { path: '/app/avaliacoes', label: 'Avaliações', icon: <Award size={16} /> },
       { path: '/app/cargos', label: 'Cargos & Carreira', icon: <Briefcase size={16} /> },
       { path: '/app/feedback', label: 'Voz do Time', icon: <MessageSquare size={16} /> },
+      { path: '/app/vagas', label: 'Vagas', icon: <UserPlus size={16} /> },
       { path: '/app/ponto', label: 'Espelho de Ponto', icon: <Clock size={16} /> },
       { path: '/app/riscos', label: 'Mapa de Riscos', icon: <Shield size={16} /> },
       { path: '/app/folha', label: 'Lançamentos da Folha', icon: <Receipt size={16} /> },
@@ -2429,7 +2447,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               ? pulseAlertasNovos
               : link.path === '/app/folha'
                 ? folhaPendentes
-                : 0;
+                : link.path === '/app/vagas'
+                  ? vagasNovas
+                  : 0;
             return (
               <button
                 key={link.path}
@@ -5356,6 +5376,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
             {activePath === '/app/folha' && hasFullAccess && (
               <FolhaManager theme={theme} userEmail={user?.email || ''} />
+            )}
+
+            {activePath === '/app/vagas' && hasFullAccess && (
+              <VagasManager theme={theme} userId={user?.id || ''} userEmail={user?.email || ''} />
             )}
 
             {activePath === '/app/agenda' && hasFullAccess && (
