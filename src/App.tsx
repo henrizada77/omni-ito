@@ -8,6 +8,7 @@ import AdmissaoCandidato from './pages/public/AdmissaoCandidato';
 import PesquisaSatisfacao from './pages/public/PesquisaSatisfacao';
 import Ouvidoria from './pages/public/Ouvidoria';
 import SolicitarVaga from './pages/public/SolicitarVaga';
+import TesteComportamental from './pages/public/TesteComportamental';
 import PulseSemanal from './pages/public/PulseSemanal';
 import ManualCultura from './pages/public/ManualCultura';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -165,6 +166,11 @@ export default function App() {
         <Route
           path="/solicitar-vaga"
           element={<SolicitarVaga theme={theme} setTheme={setTheme} />}
+        />
+
+        <Route
+          path="/teste-comportamental/:token"
+          element={<TesteComportamental theme={theme} setTheme={setTheme} />}
         />
 
         <Route

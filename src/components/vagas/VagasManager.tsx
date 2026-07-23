@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import TestesPanel from './TestesPanel';
 import {
   Briefcase,
   Loader2,
@@ -57,6 +58,7 @@ export default function VagasManager({ theme, userId, userEmail }: VagasManagerP
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [filtro, setFiltro] = useState<'todas' | SolicitacaoVaga['status']>('todas');
+  const [subAba, setSubAba] = useState<'solicitacoes' | 'testes'>('solicitacoes');
   const [selecionadaId, setSelecionadaId] = useState<string | null>(null);
 
   // Rascunho de edição da solicitação selecionada
@@ -165,6 +167,25 @@ export default function VagasManager({ theme, userId, userEmail }: VagasManagerP
 
   return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Seletor de sub-aba */}
+      <div className="flex gap-2">
+        <button
+          onClick={() => setSubAba('solicitacoes')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${subAba === 'solicitacoes' ? (theme === 'dark' ? 'bg-white/10 border-white/20' : 'bg-black/10 border-black/20') : (theme === 'dark' ? 'border-white/10 opacity-60 hover:opacity-100' : 'border-black/10 opacity-60 hover:opacity-100')}`}
+        >
+          Solicitações
+        </button>
+        <button
+          onClick={() => setSubAba('testes')}
+          className={`px-3 py-1.5 rounded-lg text-xs font-bold border ${subAba === 'testes' ? (theme === 'dark' ? 'bg-white/10 border-white/20' : 'bg-black/10 border-black/20') : (theme === 'dark' ? 'border-white/10 opacity-60 hover:opacity-100' : 'border-black/10 opacity-60 hover:opacity-100')}`}
+        >
+          Testes DISC
+        </button>
+      </div>
+
+      {subAba === 'testes' && <TestesPanel theme={theme} userId={userId} userEmail={userEmail} />}
+
+      {subAba === 'solicitacoes' && (<>
       {/* Header */}
       <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
@@ -314,6 +335,7 @@ export default function VagasManager({ theme, userId, userEmail }: VagasManagerP
           })}
         </div>
       )}
+      </>)}
     </div>
   );
 }
