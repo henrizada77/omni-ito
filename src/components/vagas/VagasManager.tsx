@@ -7,7 +7,10 @@ import {
   Save,
   ExternalLink,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Link as LinkIcon,
+  Copy,
+  Check
 } from 'lucide-react';
 
 interface VagasManagerProps {
@@ -61,6 +64,17 @@ export default function VagasManager({ theme, userId, userEmail }: VagasManagerP
   const [editLink, setEditLink] = useState('');
   const [editResposta, setEditResposta] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [linkCopiado, setLinkCopiado] = useState(false);
+
+  // Link público para os coordenadores abrirem solicitações (sem login).
+  const linkPublico = `${typeof window !== 'undefined' ? window.location.origin : ''}/solicitar-vaga`;
+  const copiarLink = async () => {
+    try {
+      await navigator.clipboard.writeText(linkPublico);
+      setLinkCopiado(true);
+      setTimeout(() => setLinkCopiado(false), 2000);
+    } catch { /* clipboard bloqueado — link visível em texto */ }
+  };
 
   const fetchLista = async () => {
     setLoading(true);
@@ -168,6 +182,38 @@ export default function VagasManager({ theme, userId, userEmail }: VagasManagerP
         >
           <RefreshCw size={13} /> Atualizar
         </button>
+      </div>
+
+      {/* Link público para divulgar aos coordenadores */}
+      <div className={`p-4 rounded-2xl border ${cardBg} flex flex-col sm:flex-row sm:items-center gap-3`}>
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <LinkIcon size={16} className="opacity-60 shrink-0" />
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold uppercase tracking-wider">Link para coordenadores</div>
+            <code className="block text-[10px] font-mono truncate opacity-70">{linkPublico}</code>
+          </div>
+        </div>
+        <p className="text-[10px] opacity-55 sm:max-w-[200px]">Envie por WhatsApp/e-mail. Abre a página de abertura de vaga, sem login.</p>
+        <div className="flex gap-2 shrink-0">
+          <button
+            onClick={copiarLink}
+            className={`text-[10px] font-bold px-2.5 py-1.5 rounded border flex items-center gap-1 ${
+              linkCopiado
+                ? 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10'
+                : (theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5')
+            }`}
+          >
+            {linkCopiado ? <><Check size={11} /> Copiado</> : <><Copy size={11} /> Copiar</>}
+          </button>
+          <a
+            href={linkPublico}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`text-[10px] font-bold px-2.5 py-1.5 rounded border ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'}`}
+          >
+            Abrir
+          </a>
+        </div>
       </div>
 
       {erro && (
