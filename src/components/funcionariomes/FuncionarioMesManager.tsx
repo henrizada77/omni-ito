@@ -8,7 +8,10 @@ import {
   CircleDashed,
   Play,
   Flag,
-  Plus
+  Plus,
+  Link as LinkIcon,
+  Copy,
+  Check
 } from 'lucide-react';
 import PodioArte, { type TopItem } from './PodioArte';
 
@@ -45,6 +48,16 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
   const [acao, setAcao] = useState(false); // abrir/fechar em andamento
   const [fotos, setFotos] = useState<(string | null)[]>([]);
   const [modoNovaRodada, setModoNovaRodada] = useState(false);
+  const [linkCopiado, setLinkCopiado] = useState(false);
+
+  const linkVotacao = `${typeof window !== 'undefined' ? window.location.origin : ''}/funcionario-do-mes`;
+  const copiarLink = async () => {
+    try {
+      await navigator.clipboard.writeText(linkVotacao);
+      setLinkCopiado(true);
+      setTimeout(() => setLinkCopiado(false), 2000);
+    } catch { /* clipboard bloqueado — link visível em texto */ }
+  };
 
   // Form abrir rodada
   const [competencia, setCompetencia] = useState(hojeCompetencia());
@@ -225,6 +238,34 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
             <button onClick={fecharRodada} disabled={acao} className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 ${btnPrimary} disabled:opacity-50`}>
               {acao ? <Loader2 size={13} className="animate-spin" /> : <Flag size={13} />} Fechar e gerar pódio
             </button>
+          </div>
+
+          {/* Link de votação para divulgar aos colaboradores */}
+          <div className={`p-4 rounded-2xl border ${cardBg} flex flex-col sm:flex-row sm:items-center gap-3`}>
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <LinkIcon size={16} className="opacity-60 shrink-0" />
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold uppercase tracking-wider">Link de votação</div>
+                <code className="block text-[10px] font-mono truncate opacity-70">{linkVotacao}</code>
+              </div>
+            </div>
+            <p className="text-[10px] opacity-55 sm:max-w-[200px]">Envie por WhatsApp/e-mail. Cada colaborador vota uma vez, sem login.</p>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={copiarLink}
+                className={`text-[10px] font-bold px-2.5 py-1.5 rounded border flex items-center gap-1 ${linkCopiado ? 'border-emerald-500/40 text-emerald-500 bg-emerald-500/10' : (theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5')}`}
+              >
+                {linkCopiado ? <><Check size={11} /> Copiado</> : <><Copy size={11} /> Copiar</>}
+              </button>
+              <a
+                href={linkVotacao}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`text-[10px] font-bold px-2.5 py-1.5 rounded border ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'}`}
+              >
+                Abrir
+              </a>
+            </div>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
