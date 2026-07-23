@@ -4,31 +4,42 @@ import {
   UserMinus, 
   AlertTriangle
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  Tooltip 
+import {
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip
 } from 'recharts';
+import { listarSemestres, turnoverSemestre } from '../../utils/turnover';
 
 interface TurnoverPanelProps {
   theme: 'dark' | 'light';
   colaboradoresList: any[];
+  movimentacoesList?: any[];
 }
 
-export default function TurnoverPanel({ theme, colaboradoresList }: TurnoverPanelProps) {
+export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesList = [] }: TurnoverPanelProps) {
   const activeColabs = colaboradoresList.filter(c => c.status === 'ativo' || c.status === 'em_ferias');
-  const activeCount = activeColabs.length;
   const desligados = colaboradoresList.filter(c => c.status === 'desligado');
   const desligadosCount = desligados.length;
 
-  // 1. Turnover Geral Calculation
-  const turnoverGeral = activeCount > 0 ? Math.round((desligadosCount / activeCount) * 100) : 0;
+  // Turnover semestral (helper puro). Menor data de movimento define o início.
+  const todasDatas: string[] = [];
+  colaboradoresList.forEach((c: any) => { if (c?.data_admissao) todasDatas.push(String(c.data_admissao).slice(0, 10)); });
+  movimentacoesList.forEach((m: any) => { if (m?.data_admissao) todasDatas.push(String(m.data_admissao).slice(0, 10)); });
+  const hojeISO = new Date().toISOString().slice(0, 10);
+  const dataMin = todasDatas.length ? todasDatas.reduce((a, b) => (a < b ? a : b)) : hojeISO;
+  const semestres = listarSemestres(dataMin, hojeISO);
+  const evolucao = semestres.map((sem) => {
+    const t = turnoverSemestre(sem, colaboradoresList, movimentacoesList);
+    return { semestre: sem.label, taxa: Number(t.taxa.toFixed(1)), adm: t.admissoes, dem: t.demissoes, efetivo: Number(t.efetivoMedio.toFixed(1)) };
+  });
+  const semestreAtual = evolucao[evolucao.length - 1] ?? { semestre: '—', taxa: 0, adm: 0, dem: 0, efetivo: 0 };
 
   // 2. Voluntário vs Involuntário Pie Chart
   const voluntarioCount = desligados.filter(d => d.tipo_desligamento === 'Voluntario').length;
@@ -78,10 +89,10 @@ export default function TurnoverPanel({ theme, colaboradoresList }: TurnoverPane
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
           theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
-          <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Turnover Geral (Acumulado)</span>
+          <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Turnover Semestral ({semestreAtual.semestre})</span>
           <div>
-            <span className="text-3xl font-extrabold font-mono leading-none">{turnoverGeral}%</span>
-            <span className="text-[9px] opacity-60 block mt-1">Taxa de desligamentos / ativos</span>
+            <span className="text-3xl font-extrabold font-mono leading-none">{semestreAtual.taxa}%</span>
+            <span className="text-[9px] opacity-60 block mt-1">adm {semestreAtual.adm} · dem {semestreAtual.dem} · efetivo médio {semestreAtual.efetivo}</span>
           </div>
         </div>
 
@@ -105,6 +116,25 @@ export default function TurnoverPanel({ theme, colaboradoresList }: TurnoverPane
             <span className="text-3xl font-extrabold font-mono leading-none text-rose-400">{involuntarioCount}</span>
             <span className="text-[9px] opacity-60 block mt-1">Demissões diretas e desligamentos</span>
           </div>
+        </div>
+      </div>
+
+      <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'}`}>
+        <div className="pb-2 border-b border-white/5">
+          <h4 className="text-xs font-bold uppercase tracking-wider opacity-65">Evolução do Turnover por Semestre</h4>
+        </div>
+        <div className="h-48 text-[10px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={evolucao} margin={{ top: 5, right: 15, left: 0, bottom: 5 }}>
+              <XAxis dataKey="semestre" stroke="currentColor" opacity={0.4} tickLine={false} />
+              <YAxis stroke="currentColor" opacity={0.4} tickLine={false} tickFormatter={(v) => `${v}%`} />
+              <Tooltip
+                formatter={(value: any, _n: any, p: any) => [`${value}%`, 'Turnover', `adm ${p.payload.adm} · dem ${p.payload.dem} · efetivo ${p.payload.efetivo}`]}
+                contentStyle={{ backgroundColor: theme === 'dark' ? '#181816' : '#ffffff', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', color: theme === 'dark' ? '#E5DFD3' : '#0A0A0A', fontSize: '11px', borderRadius: '8px' }}
+              />
+              <Bar dataKey="taxa" fill={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'} radius={[4, 4, 0, 0]} barSize={28} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
