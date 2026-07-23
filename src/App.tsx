@@ -7,6 +7,9 @@ import LandingPage from './pages/public/LandingPage';
 import AdmissaoCandidato from './pages/public/AdmissaoCandidato';
 import PesquisaSatisfacao from './pages/public/PesquisaSatisfacao';
 import Ouvidoria from './pages/public/Ouvidoria';
+import SolicitarVaga from './pages/public/SolicitarVaga';
+import TesteComportamental from './pages/public/TesteComportamental';
+import FuncionarioMes from './pages/public/FuncionarioMes';
 import PulseSemanal from './pages/public/PulseSemanal';
 import ManualCultura from './pages/public/ManualCultura';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -32,6 +35,8 @@ const APP_ROUTES: { path: string; allowedRoles: Role[] }[] = [
   { path: '/app/ferias-aso', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/avaliacoes', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/cargos', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/vagas', allowedRoles: ['coordenadora_rh'] },
+  { path: '/app/funcionario-mes', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/feedback', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/ponto', allowedRoles: ['coordenadora_rh'] },
   { path: '/app/riscos', allowedRoles: ['coordenadora_rh'] },
@@ -158,6 +163,21 @@ export default function App() {
         <Route
           path="/ouvidoria"
           element={<Ouvidoria theme={theme} setTheme={setTheme} />}
+        />
+
+        <Route
+          path="/solicitar-vaga"
+          element={<SolicitarVaga theme={theme} setTheme={setTheme} />}
+        />
+
+        <Route
+          path="/teste-comportamental/:token"
+          element={<TesteComportamental theme={theme} setTheme={setTheme} />}
+        />
+
+        <Route
+          path="/funcionario-do-mes"
+          element={<FuncionarioMes theme={theme} setTheme={setTheme} />}
         />
 
         <Route
