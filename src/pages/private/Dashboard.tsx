@@ -29,7 +29,8 @@ import {
   MessageSquare,
   Clock,
   BookOpen,
-  UserPlus
+  UserPlus,
+  Trophy
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
@@ -53,6 +54,7 @@ const PontoManager = lazy(() => import('../../components/ponto/PontoManager'));
 const RiscoManager = lazy(() => import('../../components/risco/RiscoManager'));
 const FolhaManager = lazy(() => import('../../components/folha/FolhaManager'));
 const VagasManager = lazy(() => import('../../components/vagas/VagasManager'));
+const FuncionarioMesManager = lazy(() => import('../../components/funcionariomes/FuncionarioMesManager'));
 import LetterheadWatermark from '../../components/common/LetterheadWatermark';
 import CopilotWidget from '../../components/copilot/CopilotWidget';
 
@@ -2417,6 +2419,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       { path: '/app/cargos', label: 'Cargos & Carreira', icon: <Briefcase size={16} /> },
       { path: '/app/feedback', label: 'Voz do Time', icon: <MessageSquare size={16} /> },
       { path: '/app/vagas', label: 'Vagas', icon: <UserPlus size={16} /> },
+      { path: '/app/funcionario-mes', label: 'Funcionário do Mês', icon: <Trophy size={16} /> },
       { path: '/app/ponto', label: 'Espelho de Ponto', icon: <Clock size={16} /> },
       { path: '/app/riscos', label: 'Mapa de Riscos', icon: <Shield size={16} /> },
       { path: '/app/folha', label: 'Lançamentos da Folha', icon: <Receipt size={16} /> },
@@ -5380,6 +5383,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
             {activePath === '/app/vagas' && hasFullAccess && (
               <VagasManager theme={theme} userId={user?.id || ''} userEmail={user?.email || ''} />
+            )}
+
+            {activePath === '/app/funcionario-mes' && hasFullAccess && (
+              <FuncionarioMesManager theme={theme} userId={user?.id || ''} userEmail={user?.email || ''} />
             )}
 
             {activePath === '/app/agenda' && hasFullAccess && (
