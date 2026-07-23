@@ -33,12 +33,14 @@ import {
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
 import { MESES_PT_BR, DEFAULT_MODELS, buildContractText, getEmpregadora } from '../../data/contractTemplates';
+import { calcularPrazosDesligamento } from '../../utils/desligamento';
 
 // Carregados sob demanda (code-splitting): os painéis de Analytics puxam o
 // Recharts (pesado) e cada Manager é um módulo grande. Assim o bundle inicial
 // do Dashboard fica menor e a tela abre mais rápido; cada um baixa ao entrar.
 const OverviewPanel = lazy(() => import('../../components/analytics/OverviewPanel'));
 const TurnoverPanel = lazy(() => import('../../components/analytics/TurnoverPanel'));
+const ClimaPanel = lazy(() => import('../../components/analytics/ClimaPanel'));
 const HealthSafetyPanel = lazy(() => import('../../components/analytics/HealthSafetyPanel'));
 const CompensationsPanel = lazy(() => import('../../components/analytics/CompensationsPanel'));
 const LegalPanel = lazy(() => import('../../components/analytics/LegalPanel'));
@@ -357,9 +359,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   // Offboarding form states
   const [isOffboardingMode, setIsOffboardingMode] = useState(false);
   const [offboardDate, setOffboardDate] = useState(new Date().toISOString().split('T')[0]);
-  const [offboardType, setOffboardType] = useState<'Voluntario' | 'Involuntario'>('Voluntario');
+  const [offboardTipo, setOffboardTipo] = useState<'sem_justa_causa' | 'pedido_demissao'>('sem_justa_causa');
+  const [offboardModalidade, setOffboardModalidade] = useState<'trabalhado' | 'indenizado_ou_dispensado'>('indenizado_ou_dispensado');
   const [offboardReason, setOffboardReason] = useState('');
   const [isSavingOffboard, setIsSavingOffboard] = useState(false);
+  const [desligamentosList, setDesligamentosList] = useState<any[]>([]);
+  const [movimentacoesList, setMovimentacoesList] = useState<any[]>([]);
+  const [entrevistaDraft, setEntrevistaDraft] = useState({ motivo_real: 'Remuneração', motivo_texto: '', pontos_positivos: '', pontos_melhorar: '', recomendaria: '7', comentarios: '' });
+  const [isSavingEntrevista, setIsSavingEntrevista] = useState(false);
 
   // Férias & ASO Panel States
   const [searchQueryFeriasAso, setSearchQueryFeriasAso] = useState('');
@@ -698,7 +705,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setIsRegisteringOcorrencia(false);
       setIsOffboardingMode(false);
       setOffboardDate(new Date().toISOString().split('T')[0]);
-      setOffboardType('Voluntario');
+      setOffboardTipo('sem_justa_causa');
+      setOffboardModalidade('indenizado_ou_dispensado');
       setOffboardReason('');
       setShowEvalModal(false);
       setSelectedEvalForModal(null);
@@ -711,6 +719,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeColaboradorForDrawer]);
+
+  useEffect(() => {
+    setEntrevistaDraft({ motivo_real: 'Remuneração', motivo_texto: '', pontos_positivos: '', pontos_melhorar: '', recomendaria: '7', comentarios: '' });
+  }, [activeColaboradorForDrawer?.id]);
 
   const fetchTokensList = async () => {
     try {
@@ -1463,12 +1475,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const fetchColaboradoresList = async () => {
     setLoadingColabs(true);
     try {
-      const [colabsRes, benefitsRes, assocRes, planosRes, avaliacoesRes] = await Promise.all([
+      const [colabsRes, benefitsRes, assocRes, planosRes, avaliacoesRes, desligRes, movRes] = await Promise.all([
         supabase.from('colaboradores').select('*').order('nome', { ascending: true }),
         supabase.from('beneficios').select('*'),
         supabase.from('colaborador_beneficios').select('*'),
         supabase.from('planos_carreira').select('*'),
-        supabase.from('avaliacoes_desempenho').select('*').order('data_avaliacao', { ascending: false })
+        supabase.from('avaliacoes_desempenho').select('*').order('data_avaliacao', { ascending: false }),
+        supabase.from('desligamentos').select('*').order('data_limite_pagamento'),
+        supabase.from('movimentacoes_pessoal').select('*')
       ]);
 
       if (colabsRes.error) throw colabsRes.error;
@@ -1491,6 +1505,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (assocRes.data) setDbColaboradorBeneficios(assocRes.data);
       if (planosRes.data) setDbPlanosCarreira(planosRes.data);
       if (avaliacoesRes.data) setDbAvaliacoesDesempenho(avaliacoesRes.data);
+      if (desligRes.data) setDesligamentosList(desligRes.data);
+      if (movRes.data) setMovimentacoesList(movRes.data);
 
       let advertenciasData: any[] = [];
       try {
@@ -1602,6 +1618,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePath]);
 
+  // Carrega a lista uma vez no mount para o RH: o painel "Em Férias Agora"
+  // (Dashboard) e o card de aniversariantes (Agenda) dependem dela mesmo quando
+  // a tela é aberta direto, sem passar por Colaboradores.
+  useEffect(() => {
+    if (hasFullAccess) fetchColaboradoresList();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasFullAccess]);
+
   useEffect(() => {
     if (onboardingProgress === 100 && onboardingStatus === 'ativo') {
       setOnboardingSuccessMessage(true);
@@ -1617,7 +1641,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [indicadoresTrabalhistas, setIndicadoresTrabalhistas] = useState<any[]>([]);
   const [pesquisasSatisfacao, setPesquisasSatisfacao] = useState<any[]>([]);
   const [cargosAnalytics, setCargosAnalytics] = useState<any[]>([]);
-  const [analyticsSubTab, setAnalyticsSubTab] = useState<'geral' | 'turnover' | 'saude' | 'compensacao' | 'juridico'>('geral');
+  const [analyticsSubTab, setAnalyticsSubTab] = useState<'geral' | 'turnover' | 'saude' | 'compensacao' | 'juridico' | 'clima'>('geral');
 
   // --- MÓDULO 5: DASHBOARD KPIs (dados reais) ---
   const [kpiAtivos, setKpiAtivos] = useState(0);
@@ -1699,7 +1723,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const handleOffboardColaborador = async () => {
     if (!activeColaboradorForDrawer) return;
-    if (!offboardDate || !offboardType) {
+    if (!offboardDate || !offboardTipo) {
       notify('Por favor, preencha a data e o tipo de desligamento.');
       return;
     }
@@ -1716,11 +1740,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       if (deleteAssocError) throw deleteAssocError;
 
-      // 2. Update status of the collaborator
+      // 2. Calculate legal deadlines (aviso prévio + CLT 477 §6º) and update status of the collaborator
+      const prazos = calcularPrazosDesligamento(
+        offboardTipo, offboardModalidade, offboardDate,
+        activeColaboradorForDrawer.data_admissao
+      );
       const updateData = {
         status: 'desligado',
-        tipo_desligamento: offboardType,
-        data_desligamento: offboardDate,
+        tipo_desligamento: offboardTipo === 'pedido_demissao' ? 'Voluntario' : 'Involuntario',
+        data_desligamento: prazos.dataTermino,
         motivo_desligamento: offboardReason.trim() || null
       };
 
@@ -1731,15 +1759,31 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
       if (updateError) throw updateError;
 
-      // 3. Log Audit
+      // 3. Insert the deadlines record (no rollback if this fails — notify and continue)
+      const { error: desligError } = await supabase.from('desligamentos').insert({
+        colaborador_id: activeColaboradorForDrawer.id,
+        tipo: offboardTipo,
+        modalidade_aviso: offboardModalidade,
+        data_comunicacao: offboardDate,
+        dias_aviso: prazos.diasAviso,
+        data_termino: prazos.dataTermino,
+        data_limite_pagamento: prazos.dataLimitePagamento,
+        observacoes: offboardReason.trim() || null
+      });
+      if (desligError) notify('Colaborador desligado, mas falhou o registro de prazos: ' + desligError.message);
+
+      // 4. Log Audit
       await logAuditoria('DESLIGAMENTO_COLABORADOR', {
         colaborador_id: activeColaboradorForDrawer.id,
         nome: activeColaboradorForDrawer.nome,
-        tipo: offboardType,
-        data: offboardDate
+        tipo: offboardTipo,
+        modalidade: offboardModalidade,
+        data_comunicacao: offboardDate,
+        data_termino: prazos.dataTermino,
+        data_limite_pagamento: prazos.dataLimitePagamento
       });
 
-      // 4. Update the local active state for the drawer
+      // 5. Update the local active state for the drawer
       setActiveColaboradorForDrawer({
         ...activeColaboradorForDrawer,
         ...updateData
@@ -1753,7 +1797,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setIsOffboardingMode(false);
       notify(`Colaborador ${activeColaboradorForDrawer.nome} desligado com sucesso!`);
 
-      // 5. Refresh lists
+      // 6. Refresh lists (colaboradores e desligamentos)
       fetchColaboradoresList();
       fetchDashboardKpis();
       fetchAnalyticsData();
@@ -2264,6 +2308,32 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       }
     });
 
+    // 6. Aniversários — evento recorrente: a data guardada tem o ano de
+    // nascimento (ex.: 1995-07-14), que nunca bate com o ano exibido no
+    // calendário. Projetamos dia/mês no ano em exibição (currentYear).
+    // A data vem de 3 origens: coluna data_aniversario (cadastro rápido),
+    // coluna data_nascimento, ou o JSON ficha_admissao.data_nascimento.
+    // Inclui 'pendente': quem entra pela ficha de admissão fica em onboarding
+    // (o trigger rebaixa o status até os 8 itens fecharem) e é justamente quem
+    // tem data de nascimento — excluir 'pendente' zerava a lista inteira.
+    colaboradoresList.forEach((col) => {
+      if (!col || col.status === 'desligado') return;
+      const nasc = col.data_aniversario || col.data_nascimento || col.ficha_admissao?.data_nascimento;
+      if (!nasc) return;
+      const d = new Date(String(nasc).slice(0, 10) + 'T12:00:00');
+      if (isNaN(d.getTime())) return;
+      const mm = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      list.push({
+        id: `aniv-${col.id}`,
+        date: `${currentYear}-${mm}-${dd}`,
+        type: 'aniversario',
+        label: `Aniversário: ${col.nome} 🎂`,
+        desc: `${col.nome} (${col.cargo || 'colaborador'}) faz aniversário em ${dd}/${mm}.`,
+        colaborador: col
+      });
+    });
+
     // 5. Data de Advertências (data_falta)
     dbAdvertencias.forEach((adv) => {
       if (!adv || !adv.data_falta) return;
@@ -2282,7 +2352,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     });
 
     return list;
-  }, [colaboradoresList, dbAdvertencias]);
+  }, [colaboradoresList, dbAdvertencias, currentYear]);
 
   // Sidebar Links array builder
   // Badge da sidebar: nº de alertas de pulse ainda não vistos (só faz sentido
@@ -2669,7 +2739,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <h4 className={`text-[9px] font-black tracking-[0.15em] uppercase ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Fim de Experiência</h4>
                           </div>
                           {kpiExperienciaVencer.map((c: any) => {
-                            const dateAdm = new Date(c.data_admissao);
+                            const dateAdm = new Date(c.data_admissao + 'T12:00:00');
                             const dateFim = !isNaN(dateAdm.getTime()) ? new Date(dateAdm.getTime() + 90 * 86400000) : null;
                             const dateStr = dateFim && !isNaN(dateFim.getTime()) ? dateFim.toLocaleDateString('pt-BR') : '—';
                             return (
@@ -2714,6 +2784,46 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               <p className={`font-mono text-[9px] mt-1.5 ${theme === 'dark' ? 'text-teal-300' : 'text-teal-600'}`}>
                                 {retorno ? `retorna ${retorno}` : 'retorno não informado'}
                               </p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* ── Rescisões a Pagar ── */}
+                {(() => {
+                  const pendentes = desligamentosList.filter((d: any) => d && !d.pagamento_efetuado_em);
+                  if (pendentes.length === 0) return null;
+                  const hoje = new Date().toISOString().split('T')[0];
+                  return (
+                    <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-rose-500/15 bg-[#111110]' : 'border-rose-200 bg-white'}`}>
+                      <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-200'}`}>
+                        <span className="text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">💸 Rescisões a Pagar</span>
+                        <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-100 text-rose-600'}`}>{pendentes.length}</span>
+                      </div>
+                      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {pendentes.map((d: any) => {
+                          const col = colaboradoresList.find((c: any) => c.id === d.colaborador_id);
+                          const vencido = d.data_limite_pagamento < hoje;
+                          return (
+                            <div key={d.id} className={`p-3 rounded-xl border text-xs ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-100'}`}>
+                              <p className="font-semibold truncate">{col?.nome || 'Colaborador'}</p>
+                              <p className={`font-mono text-[9px] mt-1 ${vencido ? 'text-rose-500 font-black' : (theme === 'dark' ? 'text-rose-300' : 'text-rose-600')}`}>
+                                {vencido ? '⚠ VENCIDO — ' : 'pagar até '}{new Date(d.data_limite_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}
+                              </p>
+                              <button
+                                onClick={async () => {
+                                  const { error } = await supabase.from('desligamentos')
+                                    .update({ pagamento_efetuado_em: new Date().toISOString().split('T')[0] })
+                                    .eq('id', d.id);
+                                  if (error) { notify('Erro ao marcar pagamento: ' + error.message); return; }
+                                  await logAuditoria('RESCISAO_PAGAMENTO_MARCADO', { desligamento_id: d.id, colaborador_id: d.colaborador_id });
+                                  fetchColaboradoresList();
+                                }}
+                                className={`mt-2 w-full py-1.5 rounded-lg text-[9px] font-bold tracking-widest uppercase border transition-colors ${theme === 'dark' ? 'border-rose-500/25 text-rose-300 hover:bg-rose-500/10' : 'border-rose-300 text-rose-600 hover:bg-rose-50'}`}
+                              >✓ Marcar pago</button>
                             </div>
                           );
                         })}
@@ -3623,7 +3733,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 <td className="p-3 opacity-80">{c.setor}</td>
                                 <td className="p-3 font-mono opacity-70">
                                   {(() => {
-                                    const d = new Date(c.data_admissao);
+                                    const d = new Date(c.data_admissao + 'T12:00:00');
                                     return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
                                   })()}
                                 </td>
@@ -4296,6 +4406,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     {[
                       { key: 'geral', label: 'Geral' },
                       { key: 'turnover', label: 'Movimentação (Turnover)' },
+                      { key: 'clima', label: 'Clima & Frequência' },
                       { key: 'saude', label: 'Saúde & Frequência' },
                       { key: 'compensacao', label: 'Compensação & Paridade' },
                       { key: 'juridico', label: 'Segurança Jurídica' }
@@ -4372,6 +4483,16 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 {analyticsSubTab === 'turnover' && (
                   <TurnoverPanel
                     theme={theme}
+                    colaboradoresList={colaboradoresList}
+                    movimentacoesList={movimentacoesList}
+                  />
+                )}
+
+                {analyticsSubTab === 'clima' && (
+                  <ClimaPanel
+                    theme={theme}
+                    pesquisasList={pesquisasSatisfacao}
+                    ocorrenciasList={ocorrenciasAnalytics}
                     colaboradoresList={colaboradoresList}
                   />
                 )}
@@ -5354,6 +5475,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     else if (ev.type === 'experiencia') dotColor = 'bg-amber-500';
                                     else if (ev.type === 'advertencia') dotColor = 'bg-rose-500 animate-pulse';
                                     else if (ev.type === 'admissao') dotColor = 'bg-violet-500';
+                                    else if (ev.type === 'aniversario') dotColor = 'bg-pink-500';
 
                                     return (
                                       <span
@@ -5396,6 +5518,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                         <span>Advertência</span>
                       </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-pink-500" />
+                        <span>Aniversário</span>
+                      </div>
                     </div>
 
                   </div>
@@ -5437,6 +5563,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 cardColor = 'border-violet-500/20 bg-violet-500/5';
                                 badgeColor = 'bg-violet-500/10 text-violet-400 border-violet-500/20';
                                 labelType = 'ADMISSÃO';
+                              } else if (ev.type === 'aniversario') {
+                                cardColor = 'border-pink-500/20 bg-pink-500/5';
+                                badgeColor = 'bg-pink-500/10 text-pink-400 border-pink-500/20';
+                                labelType = 'ANIVERSÁRIO 🎂';
                               }
 
                               return (
@@ -5486,17 +5616,25 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </h4>
                       <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1 scrollbar-thin">
                         {(() => {
-                          const aniversariantes = colaboradoresList
-                            .filter(c => c && (c.status === 'ativo' || c.status === 'em_ferias') && (c.data_aniversario || c.data_nascimento))
-                            .map(c => {
-                              const d = new Date((c.data_aniversario || c.data_nascimento) + 'T12:00:00');
-                              return { c, d };
-                            })
-                            .filter(({ d }) => !isNaN(d.getTime()) && d.getMonth() === currentMonth)
-                            .sort((a, b) => a.d.getDate() - b.d.getDate());
+                          // Mesma fonte dos dots do calendário (calendarEvents,
+                          // type 'aniversario'): se o dot aparece no grid, o
+                          // colaborador aparece aqui — sem lógica duplicada.
+                          const aniversariantes = calendarEvents
+                            .filter((ev: any) => ev.type === 'aniversario' && ev.colaborador)
+                            .map((ev: any) => ({ c: ev.colaborador, d: new Date(ev.date + 'T12:00:00') }))
+                            .filter(({ d }: any) => !isNaN(d.getTime()) && d.getMonth() === currentMonth)
+                            .sort((a: any, b: any) => a.d.getDate() - b.d.getDate());
 
                           if (aniversariantes.length === 0) {
-                            return <div className="py-6 text-center opacity-50 italic text-xs">Nenhum aniversariante neste mês.</div>;
+                            return (
+                              <div className="py-6 text-center opacity-50 italic text-xs">
+                                {loadingColabs
+                                  ? 'Carregando colaboradores…'
+                                  : colaboradoresList.length === 0
+                                    ? 'Lista de colaboradores não carregou — recarregue a página.'
+                                    : 'Nenhum aniversariante neste mês (ou sem data de nascimento cadastrada).'}
+                              </div>
+                            );
                           }
 
                           return aniversariantes.map(({ c, d }) => {
@@ -5882,6 +6020,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   {/* Seção de Desligamento */}
                   <div className="pt-4 border-t border-white/10 space-y-4">
                     {activeColaboradorForDrawer.status === 'desligado' ? (
+                      <>
                       <div className={`p-4 rounded-xl border text-xs space-y-2 ${theme === 'dark' ? 'bg-rose-500/5 border-rose-500/10 text-[#E5DFD3]' : 'bg-rose-500/5 border-rose-500/10 text-rose-800'
                         }`}>
                         <div className="flex items-center gap-1.5 text-rose-500 font-bold uppercase tracking-wider text-[10px]">
@@ -5904,6 +6043,65 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           )}
                         </div>
                       </div>
+                      {(() => {
+                        const deslig = desligamentosList.find((d: any) => d.colaborador_id === activeColaboradorForDrawer.id);
+                        if (!deslig) return null;
+                        if (deslig.entrevista_realizada_em) {
+                          return (
+                            <div className={`p-4 rounded-xl border space-y-2 text-xs ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'}`}>
+                              <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">✓ Entrevista de Desligamento — {new Date(deslig.entrevista_realizada_em).toLocaleDateString('pt-BR')}</h5>
+                              <p><b>Motivo real:</b> {deslig.entrevista_motivo_real || '—'}</p>
+                              <p><b>Pontos positivos:</b> {deslig.entrevista_pontos_positivos || '—'}</p>
+                              <p><b>A melhorar:</b> {deslig.entrevista_pontos_melhorar || '—'}</p>
+                              <p><b>Recomendaria (0–10):</b> {deslig.entrevista_recomendaria ?? '—'}</p>
+                              {deslig.entrevista_comentarios && <p className="italic opacity-80">"{deslig.entrevista_comentarios}"</p>}
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'}`}>
+                            <h5 className="text-[10px] font-bold uppercase tracking-wider text-amber-500">🗒 Entrevista de Desligamento — pendente</h5>
+                            <div className="space-y-2 text-xs">
+                              <select value={entrevistaDraft.motivo_real} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_real: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`}>
+                                {['Remuneração', 'Liderança', 'Carreira', 'Clima', 'Pessoal', 'Outro'].map(m => <option key={m} value={m}>{m}</option>)}
+                              </select>
+                              <input placeholder="Detalhe do motivo (opcional)" value={entrevistaDraft.motivo_texto} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_texto: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <textarea rows={2} placeholder="O que funcionou bem?" value={entrevistaDraft.pontos_positivos} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_positivos: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <textarea rows={2} placeholder="O que a clínica pode melhorar?" value={entrevistaDraft.pontos_melhorar} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_melhorar: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <div>
+                                <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Recomendaria trabalhar aqui? (0–10)</label>
+                                <input type="number" min={0} max={10} value={entrevistaDraft.recomendaria} onChange={e => setEntrevistaDraft(p => ({ ...p, recomendaria: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              </div>
+                              <textarea rows={2} placeholder="Comentários finais (opcional)" value={entrevistaDraft.comentarios} onChange={e => setEntrevistaDraft(p => ({ ...p, comentarios: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <button
+                                disabled={isSavingEntrevista}
+                                onClick={async () => {
+                                  setIsSavingEntrevista(true);
+                                  try {
+                                    const nota = parseInt(entrevistaDraft.recomendaria, 10);
+                                    const { error } = await supabase.from('desligamentos').update({
+                                      entrevista_realizada_em: new Date().toISOString(),
+                                      entrevista_motivo_real: entrevistaDraft.motivo_texto.trim() ? `${entrevistaDraft.motivo_real} — ${entrevistaDraft.motivo_texto.trim()}` : entrevistaDraft.motivo_real,
+                                      entrevista_pontos_positivos: entrevistaDraft.pontos_positivos.trim() || null,
+                                      entrevista_pontos_melhorar: entrevistaDraft.pontos_melhorar.trim() || null,
+                                      entrevista_recomendaria: isNaN(nota) ? null : Math.max(0, Math.min(10, nota)),
+                                      entrevista_comentarios: entrevistaDraft.comentarios.trim() || null
+                                    }).eq('id', deslig.id);
+                                    if (error) throw error;
+                                    await logAuditoria('ENTREVISTA_DESLIGAMENTO_REGISTRADA', { desligamento_id: deslig.id, colaborador_id: deslig.colaborador_id });
+                                    notify('Entrevista registrada.');
+                                    setEntrevistaDraft({ motivo_real: 'Remuneração', motivo_texto: '', pontos_positivos: '', pontos_melhorar: '', recomendaria: '7', comentarios: '' });
+                                    fetchColaboradoresList();
+                                  } catch (err: any) { notify('Erro ao salvar entrevista: ' + err.message); }
+                                  finally { setIsSavingEntrevista(false); }
+                                }}
+                                className="w-full py-2 rounded-lg font-bold text-xs bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+                              >{isSavingEntrevista ? 'Salvando…' : '✓ Registrar Entrevista'}</button>
+                            </div>
+                          </div>
+                        );
+                      })()}
+                      </>
                     ) : isOffboardingMode ? (
                       <div className={`p-4 rounded-xl border space-y-3.5 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
                         }`}>
@@ -5912,7 +6110,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         </h5>
                         <div className="space-y-3 text-xs">
                           <div>
-                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data do Desligamento *</label>
+                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Comunicação *</label>
                             <input
                               type="date"
                               required
@@ -5925,15 +6123,38 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <div>
                             <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tipo de Desligamento *</label>
                             <select
-                              value={offboardType}
-                              onChange={e => setOffboardType(e.target.value as any)}
+                              value={offboardTipo}
+                              onChange={e => setOffboardTipo(e.target.value as any)}
                               className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
                                 }`}
                             >
-                              <option value="Voluntario" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Voluntário (Pedido de Demissão)</option>
-                              <option value="Involuntario" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Involuntário (Demissão pela Empresa)</option>
+                              <option value="sem_justa_causa" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Sem justa causa (empresa desliga)</option>
+                              <option value="pedido_demissao" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Pedido de demissão (colaborador sai)</option>
                             </select>
                           </div>
+                          <div>
+                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Modalidade do Aviso *</label>
+                            <select
+                              value={offboardModalidade}
+                              onChange={e => setOffboardModalidade(e.target.value as any)}
+                              className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                }`}
+                            >
+                              <option value="indenizado_ou_dispensado" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Aviso indenizado / dispensado</option>
+                              <option value="trabalhado" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Aviso trabalhado</option>
+                            </select>
+                          </div>
+                          {offboardDate && (() => {
+                            const p = calcularPrazosDesligamento(offboardTipo, offboardModalidade, offboardDate, activeColaboradorForDrawer?.data_admissao);
+                            const fmt = (iso: string) => new Date(iso + 'T12:00:00').toLocaleDateString('pt-BR');
+                            return (
+                              <div className={`p-3 rounded-lg border text-[10px] space-y-1 ${theme === 'dark' ? 'bg-amber-500/8 border-amber-500/20' : 'bg-amber-50 border-amber-200'}`}>
+                                <p><b>Aviso prévio:</b> {p.diasAviso} dias</p>
+                                <p><b>Término do contrato:</b> {fmt(p.dataTermino)}</p>
+                                <p><b>Pagamento das verbas até:</b> {fmt(p.dataLimitePagamento)} (CLT 477 §6º)</p>
+                              </div>
+                            );
+                          })()}
                           <div>
                             <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Motivo do Desligamento</label>
                             <textarea

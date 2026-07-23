@@ -223,8 +223,8 @@ begin
 
   new.onboarding_progresso := (true_count * 100) / total_items;
   
-  if new.status = 'desligado' then
-    -- Keep status as 'desligado'
+  if new.status in ('desligado', 'em_ferias') then
+    -- Keep manual statuses ('desligado', 'em_ferias') — see sprint27
   elsif new.onboarding_progresso = 100 then
     new.status := 'ativo';
   else
