@@ -30,7 +30,8 @@ import {
   Clock,
   BookOpen,
   UserPlus,
-  Trophy
+  Trophy,
+  Camera
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
@@ -588,6 +589,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   // Ocorrências States
   const [drawerTab, setDrawerTab] = useState<'pessoal' | 'admissao' | 'ocorrencias' | 'carreira'>('pessoal');
+  // Foto de perfil do drawer: documentos_anexos.foto guarda só o PATH no bucket
+  // 'documentos-envios' (sem URL pública). Geramos signed URL sob demanda p/ o <img>.
+  const [fotoDrawerUrl, setFotoDrawerUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let ativo = true;
+    const path = activeColaboradorForDrawer?.documentos_anexos?.foto;
+    if (!path) { setFotoDrawerUrl(null); return; }
+    supabase.storage.from('documentos-envios').createSignedUrl(path, 3600)
+      .then(({ data }) => { if (ativo) setFotoDrawerUrl(data?.signedUrl || null); })
+      .catch(() => { if (ativo) setFotoDrawerUrl(null); });
+    return () => { ativo = false; };
+  }, [activeColaboradorForDrawer?.id, activeColaboradorForDrawer?.documentos_anexos?.foto]);
   const [ocorrenciasList, setOcorrenciasList] = useState<any[]>([]);
   const [isRegisteringOcorrencia, setIsRegisteringOcorrencia] = useState(false);
   const [ocTipo, setOcTipo] = useState('Atraso');
@@ -5864,30 +5877,80 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             }`}>
             <div className="space-y-6 overflow-y-auto pr-2">
 
-              {/* Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                <div>
-                  <span className="text-[9px] font-bold tracking-widest uppercase opacity-60">Prontuário do Colaborador</span>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <h3 className="text-base font-bold truncate max-w-[200px]">{activeColaboradorForDrawer.nome}</h3>
+              {/* Header de perfil */}
+              <div className="relative mb-2 pb-4 border-b border-white/10 overflow-hidden">
+                {/* brilho + assinatura ambiente */}
+                <div aria-hidden className="pointer-events-none absolute -right-10 -top-16 w-56 h-56 rounded-full bg-brand/15 blur-3xl" />
+                <img
+                  aria-hidden
+                  src="/signature-hero.png"
+                  alt=""
+                  className={`pointer-events-none select-none absolute right-0 top-0 h-full w-1/2 object-cover object-right [mask-image:radial-gradient(120%_120%_at_100%_30%,#000_28%,transparent_72%)] ${theme === 'dark' ? 'mix-blend-screen opacity-60' : 'opacity-20'}`}
+                />
+                <div className="relative flex items-start gap-4">
+                  {/* Avatar: foto ou iniciais + fab de câmera */}
+                  {(() => {
+                    const nome = activeColaboradorForDrawer.nome || 'Colaborador';
+                    const ini = nome.trim().split(/\s+/).slice(0, 2).map((w: string) => w[0] || '').join('').toUpperCase() || '?';
+                    return (
+                      <div className="relative shrink-0">
+                        <div className="w-20 h-20 rounded-2xl overflow-hidden ring-2 ring-brand/20 shadow-[0_10px_28px_-10px_rgba(16,24,40,0.5)] grid place-items-center bg-brand/12 text-brand">
+                          {fotoDrawerUrl
+                            ? <img src={fotoDrawerUrl} alt={nome} className="w-full h-full object-cover" />
+                            : <span className="font-display text-2xl font-semibold">{ini}</span>}
+                        </div>
+                        {hasFullAccess && (
+                          <button
+                            onClick={() => { setUploadFileType('foto'); setDrawerTab('pessoal'); }}
+                            title="Trocar foto (aba Pessoal)"
+                            aria-label="Trocar foto de perfil"
+                            className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-brand text-white grid place-items-center ring-2 ring-[#0D0D0C] hover:bg-brand-strong transition-colors"
+                          >
+                            <Camera size={13} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  <div className="min-w-0 flex-1">
+                    <span className="text-[9px] font-bold tracking-widest uppercase opacity-60">Prontuário do Colaborador</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <h3 className="font-display text-xl font-semibold truncate">{activeColaboradorForDrawer.nome}</h3>
+                      {(() => {
+                        const colabAdvs = warningsMap[activeColaboradorForDrawer.id] || [];
+                        return colabAdvs.length > 0 && (
+                          <span className="shrink-0 inline-flex items-center gap-1 text-[8px] font-extrabold uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                            ⚠️ {colabAdvs.length}
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    <p className="text-xs opacity-60 truncate mt-0.5">
+                      {activeColaboradorForDrawer.cargo}{activeColaboradorForDrawer.setor ? ` · ${activeColaboradorForDrawer.setor}` : ''}
+                    </p>
                     {(() => {
-                      const colabAdvs = warningsMap[activeColaboradorForDrawer.id] || [];
-                      return colabAdvs.length > 0 && (
-                        <span className="shrink-0 inline-flex items-center gap-1 text-[8px] font-extrabold uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20 px-1.5 py-0.5 rounded">
-                          ⚠️ {colabAdvs.length}
+                      const st = activeColaboradorForDrawer.status;
+                      const map: Record<string, { cls: string; label: string }> = {
+                        ativo: { cls: 'bg-emerald-500/12 text-emerald-500', label: 'Ativo' },
+                        em_ferias: { cls: 'bg-teal-500/12 text-teal-500', label: 'Em férias' },
+                        desligado: { cls: 'bg-rose-500/12 text-rose-500', label: 'Desligado' },
+                      };
+                      const s = map[st] || { cls: 'bg-amber-500/12 text-amber-600', label: st || '—' };
+                      return (
+                        <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full mt-2 ${s.cls}`}>
+                          <span className="w-1.5 h-1.5 rounded-full bg-current" />{s.label}
                         </span>
                       );
                     })()}
                   </div>
-                  <span className="text-xs opacity-50 block mt-0.5">{activeColaboradorForDrawer.cargo}</span>
+                  <button
+                    onClick={() => setActiveColaboradorForDrawer(null)}
+                    title="Fechar"
+                    className={`shrink-0 p-1.5 rounded-lg border hover:bg-white/5 transition-colors ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
+                  >
+                    <X size={16} />
+                  </button>
                 </div>
-                <button
-                  onClick={() => setActiveColaboradorForDrawer(null)}
-                  className={`p-1.5 rounded-lg border hover:bg-white/5 transition-colors ${theme === 'dark' ? 'border-white/10' : 'border-black/10'
-                    }`}
-                >
-                  <X size={16} />
-                </button>
               </div>
 
               {/* Tab Selector — scrollable horizontal */}
@@ -5909,7 +5972,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       key={tab}
                       onClick={() => setDrawerTab(tab)}
                       className={`shrink-0 px-3 pb-2.5 text-[9px] font-bold uppercase tracking-wider border-b-2 transition-all ${drawerTab === tab
-                          ? (theme === 'dark' ? 'border-[#E5DFD3] text-[#E5DFD3]' : 'border-[#0A0A0A] text-[#0A0A0A]')
+                          ? 'border-brand text-brand'
                           : 'border-transparent opacity-45 hover:opacity-80'
                         }`}
                     >
