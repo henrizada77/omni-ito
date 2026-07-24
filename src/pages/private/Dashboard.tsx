@@ -58,6 +58,43 @@ const FuncionarioMesManager = lazy(() => import('../../components/funcionariomes
 import LetterheadWatermark from '../../components/common/LetterheadWatermark';
 import CopilotWidget from '../../components/copilot/CopilotWidget';
 
+// Linha de pessoa no estilo do mockup: avatar com iniciais (tonal) + nome +
+// subtítulo opcional + pill de data suave, sobre superfície limpa (surface-2).
+// Reutilizada nos blocos de Alertas / Em Férias / Rescisões.
+type LinhaTone = 'rose' | 'amber' | 'sky' | 'teal' | 'brand';
+function PessoaLinha({ nome, sub, dataStr, tone, theme, danger }: {
+  nome: string; sub?: string; dataStr?: string; tone: LinhaTone; theme: string; danger?: boolean;
+}) {
+  const iniciais = (nome || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+  const dark = theme === 'dark';
+  const av: Record<LinhaTone, string> = {
+    rose: 'bg-rose-500/15 text-rose-400',
+    amber: 'bg-amber-500/15 text-amber-500',
+    sky: 'bg-sky-500/15 text-sky-500',
+    teal: 'bg-teal-500/15 text-teal-500',
+    brand: 'bg-brand/15 text-brand',
+  };
+  const pill: Record<LinhaTone, string> = {
+    rose: dark ? 'bg-rose-500/12 text-rose-300' : 'bg-rose-50 text-rose-600',
+    amber: dark ? 'bg-amber-500/12 text-amber-300' : 'bg-amber-50 text-amber-600',
+    sky: dark ? 'bg-sky-500/12 text-sky-300' : 'bg-sky-50 text-sky-600',
+    teal: dark ? 'bg-teal-500/12 text-teal-300' : 'bg-teal-50 text-teal-600',
+    brand: dark ? 'bg-brand/12 text-brand' : 'bg-brand/10 text-brand',
+  };
+  return (
+    <div className="flex items-center gap-3 p-2.5 rounded-xl bg-surface-2 border border-line hover:border-brand/25 transition-colors">
+      <span className={`w-8 h-8 rounded-full grid place-items-center text-[10px] font-bold shrink-0 ${av[tone]}`}>{iniciais}</span>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-fg truncate">{nome}</p>
+        {sub && <p className="text-[10px] text-fg-muted truncate">{sub}</p>}
+      </div>
+      {dataStr && (
+        <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full shrink-0 ${danger ? (dark ? 'bg-rose-500/20 text-rose-300' : 'bg-rose-100 text-rose-600') : pill[tone]}`}>{dataStr}</span>
+      )}
+    </div>
+  );
+}
+
 export default function Dashboard({ theme, setTheme, user, role }: DashboardProps) {
   const location = useLocation();
   const navigate = useNavigate();
@@ -2703,9 +2740,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   })}
                 </div>
 
+                {/* ── Alertas + Em Férias (lado a lado) ── */}
+                <div className="flex flex-col lg:flex-row gap-5 lg:items-start">
                 {/* ── Alertas Reais ── */}
                 {(kpiAsoVencer.length > 0 || kpiFeriasVencer.length > 0 || kpiExperienciaVencer.length > 0 || dbAdvertencias.length > 0) && (
-                  <div className="rounded-2xl border border-rose-500/20 bg-surface overflow-hidden">
+                  <div className="w-full lg:flex-[2] min-w-0 rounded-2xl border border-rose-500/20 bg-surface overflow-hidden">
                     {/* Alert Header Bar */}
                     <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-200'
                       }`}>
@@ -2723,7 +2762,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     </div>
 
                     {/* Alert Content */}
-                    <div className="p-5 grid grid-cols-1 md:grid-cols-4 gap-5">
+                    <div className="p-5 grid grid-cols-1 xl:grid-cols-2 gap-4">
                       {dbAdvertencias.length > 0 && (
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 mb-3">
@@ -2734,15 +2773,13 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             {dbAdvertencias.slice(0, 5).map((adv: any) => {
                               const colab = colaboradoresList.find(c => c.id === adv.colaborador_id);
                               return (
-                                <div key={adv.id} className={`p-2.5 rounded-xl border text-[11px] flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-rose-950/20 border-rose-500/20 hover:bg-rose-900/25' : 'bg-rose-50/50 border-rose-100'
-                                  } transition-colors`}>
-                                  <span className="font-semibold truncate">{colab?.nome?.split(' ').slice(0, 2).join(' ') || 'Colaborador'}</span>
-                                  <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-100 text-rose-600'
-                                    }`}>{(() => {
-                                      const d = new Date(adv.data_falta + 'T12:00:00');
-                                      return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
-                                    })()}</span>
-                                </div>
+                                <PessoaLinha
+                                  key={adv.id}
+                                  nome={colab?.nome || 'Colaborador'}
+                                  dataStr={(() => { const d = new Date(adv.data_falta + 'T12:00:00'); return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR'); })()}
+                                  tone="rose"
+                                  theme={theme}
+                                />
                               );
                             })}
                           </div>
@@ -2758,12 +2795,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             const dateD = new Date(c.data_aso_vencimento);
                             const dateStr = isNaN(dateD.getTime()) ? '—' : dateD.toLocaleDateString('pt-BR');
                             return (
-                              <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15 hover:bg-rose-500/12' : 'bg-rose-50 border-rose-100'
-                                } transition-colors`}>
-                                <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
-                                <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-100 text-rose-600'
-                                  }`}>{dateStr}</span>
-                              </div>
+                              <PessoaLinha key={c.id} nome={c.nome} dataStr={dateStr} tone="rose" theme={theme} />
                             );
                           })}
                         </div>
@@ -2778,12 +2810,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             const dateD = new Date(c.data_ferias_vencimento);
                             const dateStr = isNaN(dateD.getTime()) ? '—' : dateD.toLocaleDateString('pt-BR');
                             return (
-                              <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-amber-500/8 border-amber-500/15 hover:bg-amber-500/12' : 'bg-amber-50 border-amber-100'
-                                } transition-colors`}>
-                                <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
-                                <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-100 text-amber-600'
-                                  }`}>{dateStr}</span>
-                              </div>
+                              <PessoaLinha key={c.id} nome={c.nome} dataStr={dateStr} tone="amber" theme={theme} />
                             );
                           })}
                         </div>
@@ -2799,12 +2826,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             const dateFim = !isNaN(dateAdm.getTime()) ? new Date(dateAdm.getTime() + 90 * 86400000) : null;
                             const dateStr = dateFim && !isNaN(dateFim.getTime()) ? dateFim.toLocaleDateString('pt-BR') : '—';
                             return (
-                              <div key={c.id} className={`p-3 rounded-xl border text-xs flex justify-between items-center gap-2 ${theme === 'dark' ? 'bg-sky-500/8 border-sky-500/15 hover:bg-sky-500/12' : 'bg-sky-50 border-sky-100'
-                                } transition-colors`}>
-                                <span className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</span>
-                                <span className={`font-mono text-[9px] shrink-0 px-2 py-0.5 rounded-full font-bold ${theme === 'dark' ? 'bg-sky-500/15 text-sky-300' : 'bg-sky-100 text-sky-600'
-                                  }`}>{dateStr}</span>
-                              </div>
+                              <PessoaLinha key={c.id} nome={c.nome} dataStr={dateStr} tone="sky" theme={theme} />
                             );
                           })}
                         </div>
@@ -2818,7 +2840,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   const emFeriasList = colaboradoresList.filter((c: any) => c && c.status === 'em_ferias');
                   if (emFeriasList.length === 0) return null;
                   return (
-                    <div className="rounded-2xl border border-teal-500/20 bg-surface overflow-hidden">
+                    <div className="w-full lg:flex-[1] min-w-0 rounded-2xl border border-teal-500/20 bg-surface overflow-hidden">
                       <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-200'}`}>
                         <div className="flex items-center gap-2.5">
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm ${theme === 'dark' ? 'bg-teal-500/15' : 'bg-teal-100'}`}>🏖</div>
@@ -2828,25 +2850,27 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           {emFeriasList.length} colaborador{emFeriasList.length > 1 ? 'es' : ''}
                         </span>
                       </div>
-                      <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="p-5 grid grid-cols-1 gap-3">
                         {emFeriasList.map((c: any) => {
                           const retorno = c.ferias_inicio && c.ferias_dias
                             ? new Date(addDaysISO(c.ferias_inicio, c.ferias_dias) + 'T12:00:00').toLocaleDateString('pt-BR')
                             : null;
                           return (
-                            <div key={c.id} className={`p-3 rounded-xl border text-xs ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-100'}`}>
-                              <p className="font-semibold truncate">{c.nome.split(' ').slice(0, 2).join(' ')}</p>
-                              <p className="text-[9px] mt-0.5 text-fg-muted">{c.cargo || '—'}</p>
-                              <p className={`font-mono text-[9px] mt-1.5 ${theme === 'dark' ? 'text-teal-300' : 'text-teal-600'}`}>
-                                {retorno ? `retorna ${retorno}` : 'retorno não informado'}
-                              </p>
-                            </div>
+                            <PessoaLinha
+                              key={c.id}
+                              nome={c.nome}
+                              sub={c.cargo || '—'}
+                              dataStr={retorno ? `retorna ${retorno}` : 's/ retorno'}
+                              tone="teal"
+                              theme={theme}
+                            />
                           );
                         })}
                       </div>
                     </div>
                   );
                 })()}
+                </div>
 
                 {/* ── Rescisões a Pagar ── */}
                 {(() => {
@@ -2863,12 +2887,19 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         {pendentes.map((d: any) => {
                           const col = colaboradoresList.find((c: any) => c.id === d.colaborador_id);
                           const vencido = d.data_limite_pagamento < hoje;
+                          const nomeR = col?.nome || 'Colaborador';
+                          const iniR = nomeR.trim().split(/\s+/).slice(0, 2).map((w: string) => w[0] || '').join('').toUpperCase() || '?';
                           return (
-                            <div key={d.id} className={`p-3 rounded-xl border text-xs ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-100'}`}>
-                              <p className="font-semibold truncate">{col?.nome || 'Colaborador'}</p>
-                              <p className={`font-mono text-[9px] mt-1 ${vencido ? 'text-rose-500 font-black' : (theme === 'dark' ? 'text-rose-300' : 'text-rose-600')}`}>
-                                {vencido ? '⚠ VENCIDO — ' : 'pagar até '}{new Date(d.data_limite_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}
-                              </p>
+                            <div key={d.id} className="p-3 rounded-xl bg-surface-2 border border-line space-y-2.5">
+                              <div className="flex items-center gap-3">
+                                <span className="w-8 h-8 rounded-full grid place-items-center text-[10px] font-bold shrink-0 bg-rose-500/15 text-rose-400">{iniR}</span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="text-xs font-semibold text-fg truncate">{nomeR}</p>
+                                  <p className={`text-[10px] mt-0.5 ${vencido ? 'text-rose-500 font-bold' : 'text-fg-muted'}`}>
+                                    {vencido ? '⚠ Vencido · ' : 'Pagar até '}{new Date(d.data_limite_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                  </p>
+                                </div>
+                              </div>
                               <button
                                 onClick={async () => {
                                   const { error } = await supabase.from('desligamentos')
@@ -2878,7 +2909,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   await logAuditoria('RESCISAO_PAGAMENTO_MARCADO', { desligamento_id: d.id, colaborador_id: d.colaborador_id });
                                   fetchColaboradoresList();
                                 }}
-                                className={`mt-2 w-full py-1.5 rounded-lg text-[9px] font-bold tracking-widest uppercase border transition-colors ${theme === 'dark' ? 'border-rose-500/25 text-rose-300 hover:bg-rose-500/10' : 'border-rose-300 text-rose-600 hover:bg-rose-50'}`}
+                                className={`w-full py-1.5 rounded-lg text-[9px] font-bold tracking-widest uppercase border transition-colors ${theme === 'dark' ? 'border-rose-500/25 text-rose-300 hover:bg-rose-500/10' : 'border-rose-300 text-rose-600 hover:bg-rose-50'}`}
                               >✓ Marcar pago</button>
                             </div>
                           );
