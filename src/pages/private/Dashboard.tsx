@@ -2585,13 +2585,13 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               <div className="space-y-8 animate-fadeIn">
 
                 {/* ── Header ── */}
-                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 pb-6 border-b border-white/8">
+                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3 pb-6 border-b border-line">
                   <div>
-                    <p className={`text-[10px] font-bold tracking-[0.2em] uppercase mb-1.5 ${theme === 'dark' ? 'text-[#E5DFD3]/40' : 'text-black/35'}`}>
+                    <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-1.5 text-fg-muted">
                       Instituto Thiago Omena · Omni RH
                     </p>
                     <h2 className="text-2xl font-extrabold tracking-tight leading-none">Painel de Controle</h2>
-                    <p className={`text-xs mt-1.5 ${theme === 'dark' ? 'text-[#E5DFD3]/45' : 'text-black/40'}`}>
+                    <p className="text-xs mt-1.5 text-fg-muted">
                       Centro operacional · {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                   </div>
@@ -2646,10 +2646,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       icon: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length > 0 ? '⚠️' : '✅'
                     },
                   ].map((k, i) => (
-                    <div key={i} className={`relative p-5 rounded-2xl border-t-2 flex flex-col justify-between h-32 transition-all duration-200 hover:scale-[1.02] ${k.accent} ${k.glow} ${theme === 'dark' ? 'bg-[#111110] border border-white/6 border-t-2' : 'bg-white border border-black/6 border-t-2'
-                      }`}>
+                    <div key={i} className={`relative p-5 rounded-2xl border-t-2 flex flex-col justify-between h-32 transition-all duration-200 hover:scale-[1.02] bg-surface border border-line border-t-2 ${k.accent} ${k.glow}`}>
                       <div className="flex items-start justify-between">
-                        <span className={`text-[9px] font-bold tracking-[0.15em] uppercase leading-tight ${theme === 'dark' ? 'text-white/40' : 'text-black/40'}`}>
+                        <span className="text-[9px] font-bold tracking-[0.15em] uppercase leading-tight text-fg-muted">
                           {k.label}
                         </span>
                         <span className="text-base leading-none opacity-60">{k.icon}</span>
@@ -2659,7 +2658,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             k.color === 'sky' ? 'text-sky-400' :
                               k.color === 'amber' ? 'text-amber-400' : 'text-rose-400'
                           }`}>{k.value}</span>
-                        <p className={`text-[9px] mt-1.5 ${theme === 'dark' ? 'text-white/35' : 'text-black/35'}`}>{k.sub}</p>
+                        <p className="text-[9px] mt-1.5 text-fg-muted">{k.sub}</p>
                       </div>
                     </div>
                   ))}
