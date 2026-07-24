@@ -4,7 +4,29 @@
    próprio bundle, sem CDN. */
 @import "@fontsource-variable/inter";
 
+/* Fraunces (serif de display, editorial e acolhedora) + Nunito (rótulos
+   arredondados, "meigos"). Subsets latinos servidos pelo próprio bundle,
+   sem CDN — pareiam com a Inter do corpo. */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/fraunces-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito Variable";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("./assets/fonts/nunito-var.woff2") format("woff2");
+}
+
 @theme {
+  /* Famílias tipográficas → utilities font-display / font-rounded (Tailwind v4) */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-rounded: "Nunito Variable", "Inter Variable", system-ui, sans-serif;
+
   /* Warm Minimalist & Onyx Palette */
   --color-bg-light: #FBFBFA;
   --color-bg-dark: #0D0D0C;
@@ -303,4 +325,21 @@ body.light .skeleton {
 }
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background: rgba(229, 223, 211, 0.2);
+}
+
+/* === Liquid glass do hero (rebrand azul/navy) ===
+   Vidro fosco que só "aparece" sobre o fundo colorido da saudação: blur +
+   saturação, gradiente translúcido e realce de borda no topo. Tema-aware via
+   body.dark (o app alterna a classe .dark no body, não segue o SO). */
+.glass-hero {
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.22));
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 6px 20px rgba(16, 24, 40, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+body.dark .glass-hero {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
 }

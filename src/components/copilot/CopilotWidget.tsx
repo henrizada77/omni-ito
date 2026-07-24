@@ -172,12 +172,13 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          title="Copiloto de RH"
-          className={`fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-105 ${
-            dark ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-white'
-          }`}
+          title="Copiloto de Gente"
+          aria-label="Abrir Copiloto de Gente"
+          className="group fixed bottom-5 right-5 z-50 w-14 h-14 rounded-full flex items-center justify-center text-white transition-all duration-200 hover:scale-105 bg-gradient-to-br from-brand to-brand-strong ring-1 ring-white/25 shadow-[0_10px_30px_-8px_rgba(79,109,245,0.65)] hover:shadow-[0_14px_36px_-8px_rgba(79,109,245,0.8)]"
         >
-          <Sparkles size={22} />
+          {/* halo pulsante suave */}
+          <span aria-hidden className="absolute inset-0 rounded-full bg-brand/40 blur-md -z-10 animate-pulse" />
+          <Sparkles size={22} className="drop-shadow-[0_1px_2px_rgba(0,0,0,0.25)]" />
         </button>
       )}
 
@@ -187,7 +188,7 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
           {/* Header */}
           <div className={`flex items-center justify-between px-4 py-3 border-b ${dark ? 'border-white/10' : 'border-black/10'}`}>
             <div className="flex items-center gap-2">
-              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${dark ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-white'}`}>
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-brand text-white">
                 <Sparkles size={15} />
               </div>
               <div className="leading-tight">
