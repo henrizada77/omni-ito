@@ -363,3 +363,40 @@ body.dark .glass-fill {
 body.dark .glass-sheen {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 32px -16px rgba(0, 0, 0, 0.55);
 }
+
+/* === Organograma (árvore CSS top-down, estilo do print: caixas navy) === */
+:root { --org-box: #111a2e; --org-box-fg: #f5f7ff; }
+.dark { --org-box: #1b2844; --org-box-fg: #e6eaf2; }
+
+.org-tree { display: inline-flex; }
+.org-tree ul { display: flex; padding-top: 22px; position: relative; margin: 0; padding-left: 0; }
+.org-tree li {
+  list-style: none; position: relative; padding: 22px 10px 0;
+  display: flex; flex-direction: column; align-items: center;
+}
+/* conectores horizontais (metade para cada lado) */
+.org-tree li::before, .org-tree li::after {
+  content: ''; position: absolute; top: 0; right: 50%;
+  border-top: 1.5px solid var(--ds-line); width: 50%; height: 22px;
+}
+.org-tree li::after { right: auto; left: 50%; border-left: 1.5px solid var(--ds-line); }
+.org-tree li:only-child::before, .org-tree li:only-child::after { display: none; }
+.org-tree li:first-child::before, .org-tree li:last-child::after { border: 0 none; }
+.org-tree li:last-child::before { border-right: 1.5px solid var(--ds-line); border-radius: 0 8px 0 0; }
+.org-tree li:first-child::after { border-radius: 8px 0 0 0; }
+/* stem vertical do pai até a barra dos filhos (só em uls aninhadas) */
+.org-tree ul ul::before {
+  content: ''; position: absolute; top: 0; left: 50%;
+  border-left: 1.5px solid var(--ds-line); width: 0; height: 22px;
+}
+/* nível raiz: sem conectores entrando */
+.org-tree > ul { padding-top: 0; }
+.org-tree > ul > li { padding-top: 0; }
+.org-tree > ul > li::before, .org-tree > ul > li::after { display: none; }
+
+.org-box {
+  background: var(--org-box); color: var(--org-box-fg);
+  border-radius: 10px; padding: 9px 15px; min-width: 118px; max-width: 210px;
+  box-shadow: 0 6px 18px -8px rgba(16, 24, 40, 0.35);
+  position: relative; text-align: center;
+}

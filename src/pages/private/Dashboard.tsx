@@ -56,6 +56,7 @@ const RiscoManager = lazy(() => import('../../components/risco/RiscoManager'));
 const FolhaManager = lazy(() => import('../../components/folha/FolhaManager'));
 const VagasManager = lazy(() => import('../../components/vagas/VagasManager'));
 const FuncionarioMesManager = lazy(() => import('../../components/funcionariomes/FuncionarioMesManager'));
+const OrganogramaManager = lazy(() => import('../../components/organograma/OrganogramaManager'));
 import LetterheadWatermark from '../../components/common/LetterheadWatermark';
 import CopilotWidget from '../../components/copilot/CopilotWidget';
 
@@ -381,7 +382,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
 
   // --- MÓDULO 2: COLABORADORES & SIDE-BY-SIDE ---
-  const [colabSubTab, setColabSubTab] = useState<'quadro' | 'admissao' | 'cadastrar' | 'desligados'>('quadro');
+  const [colabSubTab, setColabSubTab] = useState<'quadro' | 'admissao' | 'cadastrar' | 'desligados' | 'organograma'>('quadro');
 
   // Quadro de Funcionários filters and sorting
   const [searchQuery, setSearchQuery] = useState('');
@@ -2488,7 +2489,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm bg-brand text-white`}>
             ITO
           </div>
-          <span className="font-semibold tracking-wider text-base">OMNI ITO</span>
+          <span className="font-rounded font-extrabold tracking-wide text-base">OMNI ITO</span>
         </div>
 
         {/* Links list */}
@@ -2509,7 +2510,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   navigate(link.path);
                   setIsMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${isActive
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl font-rounded text-[13px] font-bold tracking-wide transition-all relative ${isActive
                     ? 'bg-brand/12 text-brand'
                     : 'text-fg-secondary hover:bg-surface-2 hover:text-fg'
                   }`}
@@ -2587,7 +2588,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm bg-brand text-white`}>
             ITO
           </div>
-          <span className="font-semibold tracking-wider text-base">OMNI ITO</span>
+          <span className="font-rounded font-extrabold tracking-wide text-base">OMNI ITO</span>
         </div>
 
         <div className="flex items-center gap-3">
@@ -3665,6 +3666,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       Desligados
                     </button>
                     <button
+                      onClick={() => setColabSubTab('organograma')}
+                      className={`text-xs px-4 py-1.5 rounded font-bold transition-all ${colabSubTab === 'organograma'
+                          ? 'bg-brand text-white'
+                          : 'opacity-60 hover:opacity-100'
+                        }`}
+                    >
+                      Organograma
+                    </button>
+                    <button
                       onClick={() => setColabSubTab('admissao')}
                       className={`text-xs px-4 py-1.5 rounded font-bold transition-all ${colabSubTab === 'admissao'
                           ? (theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white')
@@ -3684,6 +3694,16 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     </button>
                   </div>
                 </div>
+
+                {/* Sub-tab: Organograma */}
+                {colabSubTab === 'organograma' && (
+                  <OrganogramaManager
+                    theme={theme}
+                    colaboradoresList={colaboradoresList}
+                    hasFullAccess={hasFullAccess}
+                    notify={notify}
+                  />
+                )}
 
                 {/* Sub-tab 1: Quadro de Funcionários (Time Ativo) */}
                 {(colabSubTab === 'quadro' || colabSubTab === 'desligados') && (
