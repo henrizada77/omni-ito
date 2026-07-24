@@ -191,10 +191,10 @@ export default function RiscoManager({ theme }: RiscoManagerProps) {
   const [search, setSearch] = useState('');
   const [filtroBanda, setFiltroBanda] = useState<'todos' | Banda>('todos');
 
-  const cardBg = theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm';
-  const kpiBg = theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm';
+  const cardBg = theme === 'dark' ? 'glass-fill border-white/10' : 'bg-white border-black/10 shadow-sm';
+  const kpiBg = theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm';
   const inputBg = theme === 'dark'
-    ? 'bg-[#0D0D0C] border-white/10 focus:border-[#E5DFD3]/40'
+    ? 'glass-fill border-white/10 focus:border-brand/40'
     : 'bg-white border-black/10 focus:border-black/40';
 
   useEffect(() => {
@@ -269,7 +269,7 @@ export default function RiscoManager({ theme }: RiscoManagerProps) {
       {/* Header */}
       <div className="pb-6 border-b border-white/10">
         <div className="flex items-center gap-2">
-          <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 13</span>
+          <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/20">MÓDULO 13</span>
           <h3 className="text-xl font-bold flex items-center gap-2">
             <ShieldAlert size={20} className="text-rose-400" /> Mapa de Riscos
           </h3>
@@ -322,7 +322,7 @@ export default function RiscoManager({ theme }: RiscoManagerProps) {
             className="bg-transparent py-2 text-sm outline-none w-full"
           />
         </div>
-        <div className={`inline-flex p-1 rounded-xl border self-start ${theme === 'dark' ? 'border-white/10 bg-[#0D0D0C]' : 'border-black/10 bg-white'}`}>
+        <div className={`inline-flex p-1 rounded-xl border self-start ${theme === 'dark' ? 'border-white/10 glass-fill' : 'border-black/10 bg-white'}`}>
           {([
             { key: 'todos', label: 'Todos' },
             { key: 'alto', label: 'Alto' },
@@ -334,7 +334,7 @@ export default function RiscoManager({ theme }: RiscoManagerProps) {
               onClick={() => setFiltroBanda(f.key)}
               className={`px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wide transition-colors ${
                 filtroBanda === f.key
-                  ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]')
+                  ? (theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white')
                   : 'opacity-55 hover:opacity-100'
               }`}
             >

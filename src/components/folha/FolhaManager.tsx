@@ -75,12 +75,12 @@ export default function FolhaManager({ theme, userEmail }: FolhaManagerProps) {
   const [fDescricao, setFDescricao] = useState<string>('');
   const [adding, setAdding] = useState(false);
 
-  const cardBg = theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm';
-  const kpiBg = theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm';
+  const cardBg = theme === 'dark' ? 'glass-fill border-white/10' : 'bg-white border-black/10 shadow-sm';
+  const kpiBg = theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm';
   const inputBg = theme === 'dark'
-    ? 'bg-[#0D0D0C] border-white/10 focus:border-[#E5DFD3]/40'
+    ? 'glass-fill border-white/10 focus:border-brand/40'
     : 'bg-white border-black/10 focus:border-black/40';
-  const btnPrimary = theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]';
+  const btnPrimary = theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong';
   const btnSecondary = theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-white/90' : 'border-black/10 hover:bg-black/5 text-black/90';
 
   const fetchAll = async () => {
@@ -234,7 +234,7 @@ export default function FolhaManager({ theme, userEmail }: FolhaManagerProps) {
       <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 14</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/20">MÓDULO 14</span>
             <h3 className="text-xl font-bold flex items-center gap-2">
               <Receipt size={20} className="text-emerald-400" /> Lançamentos da Folha
             </h3>
@@ -351,7 +351,7 @@ export default function FolhaManager({ theme, userEmail }: FolhaManagerProps) {
             onClick={() => setFiltroStatus(s)}
             className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-colors ${
               filtroStatus === s
-                ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] border-transparent' : 'bg-black text-white border-transparent')
+                ? (theme === 'dark' ? 'bg-brand text-white border-transparent' : 'bg-black text-white border-transparent')
                 : btnSecondary
             }`}
           >

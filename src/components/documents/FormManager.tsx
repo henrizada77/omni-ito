@@ -111,7 +111,7 @@ export default function FormManager({ theme }: FormManagerProps) {
         <button
           onClick={() => setShowCreateModal(true)}
           className={`text-xs px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 transition-colors shrink-0 ${
-            theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+            theme === 'dark' ? 'bg-brand text-black hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'
           }`}
         >
           <Plus size={14} /> Ficha de Admissão Local
@@ -121,7 +121,7 @@ export default function FormManager({ theme }: FormManagerProps) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Create Link Panel */}
         <div className={`p-5 rounded-xl border space-y-4 h-fit ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <div className="pb-2 border-b border-white/5">
             <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">
@@ -172,7 +172,7 @@ export default function FormManager({ theme }: FormManagerProps) {
                     const setor = sectorMapping[cargo] || "Recepção";
                     setNewLinkData(p => ({ ...p, cargo, setor }));
                   }}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/10 bg-[#121211]':'border-black/10 bg-white'}`} 
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/10 glass-fill':'border-black/10 bg-white'}`} 
                 >
                   {["Recepcionista", "Operador de Call Center", "Analista Financeiro", "Fisioterapeuta Dermato-Funcional", "Biomédica", "Enfermeira", "Farmacêutica", "Serviços Gerais", "Nutricionista", "Coordenadora de RH", "Administrador de TI"].map(c => <option key={c}>{c}</option>)}
                 </select>
@@ -190,7 +190,7 @@ export default function FormManager({ theme }: FormManagerProps) {
               type="submit"
               disabled={generatingLink}
               className={`w-full py-2 rounded font-bold text-xs transition-colors ${
-                theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+                theme === 'dark' ? 'bg-brand text-black hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'
               } disabled:opacity-50`}
             >
               {generatingLink ? 'Gerando...' : '✓ Gerar Link Admissão'}
@@ -200,7 +200,7 @@ export default function FormManager({ theme }: FormManagerProps) {
 
         {/* Links listing and Status */}
         <div className={`p-5 rounded-xl border space-y-4 lg:col-span-2 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <div className="pb-2 border-b border-white/5">
             <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">
@@ -239,7 +239,7 @@ export default function FormManager({ theme }: FormManagerProps) {
                     <button
                       onClick={() => copyToClipboard(token.token, token.id)}
                       className={`p-1.5 rounded hover:bg-white/5 transition-colors border ${
-                        theme === 'dark' ? 'border-white/10 text-[#E5DFD3]' : 'border-black/10 text-[#0A0A0A]'
+                        theme === 'dark' ? 'border-white/10 text-fg' : 'border-black/10 text-fg'
                       }`}
                       title="Copiar Link de Admissão"
                     >
@@ -268,8 +268,8 @@ export default function FormManager({ theme }: FormManagerProps) {
           {/* Modal content */}
           <div className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl p-6 rounded-2xl border z-50 max-h-[90vh] overflow-y-auto ${
             theme === 'dark' 
-              ? 'bg-[#0D0D0C]/95 border-white/10 text-[#E5DFD3] glass-card-dark' 
-              : 'bg-[#FBFBFA]/95 border-black/10 text-[#0A0A0A] glass-card-light'
+              ? 'glass-fill/95 border-white/10 text-fg glass-card-dark' 
+              : 'bg-surface/95 border-black/10 text-fg glass-card-light'
           }`}>
             <div className="flex justify-between items-center pb-4 border-b border-white/10 mb-5">
               <div>

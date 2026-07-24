@@ -319,7 +319,7 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-white/10 pb-5">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 6</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/20">MÓDULO 6</span>
             <h3 className="text-xl font-bold">Gestão de Benefícios & Folha</h3>
           </div>
           <p className="text-xs opacity-65 mt-1">Configure benefícios adicionais ou descontos e associe em massa aos colaboradores.</p>
@@ -327,7 +327,7 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
         <button
           onClick={() => setShowAddForm(!showAddForm)}
           className={`text-xs px-4 py-2 rounded-lg font-bold flex items-center gap-1.5 transition-colors shrink-0 ${
-            showAddForm ? 'bg-rose-500/10 border border-rose-500/25 text-rose-400' : (theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]')
+            showAddForm ? 'bg-rose-500/10 border border-rose-500/25 text-rose-400' : (theme === 'dark' ? 'bg-brand text-black hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong')
           }`}
         >
           {showAddForm ? 'Cancelar' : <><Plus size={14} /> Novo Benefício</>}
@@ -351,7 +351,7 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
       {/* Add Form Panel */}
       {showAddForm && (
         <form onSubmit={handleCreateBenefit} className={`p-5 rounded-xl border space-y-4 animate-fadeIn text-xs ${
-          theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+          theme === 'dark' ? 'glass-fill border-white/10' : 'bg-black/5 border-black/10'
         }`}>
           <h5 className="font-bold uppercase tracking-wider opacity-60">Novo Benefício Corporativo</h5>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -371,10 +371,10 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
               <select
                 value={newBenefit.tipo}
                 onChange={e => setNewBenefit(prev => ({ ...prev, tipo: e.target.value as any }))}
-                className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}
+                className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}
               >
-                <option value="adicional" className={theme==='dark'?'bg-[#121211] text-white':'bg-white text-black'}>Adicional (Soma ao Salário)</option>
-                <option value="desconto" className={theme==='dark'?'bg-[#121211] text-white':'bg-white text-black'}>Desconto (Subtrai da Folha)</option>
+                <option value="adicional" className={theme==='dark'?'glass-fill text-white':'bg-white text-black'}>Adicional (Soma ao Salário)</option>
+                <option value="desconto" className={theme==='dark'?'glass-fill text-white':'bg-white text-black'}>Desconto (Subtrai da Folha)</option>
               </select>
             </div>
             <div>
@@ -404,7 +404,7 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
             type="submit"
             disabled={saving}
             className={`px-5 py-2.5 rounded font-bold transition-colors ${
-              theme==='dark' ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]':'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+              theme==='dark' ? 'bg-brand text-black hover:bg-brand-strong':'bg-brand text-white hover:bg-brand-strong'
             }`}
           >
             {saving ? 'Cadastrando...' : '✓ Cadastrar Benefício'}
@@ -433,8 +433,8 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
                   onClick={() => loadBenefitAssociations(b)}
                   className={`p-4 rounded-xl border text-left cursor-pointer transition-all flex justify-between items-center ${
                     isSelected 
-                      ? (theme === 'dark' ? 'border-[#E5DFD3] bg-white/5' : 'border-[#0A0A0A] bg-black/5')
-                      : (theme === 'dark' ? 'border-white/5 bg-[#121211] hover:bg-white/[0.02]' : 'border-black/5 bg-black/[0.01] hover:bg-black/[0.03]')
+                      ? (theme === 'dark' ? 'border-brand bg-white/5' : 'border-brand bg-black/5')
+                      : (theme === 'dark' ? 'border-white/5 glass-fill hover:bg-white/[0.02]' : 'border-black/5 bg-black/[0.01] hover:bg-black/[0.03]')
                   }`}
                 >
                   <div className="space-y-1 max-w-[70%]">
@@ -484,7 +484,7 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
         <div className="lg:col-span-2">
           {selectedBenefit ? (
             <div className={`p-5 rounded-xl border space-y-4 h-full flex flex-col justify-between ${
-              theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+              theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
             }`}>
               <div className="space-y-2">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/10 pb-3 gap-2">
@@ -562,7 +562,7 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
                   onClick={handleSaveAssociations}
                   disabled={saving}
                   className={`px-4 py-2 rounded font-bold text-xs transition-all flex items-center gap-1.5 ${
-                    theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+                    theme === 'dark' ? 'bg-brand text-black hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'
                   } disabled:opacity-50`}
                 >
                   {saving ? <Loader2 size={13} className="animate-spin" /> : '✓ Salvar Associações'}

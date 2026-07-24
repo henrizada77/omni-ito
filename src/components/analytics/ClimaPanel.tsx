@@ -74,7 +74,7 @@ export default function ClimaPanel({ theme, pesquisasList, ocorrenciasList, cola
   ).length;
   const taxaMesAtual = absenteismo[absenteismo.length - 1]?.taxa ?? 0;
 
-  const cardCls = `p-5 rounded-xl border ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm'}`;
+  const cardCls = `p-5 rounded-xl border ${theme === 'dark' ? 'glass-fill border-white/10' : 'bg-white border-black/10 shadow-sm'}`;
   const axisColor = theme === 'dark' ? 'rgba(255,255,255,0.45)' : 'rgba(0,0,0,0.45)';
 
   return (

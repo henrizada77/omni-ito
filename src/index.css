@@ -4,7 +4,29 @@
    próprio bundle, sem CDN. */
 @import "@fontsource-variable/inter";
 
+/* Fraunces (serif de display, editorial e acolhedora) + Nunito (rótulos
+   arredondados, "meigos"). Subsets latinos servidos pelo próprio bundle,
+   sem CDN — pareiam com a Inter do corpo. */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url("./assets/fonts/fraunces-var.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito Variable";
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url("./assets/fonts/nunito-var.woff2") format("woff2");
+}
+
 @theme {
+  /* Famílias tipográficas → utilities font-display / font-rounded (Tailwind v4) */
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-rounded: "Nunito Variable", "Inter Variable", system-ui, sans-serif;
+
   /* Warm Minimalist & Onyx Palette */
   --color-bg-light: #FBFBFA;
   --color-bg-dark: #0D0D0C;
@@ -21,6 +43,49 @@
      traz essa utility, então as transições entre passos, abas e modais eram
      no-op. Definida aqui, elas passam a acontecer de fato. */
   --animate-fadeIn: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* === Design system (rebrand azul/navy) — ver docs/design-system.md ===
+   Tokens tema-aware: os valores mudam sob .dark; @theme inline expõe como
+   utilities (bg-brand, text-fg, bg-surface, border-line, ...). */
+:root {
+  --brand: #4F6DF5;
+  --brand-strong: #3D5AE0;
+  --brand-contrast: #FFFFFF;
+  --ds-bg: #F3F5FB;
+  --ds-surface: #FFFFFF;
+  --ds-surface-2: #F1F3F9;
+  --ds-sidebar: #FFFFFF;
+  --ds-line: #E9ECF3;
+  --ds-fg: #0F1729;
+  --ds-fg-secondary: #5B6472;
+  --ds-fg-muted: #8A94A6;
+}
+.dark {
+  --brand: #5B7CFA;
+  --brand-strong: #7089FF;
+  --brand-contrast: #0A0E17;
+  --ds-bg: #0A0E17;
+  --ds-surface: #121A2A;
+  --ds-surface-2: #0F1626;
+  --ds-sidebar: #0C111C;
+  --ds-line: #1E2739;
+  --ds-fg: #E6EAF2;
+  --ds-fg-secondary: #9AA4B6;
+  --ds-fg-muted: #6B7688;
+}
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-canvas: var(--ds-bg);
+  --color-surface: var(--ds-surface);
+  --color-surface-2: var(--ds-surface-2);
+  --color-sidebar: var(--ds-sidebar);
+  --color-line: var(--ds-line);
+  --color-fg: var(--ds-fg);
+  --color-fg-secondary: var(--ds-fg-secondary);
+  --color-fg-muted: var(--ds-fg-muted);
 }
 
 @keyframes fadeIn {
@@ -260,4 +325,122 @@ body.light .skeleton {
 }
 .sidebar-scroll:hover::-webkit-scrollbar-thumb {
   background: rgba(229, 223, 211, 0.2);
+}
+
+/* === Liquid glass do hero (rebrand azul/navy) ===
+   Vidro fosco que só "aparece" sobre o fundo colorido da saudação: blur +
+   saturação, gradiente translúcido e realce de borda no topo. Tema-aware via
+   body.dark (o app alterna a classe .dark no body, não segue o SO). */
+.glass-hero {
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.22));
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 0 6px 20px rgba(16, 24, 40, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+body.dark .glass-hero {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0.04));
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* glass-fill: essência do liquid glass (fundo translúcido + blur + saturação)
+   para casar com bordas/sombras/hover que continuam vindo do Tailwind inline.
+   Substitui `bg-surface` nos cards e painéis "flutuantes". Tema-aware via body.dark. */
+/* Translúcido leve SEM backdrop-blur (performance): aplicado em muitos cards,
+   então nada de filtro caro aqui — só uma cor translúcida que deixa a aurora
+   transparecer. Blur real fica só no hero e nos poucos painéis flutuantes (.glass-blur). */
+.glass-fill {
+  background-color: color-mix(in srgb, var(--ds-surface) 88%, transparent);
+}
+body.dark .glass-fill {
+  background-color: color-mix(in srgb, var(--ds-surface) 74%, transparent);
+}
+/* Vidro real (com blur) — usar com PARCIMÔNIA: só em elementos flutuantes
+   isolados (drawer, copiloto, modais), nunca em listas de cards. */
+.glass-blur {
+  backdrop-filter: blur(12px) saturate(150%);
+  -webkit-backdrop-filter: blur(12px) saturate(150%);
+}
+/* Realce "líquido": fina luz no topo da borda, some no reduced-motion-safe.
+   Aplicar junto de glass-fill em cards que se beneficiam do brilho. */
+.glass-sheen {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 10px 30px -16px rgba(16, 24, 40, 0.35);
+}
+body.dark .glass-sheen {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 12px 32px -16px rgba(0, 0, 0, 0.55);
+}
+
+/* === Organograma (árvore CSS top-down, estilo do print: caixas navy) === */
+:root { --org-box: #111a2e; --org-box-fg: #f5f7ff; }
+.dark { --org-box: #1b2844; --org-box-fg: #e6eaf2; }
+
+.org-tree { display: inline-flex; }
+.org-tree ul { display: flex; padding-top: 22px; position: relative; margin: 0; padding-left: 0; }
+.org-tree li {
+  list-style: none; position: relative; padding: 22px 10px 0;
+  display: flex; flex-direction: column; align-items: center;
+}
+/* conectores horizontais (metade para cada lado) */
+.org-tree li::before, .org-tree li::after {
+  content: ''; position: absolute; top: 0; right: 50%;
+  border-top: 1.5px solid var(--ds-line); width: 50%; height: 22px;
+}
+.org-tree li::after { right: auto; left: 50%; border-left: 1.5px solid var(--ds-line); }
+.org-tree li:only-child::before, .org-tree li:only-child::after { display: none; }
+.org-tree li:first-child::before, .org-tree li:last-child::after { border: 0 none; }
+.org-tree li:last-child::before { border-right: 1.5px solid var(--ds-line); border-radius: 0 8px 0 0; }
+.org-tree li:first-child::after { border-radius: 8px 0 0 0; }
+/* stem vertical do pai até a barra dos filhos (só em uls aninhadas) */
+.org-tree ul ul::before {
+  content: ''; position: absolute; top: 0; left: 50%;
+  border-left: 1.5px solid var(--ds-line); width: 0; height: 22px;
+}
+/* nível raiz: sem conectores entrando */
+.org-tree > ul { padding-top: 0; }
+.org-tree > ul > li { padding-top: 0; }
+.org-tree > ul > li::before, .org-tree > ul > li::after { display: none; }
+
+.org-box {
+  background: var(--org-box); color: var(--org-box-fg);
+  border-radius: 10px; padding: 9px 15px; min-width: 118px; max-width: 210px;
+  box-shadow: 0 6px 18px -8px rgba(16, 24, 40, 0.35);
+  position: relative; text-align: center;
+}
+
+/* === Fundo "aurora" do app: dá profundidade premium e faz o glass refratar ===
+   Aplicado no root do shell (.app-aurora). Radiais suaves em brand + um toque
+   teal (vibe clínica), fixos ao rolar. Escuro rico; claro bem sutil. */
+.app-aurora { background-color: var(--ds-bg); }
+body.dark .app-aurora {
+  background-image:
+    radial-gradient(1100px 620px at 12% -8%, color-mix(in srgb, var(--brand) 18%, transparent), transparent 60%),
+    radial-gradient(900px 520px at 108% 2%, rgba(45, 212, 191, 0.06), transparent 55%),
+    radial-gradient(1000px 780px at 50% 120%, color-mix(in srgb, var(--brand) 10%, transparent), transparent 62%);
+}
+body.light .app-aurora {
+  background-image:
+    radial-gradient(1000px 560px at 12% -10%, color-mix(in srgb, var(--brand) 9%, transparent), transparent 60%),
+    radial-gradient(880px 520px at 108% 0%, rgba(45, 212, 191, 0.05), transparent 55%);
+}
+
+/* Realce interativo dos cards (inspirado no card Uiverse, adaptado à paleta):
+   borda em gradiente teal→brand que acende no hover + brilho azul + elevação.
+   Combinar com glass-fill/border nos cards clicáveis. */
+.card-glow { position: relative; transition: transform .25s ease, box-shadow .3s ease, border-color .2s ease; }
+.card-glow::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px;
+  background: linear-gradient(163deg, #2dd4bf 0%, var(--brand) 55%, var(--brand-strong) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; transition: opacity .3s ease; pointer-events: none; z-index: 1;
+}
+.card-glow:hover::before { opacity: .9; }
+.card-glow:hover {
+  box-shadow: 0 22px 48px -20px color-mix(in srgb, var(--brand) 55%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.10);
+}
+body.light .card-glow:hover {
+  box-shadow: 0 22px 48px -22px color-mix(in srgb, var(--brand) 40%, transparent),
+              inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
