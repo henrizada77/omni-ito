@@ -645,7 +645,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     canvas.height = 140 * dpr;
     ctx.scale(dpr, dpr);
 
-    ctx.strokeStyle = theme === 'dark' ? '#E5DFD3' : '#0A0A0A';
+    ctx.strokeStyle = theme === 'dark' ? '#E6EAF2' : '#0F1729';
     ctx.lineWidth = 2.5;
     ctx.lineCap = 'round';
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2581,7 +2581,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       </aside>
 
       {/* 2. Mobile Top Navigation Header */}
-      <header className={`md:hidden sticky top-0 z-50 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between transition-colors ${theme === 'dark' ? 'border-white/10 bg-surface-2/80' : 'border-black/5 bg-[#FBFBFA]/80'
+      <header className={`md:hidden sticky top-0 z-50 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between transition-colors ${theme === 'dark' ? 'border-white/10 bg-surface-2/80' : 'border-black/5 bg-surface/80'
         }`}>
         <div className="flex items-center gap-3">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm bg-brand text-white`}>
@@ -2599,7 +2599,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           </span>
           <button
             onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            className={`p-2 rounded-lg border transition-colors ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-[#FBFBFA]'
+            className={`p-2 rounded-lg border transition-colors ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-surface'
               }`}
           >
             {isMobileSidebarOpen ? <X size={16} /> : <Menu size={16} />}
@@ -2614,7 +2614,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             onClick={() => setIsMobileSidebarOpen(false)}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
           />
-          <aside className={`fixed inset-y-0 left-0 w-64 p-6 z-50 transform transition-transform duration-300 ease-in-out md:hidden ${theme === 'dark' ? 'bg-surface-2 border-r border-white/10' : 'bg-[#FBFBFA] border-r border-black/10'
+          <aside className={`fixed inset-y-0 left-0 w-64 p-6 z-50 transform transition-transform duration-300 ease-in-out md:hidden ${theme === 'dark' ? 'bg-surface-2 border-r border-white/10' : 'bg-surface border-r border-black/10'
             }`}>
             {renderSidebarContent()}
           </aside>
@@ -3034,8 +3034,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 <div className="pb-5 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 1</span>
-                      <h3 className="text-xl font-bold">Gestão de Documentos</h3>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/15 text-brand">MÓDULO 1</span>
+                      <h3 className="font-display text-xl font-semibold">Gestão de Documentos</h3>
                     </div>
                     <p className="text-xs opacity-65 mt-1">Modelos, formulários, envios e assinaturas em um único painel.</p>
                   </div>
@@ -3052,7 +3052,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     ] as [typeof docsSubTab, string][]).map(([key, label]) => (
                       <button key={key} onClick={() => { setDocsSubTab(key); if (key === 'historico') fetchDocsHistorico(); }}
                         className={`text-[10px] px-3 py-1.5 rounded-lg font-bold transition-all ${docsSubTab === key
-                            ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]')
+                            ? (theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white')
                             : 'opacity-55 hover:opacity-100'
                           }`}>{label}</button>
                     ))}
@@ -3078,7 +3078,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
-                        <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Ações Rápidas</h4>
+                        <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Ações Rápidas</h4>
                         {[
                           { label: 'Novo Modelo de Documento', icon: <FileText size={15} />, action: () => { setDocsSubTab('modelos'); setShowNewModeloForm(true); } },
                           { label: 'Criar Formulário', icon: <ClipboardCheck size={15} />, action: () => setDocsSubTab('formularios') },
@@ -3094,7 +3094,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         ))}
                       </div>
                       <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
-                        <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Modelos Disponíveis</h4>
+                        <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Modelos Disponíveis</h4>
                         {modelos.length > 0 ? modelos.map((m: any) => (
                           <div key={m.id} className={`p-3 rounded-lg border flex items-center justify-between text-xs ${theme === 'dark' ? 'border-white/5 bg-white/[0.02]' : 'border-black/5 bg-black/[0.01]'}`}>
                             <span className="font-semibold truncate">{m.titulo}</span>
@@ -3113,14 +3113,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-bold">Modelos de Documentos</h4>
                       <button onClick={() => setShowNewModeloForm(!showNewModeloForm)}
-                        className={`text-xs px-4 py-2 rounded-lg font-bold border transition-colors ${showNewModeloForm ? 'border-rose-500/30 text-rose-400 bg-rose-500/10' : (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-brand text-white')
+                        className={`text-xs px-4 py-2 rounded-lg font-bold border transition-colors ${showNewModeloForm ? 'border-rose-500/30 text-rose-400 bg-rose-500/10' : (theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white')
                           }`}>{showNewModeloForm ? 'Cancelar' : '+ Novo Modelo'}</button>
                     </div>
 
                     {/* New Modelo Form */}
                     {showNewModeloForm && (
                       <div className={`p-5 rounded-xl border space-y-4 animate-fadeIn ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
-                        <h5 className="text-xs font-bold uppercase tracking-wider opacity-60">Criar Novo Modelo</h5>
+                        <h5 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Criar Novo Modelo</h5>
                         <div>
                           <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Título do Modelo *</label>
                           <input type="text" value={newModeloTitulo} onChange={e => setNewModeloTitulo(e.target.value)}
@@ -3342,7 +3342,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         {modelos.map((m: any) => (
                           <button key={m.id} onClick={() => { setSelectedModeloId(m.id); setDocTemplate(m.conteudo); }}
                             className={`w-full text-left p-3 rounded-lg border text-xs transition-colors ${selectedModeloId === m.id
-                                ? (theme === 'dark' ? 'border-[#E5DFD3]/30 bg-[#E5DFD3]/5 text-fg' : 'border-black/30 bg-black/5')
+                                ? (theme === 'dark' ? 'border-brand/40 bg-brand/8 text-brand' : 'border-black/30 bg-black/5')
                                 : (theme === 'dark' ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5')
                               }`}>
                             <span className="font-semibold block">{m.titulo}</span>
@@ -3440,7 +3440,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     notify('Link copiado para a área de transferência!');
                                   }}
                                   className={`text-[9px] px-2.5 rounded font-bold border transition-colors ${
-                                    theme === 'dark' ? 'border-[#E5DFD3]/30 hover:bg-[#E5DFD3]/5 text-fg' : 'border-black/30 hover:bg-black/5 text-black'
+                                    theme === 'dark' ? 'border-brand/40 hover:bg-brand/8 text-brand' : 'border-black/30 hover:bg-black/5 text-black'
                                   }`}
                                 >
                                   Copiar
@@ -3638,8 +3638,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 2</span>
-                      <h3 className="text-xl font-bold">Gestão de Colaboradores</h3>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/15 text-brand">MÓDULO 2</span>
+                      <h3 className="font-display text-xl font-semibold">Gestão de Colaboradores</h3>
                     </div>
                     <p className="text-xs opacity-65 mt-1">Monitore o quadro geral de funcionários ativos e gerencie novas admissões.</p>
                   </div>
@@ -3649,7 +3649,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <button
                       onClick={() => setColabSubTab('quadro')}
                       className={`text-xs px-4 py-1.5 rounded font-bold transition-all ${colabSubTab === 'quadro'
-                          ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]')
+                          ? (theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white')
                           : 'opacity-60 hover:opacity-100'
                         }`}
                     >
@@ -3658,7 +3658,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <button
                       onClick={() => setColabSubTab('desligados')}
                       className={`text-xs px-4 py-1.5 rounded font-bold transition-all ${colabSubTab === 'desligados'
-                          ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]')
+                          ? (theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white')
                           : 'opacity-60 hover:opacity-100'
                         }`}
                     >
@@ -3667,7 +3667,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <button
                       onClick={() => setColabSubTab('admissao')}
                       className={`text-xs px-4 py-1.5 rounded font-bold transition-all ${colabSubTab === 'admissao'
-                          ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]')
+                          ? (theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white')
                           : 'opacity-60 hover:opacity-100'
                         }`}
                     >
@@ -4079,7 +4079,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className="flex flex-col sm:flex-row gap-3 pt-2">
                         <button
                           onClick={handleGenerateLink}
-                          className={`text-xs px-5 py-2.5 rounded-lg font-bold transition-colors ${theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]'
+                          className={`text-xs px-5 py-2.5 rounded-lg font-bold transition-colors ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'
                             }`}
                         >
                           Gerar e Copiar Link (24h)
@@ -4314,7 +4314,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               <button
                                 onClick={mergeData}
                                 disabled={isMerged || selectedTokenRow?.status !== 'aguardando_homologacao'}
-                                className={`text-xs px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors ${theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]'
+                                className={`text-xs px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'
                                   } disabled:opacity-50`}
                               >
                                 <CheckCircle size={14} />
@@ -4347,8 +4347,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               <div className="space-y-8 animate-fadeIn">
                 <div className="pb-6 border-b border-white/10">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 3</span>
-                    <h3 className="text-xl font-bold">Esteira de Onboarding por Setor</h3>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/15 text-brand">MÓDULO 3</span>
+                    <h3 className="font-display text-xl font-semibold">Esteira de Onboarding por Setor</h3>
                   </div>
                   <p className="text-xs opacity-65 mt-1">Concessão de kits e EPIs cadastrados nos setores oficiais do Instituto.</p>
                 </div>
@@ -4366,7 +4366,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           key={sector}
                           onClick={() => setSelectedSector(sector)}
                           className={`text-[10px] md:text-xs py-2 rounded-lg border font-semibold transition-all ${selectedSector === sector
-                              ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]')
+                              ? (theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white')
                               : (theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5')
                             }`}
                         >
@@ -4422,7 +4422,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               checked={value}
                               disabled={!selectedColaboradorId || isLocked}
                               onChange={(e) => handleCheckboxChange('benefit', key, e.target.checked)}
-                              className="accent-[#E5DFD3] cursor-pointer"
+                              className="accent-brand cursor-pointer"
                             />
                           </label>
                         );
@@ -4445,7 +4445,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             checked={value}
                             disabled={!selectedColaboradorId}
                             onChange={(e) => handleCheckboxChange('task', key, e.target.checked)}
-                            className="accent-[#E5DFD3] cursor-pointer"
+                            className="accent-brand cursor-pointer"
                           />
                         </label>
                       ))}
@@ -4459,7 +4459,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className="relative inline-flex items-center justify-center">
                         <svg className="w-24 h-24 transform -rotate-90">
                           <circle cx="48" cy="48" r="40" stroke={theme === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'} strokeWidth="8" fill="transparent" />
-                          <circle cx="48" cy="48" r="40" stroke={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'} strokeWidth="8" fill="transparent" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * onboardingProgress) / 100} className="transition-all duration-500 ease-out" />
+                          <circle cx="48" cy="48" r="40" stroke={theme === 'dark' ? '#E6EAF2' : '#0F1729'} strokeWidth="8" fill="transparent" strokeDasharray={251.2} strokeDashoffset={251.2 - (251.2 * onboardingProgress) / 100} className="transition-all duration-500 ease-out" />
                         </svg>
                         <span className="absolute text-lg font-bold">{onboardingProgress}%</span>
                       </div>
@@ -4491,8 +4491,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 4</span>
-                      <h3 className="text-xl font-bold">Analytics & Auditoria Global</h3>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/15 text-brand">MÓDULO 4</span>
+                      <h3 className="font-display text-xl font-semibold">Analytics & Auditoria Global</h3>
                     </div>
                     <p className="text-xs opacity-65 mt-1">Logs de auditoria e métricas de desempenho em tempo real.</p>
                   </div>
@@ -4510,7 +4510,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         key={tab.key}
                         onClick={() => setAnalyticsSubTab(tab.key as any)}
                         className={`text-[10px] px-3 py-1.5 rounded-lg font-bold transition-all ${analyticsSubTab === tab.key
-                            ? (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]')
+                            ? (theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white')
                             : 'opacity-55 hover:opacity-100'
                           }`}
                       >
@@ -4769,7 +4769,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <>
                       <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-white/10 gap-3">
                         <div>
-                          <h2 className="text-xl font-bold tracking-tight">Férias & ASO</h2>
+                          <h2 className="font-display text-xl font-semibold tracking-tight">Férias & ASO</h2>
                           <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-fg/45' : 'text-black/45'}`}>
                             Controle ocupacional, exames médicos e vencimentos de períodos de férias.
                           </p>
@@ -4914,7 +4914,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                       }`}>
                                       <td className="p-4">
                                         <div className="flex items-center gap-3">
-                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${theme === 'dark' ? 'bg-[#E5DFD3]/10 text-fg' : 'bg-[#0A0A0A]/5 text-fg'
+                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${theme === 'dark' ? 'bg-brand/12 text-fg' : 'bg-brand/8 text-fg'
                                             }`}>
                                             {initials}
                                           </div>
@@ -4985,7 +4985,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                           </button>
                                           <button
                                             onClick={() => setActiveColaboradorForDrawer(c)}
-                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${theme === 'dark' ? 'border-[#E5DFD3]/30 bg-white/5 hover:bg-white/10 text-fg' : 'border-[#0A0A0A]/30 bg-black/5 hover:bg-black/10 text-fg'
+                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${theme === 'dark' ? 'border-brand/30 bg-white/5 hover:bg-white/10 text-fg' : 'border-brand/30 bg-black/5 hover:bg-black/10 text-fg'
                                               }`}
                                             title="Ver prontuário do colaborador"
                                           >
@@ -5098,7 +5098,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 <button
                                   onClick={handleSaveQuickDates}
                                   disabled={isSavingQuickDates}
-                                  className={`flex-1 py-2 rounded font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-[#E5DFD3] text-[#0d0d0c] hover:bg-[#c4beb1]' : 'bg-brand text-white hover:bg-black/90'
+                                  className={`flex-1 py-2 rounded font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-black/90'
                                     } disabled:opacity-50`}
                                 >
                                   {isSavingQuickDates ? 'Salvando...' : '✓ Salvar Alterações'}
@@ -5207,7 +5207,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <>
                       <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-white/10 gap-3">
                         <div>
-                          <h2 className="text-xl font-bold tracking-tight">Avaliações de Desempenho & Carreira</h2>
+                          <h2 className="font-display text-xl font-semibold tracking-tight">Avaliações de Desempenho & Carreira</h2>
                           <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-fg/45' : 'text-black/45'}`}>
                             Acompanhamento de planos de carreira, trilhas de progressão e avaliações dos colaboradores.
                           </p>
@@ -5467,8 +5467,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 8</span>
-                      <h3 className="text-xl font-bold">Agenda & Calendário do RH</h3>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/15 text-brand">MÓDULO 8</span>
+                      <h3 className="font-display text-xl font-semibold">Agenda & Calendário do RH</h3>
                     </div>
                     <p className="text-xs opacity-65 mt-1">Acompanhe vencimentos de ASO, Férias, Experiências e Ocorrências do time em tempo real.</p>
                   </div>
@@ -5561,7 +5561,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               onClick={() => setSelectedCalendarDay(day)}
                               className={`aspect-square rounded-xl border flex flex-col items-center justify-between p-2 transition-all relative ${
                                 isSelected
-                                  ? (theme === 'dark' ? 'bg-[#E5DFD3] border-transparent text-[#0C0C0C]' : 'bg-[#0A0A0A] border-transparent text-[#FBFBFA]')
+                                  ? (theme === 'dark' ? 'bg-brand border-transparent text-white' : 'bg-brand border-transparent text-white')
                                   : isToday
                                     ? 'border-emerald-500/50 bg-emerald-500/5 text-emerald-500 font-black'
                                     : (theme === 'dark' ? 'border-white/5 bg-white/[0.02] hover:bg-white/5 text-white/90' : 'border-black/5 bg-black/[0.01] hover:bg-black/[0.03] text-black/90')
@@ -5634,7 +5634,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <div className={`p-5 rounded-2xl border ${
                       theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-white border-black/10 shadow-sm'
                     }`}>
-                      <h4 className="text-xs font-bold uppercase tracking-wider opacity-60 mb-4">
+                      <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60 mb-4">
                         Eventos do Dia {selectedCalendarDay ? `${selectedCalendarDay}/${currentMonth + 1}/${currentYear}` : '—'}
                       </h4>
 
@@ -5714,7 +5714,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                     {/* Aniversariantes do mês + day off de aniversário */}
                     <div className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
-                      <h4 className="text-xs font-bold uppercase tracking-wider opacity-60 mb-4 flex items-center gap-2">
+                      <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60 mb-4 flex items-center gap-2">
                         🎂 Aniversariantes de {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][currentMonth]}
                       </h4>
                       <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1 scrollbar-thin">
@@ -5787,8 +5787,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 9</span>
-                      <h3 className="text-xl font-bold">Manual de Cultura</h3>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/15 text-brand">MÓDULO 9</span>
+                      <h3 className="font-display text-xl font-semibold">Manual de Cultura</h3>
                     </div>
                     <p className="text-xs opacity-65 mt-1">
                       Conteúdo público, visível a qualquer pessoa em{' '}
@@ -5835,7 +5835,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         </main>
 
         {/* Footer */}
-        <footer className={`py-6 border-t text-center text-xs opacity-50 transition-colors ${theme === 'dark' ? 'border-white/5 bg-surface-2' : 'border-black/5 bg-[#FBFBFA]'
+        <footer className={`py-6 border-t text-center text-xs opacity-50 transition-colors ${theme === 'dark' ? 'border-white/5 bg-surface-2' : 'border-black/5 bg-surface'
           }`}>
           <p>© 2026 Instituto Thiago Omena. Sistema OMNI ITO - Uso Exclusivo e Proprietário.</p>
           <p className="mt-0.5 font-mono text-[9px]">Autenticado e Monitorado via Row Level Security (RLS)</p>
@@ -5901,7 +5901,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             onClick={() => { setUploadFileType('foto'); setDrawerTab('pessoal'); }}
                             title="Trocar foto (aba Pessoal)"
                             aria-label="Trocar foto de perfil"
-                            className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-brand text-white grid place-items-center ring-2 ring-[#0D0D0C] hover:bg-brand-strong transition-colors"
+                            className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-brand text-white grid place-items-center ring-2 ring-surface hover:bg-brand-strong transition-colors"
                           >
                             <Camera size={13} />
                           </button>
@@ -6007,7 +6007,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Dados Pessoais & Endereço</h4>
+                    <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Dados Pessoais & Endereço</h4>
                     <button onClick={() => { setIsEditingDrawer(!isEditingDrawer); setDrawerEditData({}); }} className={`text-[9px] px-2.5 py-1 rounded font-bold border transition-colors ${isEditingDrawer ? 'border-rose-500/30 text-rose-400 bg-rose-500/10' : (theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5')
                       }`}>{isEditingDrawer ? 'Cancelar' : '✏️ Editar'}</button>
                   </div>
@@ -6352,7 +6352,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               {drawerTab === 'admissao' && (
                 <div className="space-y-6 animate-fadeIn text-xs">
                   <div className="flex justify-between items-center pb-2 border-b border-white/10">
-                    <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Dossiê de Admissão (Onboarding)</h4>
+                    <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Dossiê de Admissão (Onboarding)</h4>
                   </div>
 
                   {activeColaboradorForDrawer.ficha_admissao ? (
@@ -6549,7 +6549,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 <div className="space-y-6 animate-fadeIn">
                   {/* Button to toggle form */}
                   <div className="flex justify-between items-center">
-                    <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Histórico de Ocorrências</h4>
+                    <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Histórico de Ocorrências</h4>
                     {hasFullAccess && (
                       <button
                         onClick={() => setIsRegisteringOcorrencia(!isRegisteringOcorrencia)}
@@ -6706,7 +6706,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   {/* Advertências Formais Section */}
                   <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Advertências Formais</h4>
+                      <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Advertências Formais</h4>
                       {hasFullAccess && (
                         <button
                           onClick={() => setIsRegisteringAdvertencia(!isRegisteringAdvertencia)}
@@ -7089,14 +7089,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           `}</style>
           
           <div className={`relative w-full max-w-4xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
-            theme === 'dark' ? 'bg-surface-2 border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
+            theme === 'dark' ? 'glass-fill glass-sheen border-line text-fg' : 'glass-fill glass-sheen border-line text-fg'
           }`}>
             <LetterheadWatermark />
 
             {/* Header */}
             <div className="border-b border-white/10 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:border-black">
               <div>
-                <h2 className="text-lg md:text-xl font-bold tracking-tight">Avaliação de Desempenho & PDI</h2>
+                <h2 className="text-lg md:font-display text-xl font-semibold tracking-tight">Avaliação de Desempenho & PDI</h2>
                 <p className="text-xs opacity-60 print:opacity-100">
                   Colaborador(a): <span className="font-semibold">{activeColaboradorForDrawer?.nome}</span> | Cargo: <span className="font-semibold">{activeColaboradorForDrawer?.cargo}</span>
                   {evalModalReadOnly && selectedEvalForModal && (
@@ -7172,7 +7172,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
               {/* 1. Desempenho Geral */}
               <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">1. Desempenho Geral</h3>
+                <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">1. Desempenho Geral</h3>
                 <div>
                   <span className="block text-[10px] font-bold uppercase opacity-70 mb-2 print:text-black">Avalie o desempenho do colaborador durante o período:</span>
                   {evalModalReadOnly ? (
@@ -7234,7 +7234,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
               {/* 2. Pontos Fortes */}
               <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">2. Pontos Fortes</h3>
+                <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">2. Pontos Fortes</h3>
                 {evalModalReadOnly ? (
                   <div className="text-xs space-y-1.5 print:text-black">
                     {(evalForm.pontosFortes || '')
@@ -7269,7 +7269,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               {/* 3. Pontos de Melhorias */}
               <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <div className="flex justify-between items-center">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">3. Pontos de Melhorias</h3>
+                  <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">3. Pontos de Melhorias</h3>
                   {!evalModalReadOnly && (
                     <button
                       type="button"
@@ -7348,7 +7348,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               {/* 4. Plano de Desenvolvimento (PDI) */}
               <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <div className="flex justify-between items-center">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">4. Plano de Desenvolvimento</h3>
+                  <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">4. Plano de Desenvolvimento</h3>
                   {!evalModalReadOnly && (
                     <button
                       type="button"
@@ -7462,7 +7462,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
               {/* 5. Avaliação de Competências */}
               <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
-                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">5. Avaliação de Competências</h3>
+                <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">5. Avaliação de Competências</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse print-border">
                     <thead>
@@ -7537,7 +7537,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 
                 {/* 6. Ciência das Partes */}
                 <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">6. Ciência das Partes</h3>
+                  <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">6. Ciência das Partes</h3>
                   <p className="text-[10px] opacity-70 italic print:text-black">Declaro estar ciente e de acordo com o feedback recebido.</p>
                   
                   <div className="space-y-4 pt-2 text-xs font-mono print:space-y-3 print:pt-1">
@@ -7558,7 +7558,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                 {/* 7. Controle Interno (RH) */}
                 <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">7. Controle Interno (RH)</h3>
+                  <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">7. Controle Interno (RH)</h3>
                   
                   <div className="space-y-3 print:space-y-1.5 print:pt-1">
                     {[
@@ -7681,14 +7681,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           `}</style>
           
           <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
-            theme === 'dark' ? 'bg-surface-2 border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
+            theme === 'dark' ? 'glass-fill glass-sheen border-line text-fg' : 'glass-fill glass-sheen border-line text-fg'
           }`}>
             <LetterheadWatermark />
 
             {/* Header de Tela */}
             <div className="border-b border-white/10 pb-4 mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
               <div>
-                <h2 className="text-lg md:text-xl font-bold tracking-tight text-rose-500">Aviso de Advertência Disciplinar</h2>
+                <h2 className="text-lg md:font-display text-xl font-semibold tracking-tight text-rose-500">Aviso de Advertência Disciplinar</h2>
                 <p className="text-xs opacity-60">
                   Colaborador(a): <span className="font-semibold">{activeColaboradorForDrawer?.nome}</span> | Cargo: <span className="font-semibold">{activeColaboradorForDrawer?.cargo}</span>
                 </p>
