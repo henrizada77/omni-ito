@@ -2574,7 +2574,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   );
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row transition-colors duration-500 bg-canvas text-fg">
+    <div className="app-aurora min-h-screen flex flex-col md:flex-row transition-colors duration-500 bg-canvas text-fg">
 
       {/* 1. Desktop Left Sidebar */}
       <aside className="hidden md:block w-64 border-r border-line bg-sidebar fixed inset-y-0 left-0 p-6 z-40 transition-colors backdrop-blur-md">
@@ -2741,7 +2741,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     return (
                       <div
                         key={i}
-                        className="group relative p-5 rounded-[20px] glass-fill glass-sheen border border-line hover:border-brand/30 hover:-translate-y-0.5 transition-all duration-200"
+                        className="group relative p-5 rounded-[20px] glass-fill glass-sheen card-glow border border-line hover:border-brand/40 hover:-translate-y-1 transition-all duration-200"
                       >
                         <span className={`w-10 h-10 mb-4 rounded-xl grid place-items-center text-lg ${chip}`}>{k.icon}</span>
                         <p className="font-rounded text-[9px] font-bold tracking-[0.15em] uppercase text-fg-muted mb-1.5 leading-tight">
@@ -2973,7 +2973,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <button
                           key={i}
                           onClick={item.action}
-                          className="group p-4 rounded-2xl border border-line glass-fill text-left flex items-start gap-3.5 transition-all duration-200 hover:scale-[1.015] hover:bg-surface-2 hover:border-brand/30"
+                          className="group p-4 rounded-2xl border border-line glass-fill card-glow text-left flex items-start gap-3.5 transition-all duration-200 hover:-translate-y-1 hover:border-brand/40"
                         >
                           <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${item.accent === 'emerald' ? (theme === 'dark' ? 'bg-emerald-500/12 text-emerald-400 group-hover:bg-emerald-500/20' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100') :
                               item.accent === 'amber' ? (theme === 'dark' ? 'bg-amber-500/12 text-amber-400 group-hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100') :
@@ -3041,7 +3041,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <p className="text-xs opacity-65 mt-1">Modelos, formulários, envios e assinaturas em um único painel.</p>
                   </div>
                   {/* Sub-tabs pill bar */}
-                  <div className="flex flex-wrap gap-1 border rounded-xl border-white/10 p-1 bg-black/10 self-start md:self-auto">
+                  <div className="flex flex-wrap gap-1 rounded-xl p-1 glass-fill border border-line self-start md:self-auto">
                     {([
                       ['visao', 'Visão Geral'],
                       ['modelos', 'Modelos'],
@@ -3070,7 +3070,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         { label: 'Contratos Finalizados', value: kpiContratos, color: 'text-emerald-400' },
                         { label: 'Envios Pendentes', value: kpiAdmissoesP, color: 'text-amber-400' },
                       ].map((k, i) => (
-                        <div key={i} className={`p-5 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
+                        <div key={i} className={`p-5 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'
                           }`}>
                           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">{k.label}</span>
                           <span className={`text-3xl font-extrabold font-mono ${k.color}`}>{k.value}</span>
@@ -3078,7 +3078,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       ))}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                      <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'}`}>
                         <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Ações Rápidas</h4>
                         {[
                           { label: 'Novo Modelo de Documento', icon: <FileText size={15} />, action: () => { setDocsSubTab('modelos'); setShowNewModeloForm(true); } },
@@ -3094,7 +3094,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </button>
                         ))}
                       </div>
-                      <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                      <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'}`}>
                         <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Modelos Disponíveis</h4>
                         {modelos.length > 0 ? modelos.map((m: any) => (
                           <div key={m.id} className={`p-3 rounded-lg border flex items-center justify-between text-xs ${theme === 'dark' ? 'border-white/5 bg-white/[0.02]' : 'border-black/5 bg-black/[0.01]'}`}>
@@ -3381,7 +3381,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             </div>
                           ))}
                         </div>
-                        <div className={`p-4 rounded-xl border text-xs leading-relaxed font-serif ${theme === 'dark' ? 'bg-[#161615] border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                        <div className={`p-4 rounded-xl border text-xs leading-relaxed font-serif ${theme === 'dark' ? 'bg-[#161615] border-white/5' : 'glass-fill border-line'}`}>
                           <span className="block text-[9px] font-bold uppercase opacity-50 mb-2 tracking-wider">Pré-visualização</span>
                           {selectedModeloId === 'upload' ? (
                             <p className="text-emerald-500 font-mono text-[10px]">📄 PDF importado: {uploadedPdfName}</p>
@@ -3472,7 +3472,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           };
                           const st = statusMap[t.status] || { label: t.status, color: 'bg-white/5 border-white/10 text-white' };
                           return (
-                            <div key={t.id} className={`p-4 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                            <div key={t.id} className={`p-4 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'}`}>
                               <div>
                                 <span className="text-sm font-semibold block">{t.candidato_nome || '—'}</span>
                                 <span className="text-[10px] opacity-50 font-mono">{t.token?.slice(0, 20)}...</span>
@@ -3587,7 +3587,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     {docsHistorico.length > 0 ? (
                       <div className="space-y-2">
                         {docsHistorico.map((doc: any) => (
-                          <div key={doc.id} className={`p-3.5 rounded-xl border flex items-center justify-between text-xs ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                          <div key={doc.id} className={`p-3.5 rounded-xl border flex items-center justify-between text-xs ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'}`}>
                             <div>
                               <span className="font-semibold block">{doc.nome_colaborador || doc.cpf_colaborador || '—'}</span>
                               <span className="opacity-50 text-[10px]">
@@ -3614,7 +3614,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     )}
 
                     {/* Integridade */}
-                    <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.03] border-black/5'}`}>
+                    <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'glass-fill border-line' : 'bg-black/[0.03] border-black/5'}`}>
                       <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase opacity-65">
                         <Shield size={13} className="text-emerald-500" />
                         <span>Auditoria & Integridade SHA-256</span>
@@ -3646,7 +3646,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   </div>
 
                   {/* Sub-tabs menu */}
-                  <div className="flex border rounded-lg overflow-hidden border-white/10 p-1 bg-black/10 gap-1 self-start md:self-auto">
+                  <div className="flex rounded-xl p-1 gap-1 glass-fill border border-line self-start md:self-auto">
                     <button
                       onClick={() => setColabSubTab('quadro')}
                       className={`text-xs px-4 py-1.5 rounded font-bold transition-all ${colabSubTab === 'quadro'
@@ -4162,7 +4162,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className={`p-4 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#161615] border-white/5' : 'bg-black/[0.02] border-black/5'
+                        <div className={`p-4 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#161615] border-white/5' : 'glass-fill border-line'
                           }`}>
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold uppercase opacity-65">Formulário Recebido (Candidato)</span>
@@ -4202,7 +4202,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </div>
                         </div>
 
-                        <div className={`p-4 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#161615] border-white/5' : 'bg-black/[0.02] border-black/5'
+                        <div className={`p-4 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#161615] border-white/5' : 'glass-fill border-line'
                           }`}>
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-bold uppercase opacity-65">Banco de Dados Ativo (`public.colaboradores`)</span>
@@ -4473,7 +4473,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   </div>
 
                   <div className="space-y-6 flex flex-col justify-between">
-                    <div className={`p-5 rounded-xl border space-y-4 text-center ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.03] border-black/5'
+                    <div className={`p-5 rounded-xl border space-y-4 text-center ${theme === 'dark' ? 'glass-fill border-line' : 'bg-black/[0.03] border-black/5'
                       }`}>
                       <h4 className="text-xs font-bold tracking-widest uppercase opacity-65">Status de Onboarding</h4>
                       <div className="relative inline-flex items-center justify-center">
@@ -4517,7 +4517,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <p className="text-xs opacity-65 mt-1">Logs de auditoria e métricas de desempenho em tempo real.</p>
                   </div>
                   {/* Tab controls */}
-                  <div className="flex flex-wrap gap-1 border rounded-xl border-white/10 p-1 bg-black/10 self-start md:self-auto">
+                  <div className="flex flex-wrap gap-1 rounded-xl p-1 glass-fill border border-line self-start md:self-auto">
                     {[
                       { key: 'geral', label: 'Geral' },
                       { key: 'turnover', label: 'Movimentação (Turnover)' },
@@ -4798,7 +4798,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                       {/* KPIs Row */}
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm'
                           }`}>
                           <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">ASO Vencido</span>
                           <div className="flex items-baseline justify-between mt-1">
@@ -4806,7 +4806,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <span className="text-xs">exames</span>
                           </div>
                         </div>
-                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm'
                           }`}>
                           <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">ASO a Vencer (30d)</span>
                           <div className="flex items-baseline justify-between mt-1">
@@ -4814,7 +4814,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <span className="text-xs">exames</span>
                           </div>
                         </div>
-                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm'
                           }`}>
                           <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Férias Limite/Vencidas</span>
                           <div className="flex items-baseline justify-between mt-1">
@@ -4822,7 +4822,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <span className="text-xs">alertas</span>
                           </div>
                         </div>
-                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm'
                           }`}>
                           <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Total Colaboradores</span>
                           <div className="flex items-baseline justify-between mt-1">
@@ -4833,7 +4833,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Filter Controls Row */}
-                      <div className={`p-4 rounded-xl border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.01] border-black/5'
+                      <div className={`p-4 rounded-xl border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 ${theme === 'dark' ? 'glass-fill border-line' : 'bg-black/[0.01] border-black/5'
                         }`}>
                         <div>
                           <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Buscar Colaborador</label>
@@ -5236,7 +5236,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                       {/* KPIs Row */}
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm'
                           }`}>
                           <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Média Geral de Notas</span>
                           <div className="flex items-baseline justify-between mt-1">
@@ -5245,7 +5245,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </div>
                         </div>
 
-                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm'
                           }`}>
                           <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Avaliações Lançadas</span>
                           <div className="flex items-baseline justify-between mt-1">
@@ -5254,7 +5254,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </div>
                         </div>
 
-                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm'
                           }`}>
                           <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Aptos para Promoção</span>
                           <div className="flex items-baseline justify-between mt-1">
@@ -5263,7 +5263,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </div>
                         </div>
 
-                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                        <div className={`p-4 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm'
                           }`}>
                           <span className="text-[9px] font-bold uppercase tracking-wider opacity-45">Avaliações Pendentes</span>
                           <div className="flex items-baseline justify-between mt-1">
@@ -5274,7 +5274,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Filters and Search */}
-                      <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'bg-[#111110] border-white/5' : 'bg-white border-black/5 shadow-sm'
+                      <div className={`p-4 rounded-xl border ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-white border-black/5 shadow-sm'
                         }`}>
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           {/* Search */}
@@ -5891,7 +5891,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
           />
           {/* Drawer Panel */}
-          <div className="fixed top-0 right-0 h-full w-full max-w-md p-6 z-50 transform transition-transform duration-300 ease-in-out border-l border-line flex flex-col justify-between glass-fill glass-sheen text-fg">
+          <div className="fixed top-0 right-0 h-full w-full max-w-md p-6 z-50 transform transition-transform duration-300 ease-in-out border-l border-line flex flex-col justify-between glass-fill glass-blur glass-sheen text-fg">
             <div className="space-y-6 overflow-y-auto pr-2">
 
               {/* Header de perfil */}
@@ -6677,7 +6677,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         };
 
                         return (
-                          <div key={oc.id} className={`p-3.5 rounded-xl border space-y-2.5 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
+                          <div key={oc.id} className={`p-3.5 rounded-xl border space-y-2.5 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'
                             }`}>
                             <div className="flex items-center justify-between">
                               <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${badgeColors[oc.tipo] || 'bg-white/10 text-white'}`}>
@@ -6788,7 +6788,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         const colabAdvs = warningsMap[activeColaboradorForDrawer.id] || [];
                         return colabAdvs.length > 0 ? (
                           colabAdvs.map((adv: any) => (
-                          <div key={adv.id} className={`p-3.5 rounded-xl border space-y-2.5 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
+                          <div key={adv.id} className={`p-3.5 rounded-xl border space-y-2.5 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'
                             }`}>
                             <div className="flex items-center justify-between">
                               <span className="px-2 py-0.5 rounded text-[9px] font-bold border bg-rose-500/10 border-rose-500/20 text-rose-500">
@@ -6891,7 +6891,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <span className="text-[9px] font-bold uppercase tracking-wider opacity-50 block">Critérios para Promoção</span>
 
                       {/* Critério: Tempo de Casa */}
-                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'
                         }`}>
                         <div>
                           <span className="text-[10px] font-bold block">Tempo de Casa</span>
@@ -6907,7 +6907,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Critério: Ocorrências */}
-                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'
                         }`}>
                         <div>
                           <span className="text-[10px] font-bold block">Ocorrências (Últimos 6 meses)</span>
@@ -6923,7 +6923,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Critério: Avaliação Desempenho */}
-                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'
                         }`}>
                         <div>
                           <span className="text-[10px] font-bold block">Avaliação Desempenho</span>
@@ -6993,7 +6993,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           colabAvaliacoes.map((a) => {
                             const parsed = parseEvaluationComments(a.comentarios);
                             return (
-                              <div key={a.id} className={`p-3 rounded-xl border space-y-2 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
+                              <div key={a.id} className={`p-3 rounded-xl border space-y-2 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'
                                 }`}>
                                 <div className="flex items-center justify-between text-[10px]">
                                   <div className="flex items-center gap-1.5">
@@ -7109,7 +7109,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           `}</style>
           
           <div className={`relative w-full max-w-4xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
-            theme === 'dark' ? 'glass-fill glass-sheen border-line text-fg' : 'glass-fill glass-sheen border-line text-fg'
+            theme === 'dark' ? 'glass-fill glass-blur glass-sheen border-line text-fg' : 'glass-fill glass-blur glass-sheen border-line text-fg'
           }`}>
             <LetterheadWatermark />
 
@@ -7191,7 +7191,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
 
               {/* 1. Desempenho Geral */}
-              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">1. Desempenho Geral</h3>
                 <div>
                   <span className="block text-[10px] font-bold uppercase opacity-70 mb-2 print:text-black">Avalie o desempenho do colaborador durante o período:</span>
@@ -7253,7 +7253,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
 
               {/* 2. Pontos Fortes */}
-              <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">2. Pontos Fortes</h3>
                 {evalModalReadOnly ? (
                   <div className="text-xs space-y-1.5 print:text-black">
@@ -7287,7 +7287,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
 
               {/* 3. Pontos de Melhorias */}
-              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <div className="flex justify-between items-center">
                   <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">3. Pontos de Melhorias</h3>
                   {!evalModalReadOnly && (
@@ -7366,7 +7366,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
 
               {/* 4. Plano de Desenvolvimento (PDI) */}
-              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <div className="flex justify-between items-center">
                   <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">4. Plano de Desenvolvimento</h3>
                   {!evalModalReadOnly && (
@@ -7481,7 +7481,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
 
               {/* 5. Avaliação de Competências */}
-              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">5. Avaliação de Competências</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse print-border">
@@ -7556,7 +7556,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-1 print:gap-4 print:pt-4">
                 
                 {/* 6. Ciência das Partes */}
-                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                   <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">6. Ciência das Partes</h3>
                   <p className="text-[10px] opacity-70 italic print:text-black">Declaro estar ciente e de acordo com o feedback recebido.</p>
                   
@@ -7577,7 +7577,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 </div>
 
                 {/* 7. Controle Interno (RH) */}
-                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'glass-fill border-line' : 'glass-fill border-line'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                   <h3 className="font-rounded text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">7. Controle Interno (RH)</h3>
                   
                   <div className="space-y-3 print:space-y-1.5 print:pt-1">
@@ -7701,7 +7701,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           `}</style>
           
           <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
-            theme === 'dark' ? 'glass-fill glass-sheen border-line text-fg' : 'glass-fill glass-sheen border-line text-fg'
+            theme === 'dark' ? 'glass-fill glass-blur glass-sheen border-line text-fg' : 'glass-fill glass-blur glass-sheen border-line text-fg'
           }`}>
             <LetterheadWatermark />
 

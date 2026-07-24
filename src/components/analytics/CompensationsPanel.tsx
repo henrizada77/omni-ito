@@ -227,7 +227,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
       {/* KPI Row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Custo Total de Compensação (Mensal)</span>
           <div>
@@ -237,7 +237,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
         </div>
 
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Custo Base de Salários</span>
           <div>
@@ -247,7 +247,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
         </div>
 
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Investimento Estimado em Benefícios</span>
           <div>
@@ -260,7 +260,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Gender salary parity bar chart */}
         <div className={`p-5 rounded-xl border space-y-4 lg:col-span-2 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <div className="pb-2 border-b border-white/5">
             <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">
@@ -302,9 +302,9 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
                     <Tooltip
                       formatter={(value) => [`R$ ${value}`, 'Média Salarial']}
                       contentStyle={{
-                        backgroundColor: theme === 'dark' ? '#181816' : '#ffffff',
+                        backgroundColor: theme === 'dark' ? '#121A2A' : '#ffffff',
                         borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                        color: theme === 'dark' ? '#E5DFD3' : '#0A0A0A',
+                        color: theme === 'dark' ? '#5B7CFA' : '#4F6DF5',
                         fontSize: '11px',
                         borderRadius: '8px'
                       }}
@@ -327,7 +327,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
 
         {/* Benefits satisfaction climate */}
         <div className={`p-5 rounded-xl border space-y-4 flex flex-col justify-between ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <div className="pb-2 border-b border-white/5">
             <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">
@@ -357,7 +357,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
 
       {/* ====== ITO × Mercado Alagoas por cargo ====== */}
       <div className={`p-5 rounded-xl border space-y-4 ${
-        theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+        theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
       }`}>
         <div className="pb-2 border-b border-white/5 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
           <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">
@@ -386,7 +386,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
                 <BarChart data={mercadoData} margin={{ top: 10, right: 10, left: -10, bottom: 60 }}>
                   <XAxis
                     dataKey="cargo"
-                    stroke={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'}
+                    stroke={theme === 'dark' ? '#5B7CFA' : '#4F6DF5'}
                     tick={{ fontSize: 9 }}
                     interval={0}
                     angle={-35}
@@ -394,13 +394,13 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
                     height={70}
                   />
                   <YAxis
-                    stroke={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'}
+                    stroke={theme === 'dark' ? '#5B7CFA' : '#4F6DF5'}
                     tick={{ fontSize: 10 }}
                     tickFormatter={(v: number) => `R$${(v / 1000).toFixed(1)}k`}
                   />
                   <Tooltip
                     contentStyle={{
-                      background: theme === 'dark' ? '#121211' : '#FFFFFF',
+                      background: theme === 'dark' ? '#121A2A' : '#FFFFFF',
                       border: `1px solid ${theme === 'dark' ? '#333' : '#DDD'}`,
                       fontSize: 11
                     }}
@@ -421,7 +421,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="ITO" fill={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'} radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="ITO" fill={theme === 'dark' ? '#5B7CFA' : '#4F6DF5'} radius={[3, 3, 0, 0]} />
                   <Bar dataKey="Alagoas" fill="#38bdf8" radius={[3, 3, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>

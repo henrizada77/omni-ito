@@ -51,7 +51,7 @@ export default function LegalPanel({ theme, indicadoresList }: LegalPanelProps) 
       {/* KPI row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Litígios Trabalhistas Ativos</span>
           <div>
@@ -63,7 +63,7 @@ export default function LegalPanel({ theme, indicadoresList }: LegalPanelProps) 
         </div>
 
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Valor Total Estimado em Risco</span>
           <div>
@@ -73,7 +73,7 @@ export default function LegalPanel({ theme, indicadoresList }: LegalPanelProps) 
         </div>
 
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Tempo Médio de Resolução (SLA)</span>
           <div>
@@ -86,7 +86,7 @@ export default function LegalPanel({ theme, indicadoresList }: LegalPanelProps) 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Sector legal bar chart */}
         <div className={`p-5 rounded-xl border space-y-4 lg:col-span-2 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <div className="pb-2 border-b border-white/5">
             <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">
@@ -101,9 +101,9 @@ export default function LegalPanel({ theme, indicadoresList }: LegalPanelProps) 
                   <YAxis stroke="currentColor" opacity={0.4} tickLine={false} allowDecimals={false} />
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: theme === 'dark' ? '#181816' : '#ffffff',
+                      backgroundColor: theme === 'dark' ? '#121A2A' : '#ffffff',
                       borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                      color: theme === 'dark' ? '#E5DFD3' : '#0A0A0A',
+                      color: theme === 'dark' ? '#5B7CFA' : '#4F6DF5',
                       fontSize: '11px',
                       borderRadius: '8px'
                     }} 
@@ -123,7 +123,7 @@ export default function LegalPanel({ theme, indicadoresList }: LegalPanelProps) 
 
         {/* Litigations listing */}
         <div className={`p-5 rounded-xl border space-y-4 flex flex-col ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <div className="pb-2 border-b border-white/5">
             <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">

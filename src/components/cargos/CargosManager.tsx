@@ -67,13 +67,13 @@ export default function CargosManager({ theme, userEmail }: CargosManagerProps) 
   const [promocoes, setPromocoes] = useState<Promocao[]>([]);
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
 
-  const cardBg = theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm';
+  const cardBg = theme === 'dark' ? 'glass-fill border-white/10' : 'bg-white border-black/10 shadow-sm';
   const inputBg = theme === 'dark'
-    ? 'bg-[#0D0D0C] border-white/10 focus:border-[#E5DFD3]/40'
+    ? 'glass-fill border-white/10 focus:border-brand/40'
     : 'bg-white border-black/10 focus:border-black/40';
   const btnPrimary = theme === 'dark'
-    ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]'
-    : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]';
+    ? 'bg-brand text-white hover:bg-brand-strong'
+    : 'bg-brand text-white hover:bg-brand-strong';
   const btnSecondary = theme === 'dark'
     ? 'border-white/10 hover:bg-white/5 text-white/90'
     : 'border-black/10 hover:bg-black/5 text-black/90';
@@ -124,14 +124,14 @@ export default function CargosManager({ theme, userEmail }: CargosManagerProps) 
       <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 9</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/20">MÓDULO 9</span>
             <h3 className="text-xl font-bold">Cargos & Descritivos</h3>
           </div>
           <p className="text-xs opacity-65 mt-1">Catálogo central de cargos, trilhas de carreira com múltiplos degraus e o workflow de promoções.</p>
         </div>
 
         {/* Sub-tab switcher */}
-        <div className={`inline-flex p-1 rounded-xl border ${theme === 'dark' ? 'border-white/10 bg-[#0D0D0C]' : 'border-black/10 bg-white'}`}>
+        <div className={`inline-flex p-1 rounded-xl border ${theme === 'dark' ? 'border-white/10 glass-fill' : 'border-black/10 bg-white'}`}>
           <button
             onClick={() => setSubTab('catalogo')}
             className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase flex items-center gap-1.5 transition-colors ${
@@ -479,7 +479,7 @@ function CatalogoView({
               className={`w-full text-left px-3 py-2 rounded-lg border transition-colors flex items-center justify-between gap-2 ${
                 selectedCargoId === c.id
                   ? theme === 'dark'
-                    ? 'border-[#E5DFD3]/40 bg-[#E5DFD3]/10'
+                    ? 'border-brand/40 bg-brand/10'
                     : 'border-black/40 bg-black/5'
                   : theme === 'dark'
                     ? 'border-white/5 hover:bg-white/5'
@@ -794,7 +794,7 @@ function CatalogoView({
                         return (
                           <div key={d.id} className={`p-3 rounded-lg border ${theme === 'dark' ? 'border-white/10 bg-white/[0.02]' : 'border-black/10 bg-black/[0.02]'}`}>
                             <div className="flex items-start gap-2">
-                              <div className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0 ${theme === 'dark' ? 'bg-[#E5DFD3]/20 text-[#E5DFD3]' : 'bg-black/10 text-black'}`}>
+                              <div className={`w-7 h-7 rounded-full flex items-center justify-center font-mono text-xs font-bold shrink-0 ${theme === 'dark' ? 'bg-brand/20 text-fg' : 'bg-black/10 text-black'}`}>
                                 {idx + 1}
                               </div>
                               <div className="flex-1 min-w-0">

@@ -139,7 +139,7 @@ export default function PodioArte({ top3, fotos, competencia, theme }: PodioArte
         <button
           onClick={baixarPng}
           disabled={baixando}
-          className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 ${theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]'} disabled:opacity-50`}
+          className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'} disabled:opacity-50`}
         >
           {baixando ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />} Baixar PNG
         </button>

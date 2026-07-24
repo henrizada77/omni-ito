@@ -281,7 +281,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
             key={i} 
             className={`flex items-center gap-1.5 shrink-0 pb-1.5 border-b-2 text-[10px] uppercase font-bold tracking-wider transition-all ${
               step === i + 1 
-                ? (theme === 'dark' ? 'border-[#E5DFD3] text-[#E5DFD3]' : 'border-[#0A0A0A] text-[#0A0A0A]')
+                ? (theme === 'dark' ? 'border-brand text-fg' : 'border-brand text-fg')
                 : 'border-transparent opacity-40'
             }`}
           >
@@ -366,7 +366,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Raça/Cor</label>
                 <select value={formData.raca_cor} onChange={e => handleInputChange('raca_cor', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Branca','Parda','Preta','Amarela','Indígena','Prefiro não declarar'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
@@ -374,7 +374,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Sexo</label>
                 <select value={formData.genero} onChange={e => handleInputChange('genero', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Feminino','Masculino','Outro','Prefiro não declarar'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
@@ -382,7 +382,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Estado Civil</label>
                 <select value={formData.estado_civil} onChange={e => handleInputChange('estado_civil', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Solteiro(a)','Casado(a)','União estável','Divorciado(a)','Viúvo(a)'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
@@ -402,7 +402,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Possui alguma deficiência?</label>
                 <select value={formData.possui_deficiencia} onChange={e => handleInputChange('possui_deficiencia', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
                 </select>
@@ -419,7 +419,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Possui dependentes?</label>
                 <select value={formData.possui_dependentes} onChange={e => handleInputChange('possui_dependentes', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
                 </select>
@@ -492,7 +492,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Departamento/Setor *</label>
                 <select value={formData.setor} onChange={e => handleInputChange('setor', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Biomedicina', 'Recepção', 'Financeiro', 'Call Center', 'Smartshape', 'Enfermagem', 'Farmácia', 'Serviços Gerais', 'Nutrição', 'Administrativo'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
@@ -500,7 +500,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Tipo de Vínculo</label>
                 <select value={formData.tipo_vinculo} onChange={e => handleInputChange('tipo_vinculo', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['CLT', 'PJ', 'Temporário', 'Estágio', 'Outro'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
@@ -508,7 +508,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Jornada/Regime de Trabalho</label>
                 <select value={formData.jornada_regime} onChange={e => handleInputChange('jornada_regime', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['44h semanal', '40h', '30h', 'Horista', 'Plantão', 'Outro'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
@@ -569,7 +569,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Escolaridade</label>
                 <select value={formData.escolaridade} onChange={e => handleInputChange('escolaridade', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Fundamental','Médio','Técnico','Superior incompleto','Superior completo','Pós-graduação'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
@@ -616,7 +616,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Condição de saúde compatível com as funções?</label>
                 <select value={formData.saude_compativel} onChange={e => handleInputChange('saude_compativel', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Sim</option>
                   <option>Não</option>
                 </select>
@@ -625,7 +625,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Uso de Medicação Contínua?</label>
                 <select value={formData.medicacao_continua} onChange={e => handleInputChange('medicacao_continua', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
                 </select>
@@ -642,7 +642,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Possui Alergias Relevantes?</label>
                 <select value={formData.alergias_relevantes} onChange={e => handleInputChange('alergias_relevantes', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
                 </select>
@@ -659,7 +659,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               <div>
                 <label className="block font-bold opacity-60 mb-1">Já sofreu Acidente de Trabalho?</label>
                 <select value={formData.sofreu_acidente_trabalho} onChange={e => handleInputChange('sofreu_acidente_trabalho', e.target.value)}
-                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                  className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
                 </select>
@@ -782,7 +782,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
                   <div>
                     <label className="block font-bold opacity-60 mb-1">Consulta de Antecedentes e Contatos</label>
                     <select value={formData.autorizacao_antecedentes} onChange={e => handleInputChange('autorizacao_antecedentes', e.target.value)}
-                      className={`w-full p-2 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                      className={`w-full p-2 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                       <option>Concordo</option>
                       <option>Não concordo</option>
                     </select>
@@ -790,7 +790,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
                   <div>
                     <label className="block font-bold opacity-60 mb-1">Autoriza uso de imagem interna (Crachá/Ponto)</label>
                     <select value={formData.autorizacao_imagem} onChange={e => handleInputChange('autorizacao_imagem', e.target.value)}
-                      className={`w-full p-2 rounded border bg-transparent ${theme==='dark'?'border-white/15 bg-[#121211]':'border-black/15 bg-white'}`}>
+                      className={`w-full p-2 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                       <option>Sim</option>
                       <option>Não</option>
                     </select>
@@ -818,7 +818,7 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               type="button" 
               onClick={handleNext}
               className={`px-4 py-2 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
-                theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]'
+                theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'
               }`}
             >
               Avançar <ArrowRight size={14} />

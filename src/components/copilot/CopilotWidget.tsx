@@ -32,7 +32,7 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const dark = theme === 'dark';
 
-  const panelBg = 'glass-fill glass-sheen border-line text-fg';
+  const panelBg = 'glass-fill glass-blur glass-sheen border-line text-fg';
   const bubbleUser = 'bg-brand text-white';
   const bubbleBot = 'bg-surface-2 text-fg border border-line';
   const inputBg = 'bg-surface-2 border-line text-fg';

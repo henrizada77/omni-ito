@@ -87,7 +87,7 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* KPI: Turnover Geral */}
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Turnover Semestral ({semestreAtual.semestre})</span>
           <div>
@@ -98,7 +98,7 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
 
         {/* KPI: Desligamentos Voluntários */}
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Desligamentos Iniciados pelo Colaborador</span>
           <div>
@@ -109,7 +109,7 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
 
         {/* KPI: Desligamentos Involuntários */}
         <div className={`p-5 rounded-xl border flex flex-col justify-between h-28 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">Desligamentos por Decisão do Instituto</span>
           <div>
@@ -119,7 +119,7 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
         </div>
       </div>
 
-      <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'}`}>
+      <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'}`}>
         <div className="pb-2 border-b border-white/5">
           <h4 className="text-xs font-bold uppercase tracking-wider opacity-65">Evolução do Turnover por Semestre</h4>
         </div>
@@ -130,9 +130,9 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
               <YAxis stroke="currentColor" opacity={0.4} tickLine={false} tickFormatter={(v) => `${v}%`} />
               <Tooltip
                 formatter={(value: any, _n: any, p: any) => [`${value}%`, 'Turnover', `adm ${p.payload.adm} · dem ${p.payload.dem} · efetivo ${p.payload.efetivo}`]}
-                contentStyle={{ backgroundColor: theme === 'dark' ? '#181816' : '#ffffff', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', color: theme === 'dark' ? '#E5DFD3' : '#0A0A0A', fontSize: '11px', borderRadius: '8px' }}
+                contentStyle={{ backgroundColor: theme === 'dark' ? '#121A2A' : '#ffffff', borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)', color: theme === 'dark' ? '#5B7CFA' : '#4F6DF5', fontSize: '11px', borderRadius: '8px' }}
               />
-              <Bar dataKey="taxa" fill={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'} radius={[4, 4, 0, 0]} barSize={28} />
+              <Bar dataKey="taxa" fill={theme === 'dark' ? '#5B7CFA' : '#4F6DF5'} radius={[4, 4, 0, 0]} barSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -141,7 +141,7 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Sector Turnover Bar Chart */}
         <div className={`p-5 rounded-xl border space-y-4 lg:col-span-2 ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <div className="pb-2 border-b border-white/5">
             <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">
@@ -156,14 +156,14 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
                 <Tooltip 
                   formatter={(value, _name, props) => [`${value}%`, 'Taxa de Turnover', `Ativos: ${props.payload.Ativos}, Desligados: ${props.payload.Desligados}`]}
                   contentStyle={{ 
-                    backgroundColor: theme === 'dark' ? '#181816' : '#ffffff',
+                    backgroundColor: theme === 'dark' ? '#121A2A' : '#ffffff',
                     borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                    color: theme === 'dark' ? '#E5DFD3' : '#0A0A0A',
+                    color: theme === 'dark' ? '#5B7CFA' : '#4F6DF5',
                     fontSize: '11px',
                     borderRadius: '8px'
                   }} 
                 />
-                <Bar dataKey="Taxa de Turnover (%)" fill={theme === 'dark' ? '#E5DFD3' : '#0A0A0A'} radius={[0, 4, 4, 0]} barSize={10} />
+                <Bar dataKey="Taxa de Turnover (%)" fill={theme === 'dark' ? '#5B7CFA' : '#4F6DF5'} radius={[0, 4, 4, 0]} barSize={10} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -171,7 +171,7 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
 
         {/* Voluntário vs Involuntário Donut Chart */}
         <div className={`p-5 rounded-xl border space-y-4 flex flex-col justify-between ${
-          theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+          theme === 'dark' ? 'glass-fill border-white/5' : 'bg-black/[0.01] border-black/5'
         }`}>
           <div className="pb-2 border-b border-white/5">
             <h4 className="text-xs font-bold uppercase tracking-wider opacity-65 flex items-center gap-1.5">
@@ -198,9 +198,9 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
                   </Pie>
                   <Tooltip 
                     contentStyle={{ 
-                      backgroundColor: theme === 'dark' ? '#181816' : '#ffffff',
+                      backgroundColor: theme === 'dark' ? '#121A2A' : '#ffffff',
                       borderColor: theme === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                      color: theme === 'dark' ? '#E5DFD3' : '#0A0A0A',
+                      color: theme === 'dark' ? '#5B7CFA' : '#4F6DF5',
                       fontSize: '11px',
                       borderRadius: '8px'
                     }} 

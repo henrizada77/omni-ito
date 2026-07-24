@@ -179,8 +179,8 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
   };
 
   const cardBg = theme === 'dark' ? 'bg-white/[0.03] border-white/10' : 'bg-black/[0.02] border-black/10';
-  const inputBg = theme === 'dark' ? 'bg-[#0D0D0C] border-white/15 focus:border-[#E5DFD3]/40' : 'bg-white border-black/15 focus:border-black/40';
-  const btnPrimary = theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]';
+  const inputBg = theme === 'dark' ? 'glass-fill border-white/15 focus:border-brand/40' : 'bg-white border-black/15 focus:border-black/40';
+  const btnPrimary = theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong';
 
   if (loading) {
     return <div className="flex items-center gap-2 text-xs opacity-60 py-10 justify-center"><Loader2 size={16} className="animate-spin" /> Carregando...</div>;

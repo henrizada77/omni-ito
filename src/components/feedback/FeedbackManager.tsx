@@ -98,9 +98,9 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
 
   const alertasNovos = useMemo(() => pulseAlertas.filter(a => a.status === 'novo').length, [pulseAlertas]);
 
-  const cardBg = theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm';
-  const inputBg = theme === 'dark' ? 'bg-[#0D0D0C] border-white/10 focus:border-[#E5DFD3]/40' : 'bg-white border-black/10 focus:border-black/40';
-  const btnPrimary = theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]';
+  const cardBg = theme === 'dark' ? 'glass-fill border-white/10' : 'bg-white border-black/10 shadow-sm';
+  const inputBg = theme === 'dark' ? 'glass-fill border-white/10 focus:border-brand/40' : 'bg-white border-black/10 focus:border-black/40';
+  const btnPrimary = theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong';
   const btnSecondary = theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-white/90' : 'border-black/10 hover:bg-black/5 text-black/90';
 
   const fetchAll = async () => {
@@ -141,13 +141,13 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
       <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 10</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/20">MÓDULO 10</span>
             <h3 className="text-xl font-bold">Voz do Time</h3>
           </div>
           <p className="text-xs opacity-65 mt-1">Pulse semanal, pesquisa de satisfação e ouvidoria — todos anônimos.</p>
         </div>
 
-        <div className={`inline-flex p-1 rounded-xl border ${theme === 'dark' ? 'border-white/10 bg-[#0D0D0C]' : 'border-black/10 bg-white'}`}>
+        <div className={`inline-flex p-1 rounded-xl border ${theme === 'dark' ? 'border-white/10 glass-fill' : 'border-black/10 bg-white'}`}>
           <button
             onClick={() => setSubTab('pulse')}
             className={`px-4 py-1.5 rounded-lg text-xs font-bold tracking-wider uppercase flex items-center gap-1.5 transition-colors relative ${
@@ -633,7 +633,7 @@ function PesquisaView({
             onClick={() => setFilterPeriodo(v)}
             className={`px-3 py-1 rounded text-[10px] font-bold uppercase border transition-colors ${
               filterPeriodo === v
-                ? theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] border-transparent' : 'bg-black text-white border-transparent'
+                ? theme === 'dark' ? 'bg-brand text-white border-transparent' : 'bg-black text-white border-transparent'
                 : btnSecondary
             }`}
           >
@@ -645,7 +645,7 @@ function PesquisaView({
         <select
           value={filterCategoria}
           onChange={e => setFilterCategoria(e.target.value as any)}
-          className={`text-[11px] px-2 py-1 rounded border ${theme === 'dark' ? 'bg-[#0D0D0C] border-white/10' : 'bg-white border-black/10'}`}
+          className={`text-[11px] px-2 py-1 rounded border ${theme === 'dark' ? 'glass-fill border-white/10' : 'bg-white border-black/10'}`}
         >
           <option value="Todas">Todas</option>
           {CATEGORIAS_SAT.map(c => <option key={c} value={c}>{c}</option>)}
@@ -885,7 +885,7 @@ function OuvidoriaView({
               onClick={() => setStatusFilter(s)}
               className={`px-3 py-1 rounded text-[10px] font-bold uppercase border transition-colors ${
                 active
-                  ? theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] border-transparent' : 'bg-black text-white border-transparent'
+                  ? theme === 'dark' ? 'bg-brand text-white border-transparent' : 'bg-black text-white border-transparent'
                   : btnSecondary
               }`}
             >
@@ -898,7 +898,7 @@ function OuvidoriaView({
         <select
           value={tipoFilter}
           onChange={e => setTipoFilter(e.target.value as any)}
-          className={`text-[11px] px-2 py-1 rounded border ${theme === 'dark' ? 'bg-[#0D0D0C] border-white/10' : 'bg-white border-black/10'}`}
+          className={`text-[11px] px-2 py-1 rounded border ${theme === 'dark' ? 'glass-fill border-white/10' : 'bg-white border-black/10'}`}
         >
           <option value="todos">Todos</option>
           {(['Elogio', 'Sugestão', 'Reclamação', 'Denúncia'] as const).map(t => <option key={t} value={t}>{t}</option>)}
@@ -1070,7 +1070,7 @@ function PublicLinksCard({
             <span className="text-[10px] font-bold uppercase tracking-wider">Pesquisa de Satisfação</span>
           </div>
           <div className="flex items-center gap-2">
-            <code className={`flex-1 text-[10px] px-2 py-1.5 rounded font-mono truncate ${theme === 'dark' ? 'bg-[#0D0D0C]' : 'bg-white'}`}>
+            <code className={`flex-1 text-[10px] px-2 py-1.5 rounded font-mono truncate ${theme === 'dark' ? 'glass-fill' : 'bg-white'}`}>
               {pesquisaUrl}
             </code>
             <button
@@ -1098,7 +1098,7 @@ function PublicLinksCard({
             <span className="text-[10px] font-bold uppercase tracking-wider">Ouvidoria</span>
           </div>
           <div className="flex items-center gap-2">
-            <code className={`flex-1 text-[10px] px-2 py-1.5 rounded font-mono truncate ${theme === 'dark' ? 'bg-[#0D0D0C]' : 'bg-white'}`}>
+            <code className={`flex-1 text-[10px] px-2 py-1.5 rounded font-mono truncate ${theme === 'dark' ? 'glass-fill' : 'bg-white'}`}>
               {ouvidoriaUrl}
             </code>
             <button

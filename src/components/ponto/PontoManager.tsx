@@ -86,9 +86,9 @@ export default function PontoManager({ theme }: PontoManagerProps) {
   const [selectedColabId, setSelectedColabId] = useState('');
   const [filterSetor, setFilterSetor] = useState('Todos');
 
-  const cardBg = theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm';
-  const inputBg = theme === 'dark' ? 'bg-[#0D0D0C] border-white/10' : 'bg-white border-black/10';
-  const btnPrimary = theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]';
+  const cardBg = theme === 'dark' ? 'glass-fill border-white/10' : 'bg-white border-black/10 shadow-sm';
+  const inputBg = theme === 'dark' ? 'glass-fill border-white/10' : 'bg-white border-black/10';
+  const btnPrimary = theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong';
   const btnSecondary = theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-white/90' : 'border-black/10 hover:bg-black/5 text-black/90';
 
   const firstDay = `${competencia}-01`;
@@ -225,7 +225,7 @@ export default function PontoManager({ theme }: PontoManagerProps) {
       <div className="pb-6 border-b border-white/10 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-[#E5DFD3]/20">MÓDULO 11</span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-brand/20">MÓDULO 11</span>
             <h3 className="text-xl font-bold">Espelho de Ponto</h3>
             {modo && (
               <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
