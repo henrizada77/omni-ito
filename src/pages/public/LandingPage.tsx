@@ -8,7 +8,9 @@ import {
   KeyRound,
   User,
   Star,
-  MessageSquare
+  MessageSquare,
+  ShieldCheck,
+  Heart
 } from 'lucide-react';
 import { useMouseGlow } from '../../hooks/useMouseGlow';
 import { supabase } from '../../supabaseClient';
@@ -127,158 +129,122 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
     }
   };
 
+  const canaisAnonimos: { to: string; node: React.ReactNode; tone: string; titulo: string; desc: string }[] = [
+    { to: '/pulse', node: '🙂', tone: 'amber', titulo: 'Pulse Semanal', desc: 'Como foi sua semana? · 30 segundos' },
+    { to: '/pesquisa', node: <Star size={16} />, tone: 'emerald', titulo: 'Pesquisa de Satisfação', desc: 'Anônima · 1 minuto' },
+    { to: '/ouvidoria', node: <MessageSquare size={16} />, tone: 'sky', titulo: 'Ouvidoria', desc: 'Elogio, sugestão ou desabafo' },
+    { to: '/cultura', node: '📖', tone: 'teal', titulo: 'Manual de Cultura', desc: 'Nossos valores e princípios' },
+  ];
+
+  const toneMap: Record<string, string> = {
+    amber: 'bg-amber-500/12 text-amber-500 border-amber-500/25',
+    emerald: 'bg-emerald-500/12 text-emerald-500 border-emerald-500/25',
+    sky: 'bg-sky-500/12 text-sky-500 border-sky-500/25',
+    teal: 'bg-teal-500/12 text-teal-500 border-teal-500/25',
+  };
+
   return (
-    <div className={`min-h-screen transition-colors duration-500 relative overflow-hidden ${
-      theme === 'dark' ? 'bg-[#0D0D0C] text-[#E5DFD3]' : 'bg-[#FBFBFA] text-[#0A0A0A]'
-    }`}>
-      {/* Background Glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#E5DFD3]/3 rounded-full blur-[120px] pointer-events-none" />
+    <div className="app-aurora min-h-screen transition-colors duration-500 relative overflow-hidden bg-canvas text-fg">
+      {/* Blobs de luz flutuantes (motion leve, só transform) */}
+      <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 w-[460px] h-[460px] rounded-full bg-brand/20 blur-[130px] animate-floaty" />
+      <div aria-hidden className="pointer-events-none absolute top-1/3 -right-32 w-[420px] h-[420px] rounded-full bg-teal-400/10 blur-[130px] animate-floaty2" />
+      <div aria-hidden className="pointer-events-none absolute -bottom-32 left-1/3 w-[400px] h-[400px] rounded-full bg-brand/12 blur-[130px] animate-floaty" />
 
       {/* Header theme button */}
-      <div className="absolute top-6 right-6">
+      <div className="absolute top-6 right-6 z-20">
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className={`p-2 rounded-lg border transition-colors ${
-            theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-[#0D0D0C]' : 'border-black/10 hover:bg-black/5 bg-[#FBFBFA]'
-          }`}
+          aria-label="Alternar tema"
+          className="p-2.5 rounded-xl border border-line glass-fill hover:bg-surface-2 transition-colors"
         >
           {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-16 flex flex-col lg:flex-row items-center justify-between gap-12 min-h-screen relative z-10">
-        
+
         {/* Pitch Text Left Column */}
-        <div className="max-w-xl space-y-8 text-center lg:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold tracking-wider uppercase border glass-card-dark"
-               style={{
-                 borderColor: theme === 'dark' ? 'rgba(229, 223, 211, 0.15)' : 'rgba(10, 10, 10, 0.1)'
-               }}>
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            Autenticado via Supabase RLS
+        <div className="max-w-xl space-y-7 text-center lg:text-left reveal-up">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-rounded font-bold tracking-wide border border-line glass-fill">
+            <Heart size={12} className="text-brand" />
+            Feito com cuidado · seguro e auditado
           </div>
 
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight leading-[1.1] font-sans">
-            A Nova Era da Gestão Operacional do <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#E5DFD3] via-[#D4CBB7] to-[#E5DFD3]"
-                  style={{
-                    backgroundImage: theme === 'dark' ? '' : 'linear-gradient(to right, #0A0A0A, #4A4A4A)'
-                  }}>
-              Instituto Thiago Omena
-            </span>
-          </h1>
+          <div className="space-y-3">
+            <h1 className="font-display text-[40px] md:text-[54px] font-semibold tracking-tight leading-[1.03]">
+              Cuidar de quem
+              <br />cuida de pessoas.
+            </h1>
+            <p className="text-base md:text-lg text-fg-secondary leading-relaxed">
+              O portal de gente do{' '}
+              <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand via-brand-strong to-brand">
+                Instituto Thiago Omena
+              </span>
+              . Admissões, contratos, onboarding e o bem-estar do time — reunidos em um só lugar, com a delicadeza que as pessoas merecem.
+            </p>
+          </div>
 
-          <p className="text-sm md:text-base opacity-75 leading-relaxed">
-            Elimine planilhas paralelas, processos manuais e papéis. Centralize admissões, contratos e onboarding em uma única plataforma digital segura, imutável e auditada via RLS.
-          </p>
-
-          {/* Interactive alerts mockup (pitch) */}
-          <div 
+          {/* Card-pitch interativo (glow que segue o mouse = motion) */}
+          <div
             ref={glowHero.ref}
             onMouseMove={glowHero.onMouseMove}
             onMouseEnter={glowHero.onMouseEnter}
             onMouseLeave={glowHero.onMouseLeave}
             style={glowHero.style}
-            className={`glow-card rounded-2xl border p-5 transition-all text-left ${
-              theme === 'dark' ? 'glass-card-dark glow-border-dark' : 'glass-card-light glow-border-light'
-            }`}
+            className={`glow-card rounded-2xl border border-line glass-fill glass-sheen p-5 transition-all text-left ${theme === 'dark' ? 'glow-border-dark' : 'glow-border-light'}`}
           >
             <div className={`glow-overlay-${theme}`}></div>
             <div className="flex items-center gap-4 relative z-10">
-              <div className="w-10 h-10 rounded-full bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-amber-500 flex-shrink-0">
-                <AlertTriangle size={20} />
+              <div className="w-11 h-11 rounded-2xl bg-brand/12 border border-brand/25 flex items-center justify-center text-brand flex-shrink-0">
+                <ShieldCheck size={20} />
               </div>
-              <div className="space-y-1">
-                <h4 className="text-xs font-bold uppercase opacity-60">Alertas Operacionais de Experiência</h4>
-                <p className="text-xs font-semibold">Monitoramento automático de prazos de 45 e 90 dias ativo.</p>
+              <div className="space-y-0.5">
+                <h4 className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Cuidado que se antecipa</h4>
+                <p className="text-xs md:text-sm font-medium text-fg">Avisamos sobre prazos de experiência (45 e 90 dias) antes que passem — ninguém fica para trás.</p>
               </div>
             </div>
           </div>
 
-          {/* Canais anônimos — descobríveis por qualquer visitante sem precisar
-              de login. RH divulga o link direto pela equipe. */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-2">
-            <Link
-              to="/pulse"
-              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
-              }`}
-            >
-              <div className="w-9 h-9 rounded-full bg-amber-500/10 border border-amber-500/25 flex items-center justify-center text-lg leading-none">
-                🙂
-              </div>
-              <div className="text-left">
-                <div className="text-xs font-bold">Pulse Semanal</div>
-                <div className="text-[10px] opacity-60">Como foi sua semana? · 30 segundos</div>
-              </div>
-            </Link>
-            <Link
-              to="/pesquisa"
-              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
-              }`}
-            >
-              <div className="w-9 h-9 rounded-full bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-500">
-                <Star size={16} />
-              </div>
-              <div className="text-left">
-                <div className="text-xs font-bold">Pesquisa de Satisfação</div>
-                <div className="text-[10px] opacity-60">Anônima · 1 minuto</div>
-              </div>
-            </Link>
-            <Link
-              to="/ouvidoria"
-              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
-              }`}
-            >
-              <div className="w-9 h-9 rounded-full bg-sky-500/10 border border-sky-500/25 flex items-center justify-center text-sky-500">
-                <MessageSquare size={16} />
-              </div>
-              <div className="text-left">
-                <div className="text-xs font-bold">Ouvidoria</div>
-                <div className="text-[10px] opacity-60">Elogio, sugestão, reclamação ou denúncia</div>
-              </div>
-            </Link>
-            <Link
-              to="/cultura"
-              className={`flex-1 flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
-                theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'
-              }`}
-            >
-              <div className="w-9 h-9 rounded-full bg-teal-500/10 border border-teal-500/25 flex items-center justify-center text-lg leading-none">
-                📖
-              </div>
-              <div className="text-left">
-                <div className="text-xs font-bold">Manual de Cultura</div>
-                <div className="text-[10px] opacity-60">Nossos valores e princípios</div>
-              </div>
-            </Link>
+          {/* Canais anônimos — descobríveis por qualquer visitante sem login. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {canaisAnonimos.map((c) => (
+              <Link
+                key={c.to}
+                to={c.to}
+                className="group flex items-center gap-3 px-4 py-3 rounded-xl border border-line glass-fill card-glow hover:-translate-y-0.5 hover:border-brand/40 transition-all"
+              >
+                <div className={`w-9 h-9 rounded-full border flex items-center justify-center text-lg leading-none ${toneMap[c.tone]}`}>
+                  {c.node}
+                </div>
+                <div className="text-left min-w-0">
+                  <div className="text-xs font-bold truncate">{c.titulo}</div>
+                  <div className="text-[10px] text-fg-muted truncate">{c.desc}</div>
+                </div>
+              </Link>
+            ))}
           </div>
         </div>
 
         {/* Login / SignUp Form Right Column */}
-        <div 
+        <div
           ref={glowAuth.ref}
           onMouseMove={glowAuth.onMouseMove}
           onMouseEnter={glowAuth.onMouseEnter}
           onMouseLeave={glowAuth.onMouseLeave}
           style={glowAuth.style}
-          className={`glow-card w-full max-w-md rounded-2xl border p-6 md:p-8 transition-all ${
-            theme === 'dark' ? 'glass-card-dark' : 'glass-card-light'
-          }`}
+          className="glow-card w-full max-w-md rounded-[22px] border border-line glass-fill glass-blur glass-sheen p-6 md:p-8 transition-all reveal-up"
         >
           <div className={`glow-overlay-${theme}`}></div>
           <div className="relative z-10 space-y-6">
-            
+
             <div className="text-center space-y-2">
-              <div className={`w-10 h-10 rounded-xl mx-auto flex items-center justify-center font-bold tracking-tight text-base ${
-                theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]'
-              }`}>
+              <div className="w-12 h-12 rounded-2xl mx-auto flex items-center justify-center font-rounded font-extrabold tracking-tight text-lg bg-brand text-white shadow-[0_10px_30px_-8px_rgba(79,109,245,0.6)]">
                 ITO
               </div>
-              <h2 className="text-2xl font-bold tracking-tight font-sans">Omni ITO</h2>
-              <p className="text-xs opacity-60">Portal Interno do Colaborador</p>
+              <h2 className="font-display text-2xl font-semibold tracking-tight">Omni ITO</h2>
+              <p className="text-xs text-fg-secondary">
+                {authMode === 'login' ? 'Que bom te ver de novo. 💙' : 'Vamos criar o seu acesso.'}
+              </p>
             </div>
 
             {authError && (
@@ -289,51 +255,42 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
             )}
 
             <form onSubmit={authMode === 'login' ? handleLogin : handleSignUp} className="space-y-4">
-              
+
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">E-mail corporativo / pessoal</label>
+                <label className="block font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-1.5">E-mail corporativo / pessoal</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-3 opacity-45" size={14} />
+                  <Mail className="absolute left-3 top-3 text-fg-muted" size={14} />
                   <input
                     type="email"
                     required
                     placeholder="nome@itoinstituto.com.br"
                     value={authEmail}
                     onChange={(e) => setAuthEmail(e.target.value)}
-                    className={`w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border focus:outline-none focus:ring-1 transition-all ${
-                      theme === 'dark' 
-                        ? 'bg-[#121211] border-white/15 focus:ring-[#E5DFD3] text-[#E5DFD3]' 
-                        : 'bg-black/5 border-black/15 focus:ring-[#0A0A0A] text-[#0A0A0A]'
-                    }`}
+                    className="w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border border-line bg-surface-2 text-fg focus:outline-none focus:border-brand/50 focus:ring-2 focus:ring-brand/20 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">Senha</label>
+                <label className="block font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-1.5">Senha</label>
                 <div className="relative">
-                  <KeyRound className="absolute left-3 top-3 opacity-45" size={14} />
+                  <KeyRound className="absolute left-3 top-3 text-fg-muted" size={14} />
                   <input
                     type="password"
                     required
                     placeholder="••••••••"
                     value={authPassword}
                     onChange={(e) => setAuthPassword(e.target.value)}
-                    className={`w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border focus:outline-none focus:ring-1 transition-all ${
-                      theme === 'dark' 
-                        ? 'bg-[#121211] border-white/15 focus:ring-[#E5DFD3] text-[#E5DFD3]' 
-                        : 'bg-black/5 border-black/15 focus:ring-[#0A0A0A] text-[#0A0A0A]'
-                    }`}
+                    className="w-full text-xs pl-9 pr-3 py-2.5 rounded-lg border border-line bg-surface-2 text-fg focus:outline-none focus:border-brand/50 focus:ring-2 focus:ring-brand/20 transition-all"
                   />
                 </div>
               </div>
 
               {authMode === 'signup' && (
                 <div className="animate-fadeIn">
-                  <p className={`text-[10px] leading-relaxed opacity-60 ${theme === 'dark' ? 'text-[#E5DFD3]' : 'text-[#0A0A0A]'}`}>
-                    <User className="inline mr-1.5 -mt-0.5 opacity-60" size={12} />
-                    Novas contas entram como Suporte TI, com acesso de leitura.
-                    O acesso de coordenação é liberado pela equipe depois do cadastro.
+                  <p className="text-[10px] leading-relaxed text-fg-secondary">
+                    <User className="inline mr-1.5 -mt-0.5 text-fg-muted" size={12} />
+                    Novas contas entram como Suporte TI, com acesso de leitura. O acesso de coordenação é liberado pela equipe depois do cadastro.
                   </p>
                 </div>
               )}
@@ -341,31 +298,27 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
               <button
                 type="submit"
                 disabled={authLoading}
-                className={`w-full py-2.5 rounded-lg text-xs font-bold tracking-wide uppercase transition-colors ${
-                  theme === 'dark' 
-                    ? 'bg-[#E5DFD3] text-[#0D0D0C] hover:bg-[#D4CBB7]' 
-                    : 'bg-[#0A0A0A] text-[#FBFBFA] hover:bg-[#2A2A2A]'
-                } disabled:opacity-50`}
+                className="w-full py-3 rounded-xl text-xs font-bold tracking-wide uppercase bg-brand text-white hover:bg-brand-strong transition-colors disabled:opacity-50 shadow-[0_10px_30px_-10px_rgba(79,109,245,0.6)]"
               >
-                {authLoading ? 'Processando...' : (authMode === 'login' ? 'Acessar Painel' : 'Registrar Usuário')}
+                {authLoading ? 'Só um instante…' : (authMode === 'login' ? 'Entrar' : 'Criar meu acesso')}
               </button>
 
             </form>
 
-            <div className="text-center pt-2">
+            <div className="text-center pt-1">
               <button
                 onClick={() => {
                   setAuthMode(authMode === 'login' ? 'signup' : 'login');
                   setAuthError('');
                 }}
-                className="text-[11px] font-medium opacity-65 hover:opacity-100 transition-opacity underline underline-offset-4"
+                className="text-[11px] font-medium text-fg-secondary hover:text-fg transition-colors underline underline-offset-4"
               >
-                {authMode === 'login' 
-                  ? 'Não possui uma conta? Cadastre-se' 
-                  : 'Já possui uma conta? Faça Login'}
+                {authMode === 'login'
+                  ? 'Ainda não tem conta? Cadastre-se'
+                  : 'Já tem conta? Entrar'}
               </button>
             </div>
-            
+
           </div>
         </div>
 
