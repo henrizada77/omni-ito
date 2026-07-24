@@ -32,10 +32,10 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const dark = theme === 'dark';
 
-  const panelBg = dark ? 'bg-[#0D0D0C] border-white/10' : 'bg-white border-black/10';
-  const bubbleUser = dark ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-white';
-  const bubbleBot = dark ? 'bg-white/5 text-[#E5DFD3] border border-white/10' : 'bg-black/[0.03] text-[#0A0A0A] border border-black/10';
-  const inputBg = dark ? 'bg-[#121211] border-white/10' : 'bg-white border-black/15';
+  const panelBg = 'glass-fill glass-sheen border-line text-fg';
+  const bubbleUser = 'bg-brand text-white';
+  const bubbleBot = 'bg-surface-2 text-fg border border-line';
+  const inputBg = 'bg-surface-2 border-line text-fg';
 
   const loadConversas = useCallback(async () => {
     const { data } = await supabase
@@ -261,7 +261,7 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
               <button
                 onClick={send}
                 disabled={streaming || !input.trim()}
-                className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${dark ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-white'} disabled:opacity-40`}
+                className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-brand text-white disabled:opacity-40"
               >
                 {streaming ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
               </button>

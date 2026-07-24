@@ -2740,10 +2740,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     return (
                       <div
                         key={i}
-                        className="group relative p-5 rounded-[20px] bg-surface border border-line shadow-[0_1px_2px_rgba(16,24,40,0.04),0_10px_28px_-14px_rgba(16,24,40,0.30)] hover:border-brand/30 hover:-translate-y-0.5 transition-all duration-200"
+                        className="group relative p-5 rounded-[20px] glass-fill glass-sheen border border-line hover:border-brand/30 hover:-translate-y-0.5 transition-all duration-200"
                       >
                         <span className={`w-10 h-10 mb-4 rounded-xl grid place-items-center text-lg ${chip}`}>{k.icon}</span>
-                        <p className="text-[9px] font-bold tracking-[0.15em] uppercase text-fg-muted mb-1.5 leading-tight">
+                        <p className="font-rounded text-[9px] font-bold tracking-[0.15em] uppercase text-fg-muted mb-1.5 leading-tight">
                           {k.label}
                         </p>
                         <span className="font-display text-[34px] font-semibold leading-none text-fg tabular-nums">{k.value}</span>
@@ -2757,7 +2757,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 <div className="flex flex-col lg:flex-row gap-5 lg:items-start">
                 {/* ── Alertas Reais ── */}
                 {(kpiAsoVencer.length > 0 || kpiFeriasVencer.length > 0 || kpiExperienciaVencer.length > 0 || dbAdvertencias.length > 0) && (
-                  <div className="w-full lg:flex-[2] min-w-0 rounded-2xl border border-rose-500/20 bg-surface overflow-hidden">
+                  <div className="w-full lg:flex-[2] min-w-0 rounded-2xl border border-rose-500/20 glass-fill glass-sheen overflow-hidden">
                     {/* Alert Header Bar */}
                     <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-200'
                       }`}>
@@ -2766,7 +2766,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           }`}>
                           <AlertTriangle size={13} className="text-rose-400" />
                         </div>
-                        <span className="text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">Alertas — Próximos 30 dias & Penalidades</span>
+                        <span className="font-rounded text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">Alertas — Próximos 30 dias & Penalidades</span>
                       </div>
                       <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-100 text-rose-500'
                         }`}>
@@ -2780,7 +2780,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 mb-3">
                             <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-                            <h4 className="text-[9px] font-black tracking-[0.15em] uppercase text-fg-secondary">Advertências Emitidas</h4>
+                            <h4 className="font-rounded text-[9px] font-black tracking-[0.15em] uppercase text-fg-secondary">Advertências Emitidas</h4>
                           </div>
                           <div className="max-h-[220px] overflow-y-auto space-y-2 pr-1 scrollbar-thin">
                             {dbAdvertencias.slice(0, 5).map((adv: any) => {
@@ -2802,7 +2802,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 mb-3">
                             <span className={`w-2 h-2 rounded-full bg-rose-400`} />
-                            <h4 className="text-[9px] font-black tracking-[0.15em] uppercase text-fg-secondary">ASO a Vencer</h4>
+                            <h4 className="font-rounded text-[9px] font-black tracking-[0.15em] uppercase text-fg-secondary">ASO a Vencer</h4>
                           </div>
                            {kpiAsoVencer.map((c: any) => {
                             const dateD = new Date(c.data_aso_vencimento);
@@ -2817,7 +2817,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 mb-3">
                             <span className={`w-2 h-2 rounded-full bg-amber-400`} />
-                            <h4 className="text-[9px] font-black tracking-[0.15em] uppercase text-fg-secondary">Férias a Vencer</h4>
+                            <h4 className="font-rounded text-[9px] font-black tracking-[0.15em] uppercase text-fg-secondary">Férias a Vencer</h4>
                           </div>
                           {kpiFeriasVencer.map((c: any) => {
                             const dateD = new Date(c.data_ferias_vencimento);
@@ -2832,7 +2832,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <div className="space-y-2">
                           <div className="flex items-center gap-2 mb-3">
                             <span className={`w-2 h-2 rounded-full bg-sky-400`} />
-                            <h4 className="text-[9px] font-black tracking-[0.15em] uppercase text-fg-secondary">Fim de Experiência</h4>
+                            <h4 className="font-rounded text-[9px] font-black tracking-[0.15em] uppercase text-fg-secondary">Fim de Experiência</h4>
                           </div>
                           {kpiExperienciaVencer.map((c: any) => {
                             const dateAdm = new Date(c.data_admissao + 'T12:00:00');
@@ -2853,11 +2853,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   const emFeriasList = colaboradoresList.filter((c: any) => c && c.status === 'em_ferias');
                   if (emFeriasList.length === 0) return null;
                   return (
-                    <div className="w-full lg:flex-[1] min-w-0 rounded-2xl border border-teal-500/20 bg-surface overflow-hidden">
+                    <div className="w-full lg:flex-[1] min-w-0 rounded-2xl border border-teal-500/20 glass-fill glass-sheen overflow-hidden">
                       <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-200'}`}>
                         <div className="flex items-center gap-2.5">
                           <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm ${theme === 'dark' ? 'bg-teal-500/15' : 'bg-teal-100'}`}>🏖</div>
-                          <span className="text-[10px] font-black tracking-[0.15em] uppercase text-teal-400">Em Férias Agora</span>
+                          <span className="font-rounded text-[10px] font-black tracking-[0.15em] uppercase text-teal-400">Em Férias Agora</span>
                         </div>
                         <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-teal-500/15 text-teal-400' : 'bg-teal-100 text-teal-600'}`}>
                           {emFeriasList.length} colaborador{emFeriasList.length > 1 ? 'es' : ''}
@@ -2891,9 +2891,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   if (pendentes.length === 0) return null;
                   const hoje = new Date().toISOString().split('T')[0];
                   return (
-                    <div className="rounded-2xl border border-rose-500/20 bg-surface overflow-hidden">
+                    <div className="rounded-2xl border border-rose-500/20 glass-fill glass-sheen overflow-hidden">
                       <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-200'}`}>
-                        <span className="text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">💸 Rescisões a Pagar</span>
+                        <span className="font-rounded text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">💸 Rescisões a Pagar</span>
                         <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-100 text-rose-600'}`}>{pendentes.length}</span>
                       </div>
                       <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -2937,7 +2937,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                   {/* Quick Actions */}
                   <div className="lg:col-span-2 space-y-3">
-                    <p className="text-[9px] font-black tracking-[0.2em] uppercase text-fg-muted">Ações Rápidas</p>
+                    <p className="font-rounded text-[10px] font-bold tracking-[0.2em] uppercase text-fg-muted">Ações Rápidas</p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
                         {
@@ -2972,7 +2972,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <button
                           key={i}
                           onClick={item.action}
-                          className="group p-4 rounded-2xl border border-line bg-surface text-left flex items-start gap-3.5 transition-all duration-200 hover:scale-[1.015] hover:bg-surface-2 hover:border-brand/30"
+                          className="group p-4 rounded-2xl border border-line glass-fill text-left flex items-start gap-3.5 transition-all duration-200 hover:scale-[1.015] hover:bg-surface-2 hover:border-brand/30"
                         >
                           <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 transition-colors ${item.accent === 'emerald' ? (theme === 'dark' ? 'bg-emerald-500/12 text-emerald-400 group-hover:bg-emerald-500/20' : 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100') :
                               item.accent === 'amber' ? (theme === 'dark' ? 'bg-amber-500/12 text-amber-400 group-hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 group-hover:bg-amber-100') :
@@ -2991,10 +2991,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   </div>
 
                   {/* Recent Activity Feed */}
-                  <div className="rounded-2xl border border-line bg-surface p-5 flex flex-col gap-4">
+                  <div className="rounded-2xl border border-line glass-fill glass-sheen p-5 flex flex-col gap-4">
                     <div className="flex items-center gap-2">
                       <History size={13} className="text-emerald-500" />
-                      <p className="text-[9px] font-black tracking-[0.2em] uppercase text-fg-muted">Atividades Recentes</p>
+                      <p className="font-rounded text-[10px] font-bold tracking-[0.2em] uppercase text-fg-muted">Atividades Recentes</p>
                     </div>
                     <div className="space-y-1 flex-1">
                       {recentLogs.length > 0 ? recentLogs.map((log: any, i: number) => (
@@ -5871,7 +5871,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
           />
           {/* Drawer Panel */}
-          <div className="fixed top-0 right-0 h-full w-full max-w-md p-6 z-50 transform transition-transform duration-300 ease-in-out border-l border-line flex flex-col justify-between bg-surface/95 backdrop-blur-xl text-fg">
+          <div className="fixed top-0 right-0 h-full w-full max-w-md p-6 z-50 transform transition-transform duration-300 ease-in-out border-l border-line flex flex-col justify-between glass-fill glass-sheen text-fg">
             <div className="space-y-6 overflow-y-auto pr-2">
 
               {/* Header de perfil */}
