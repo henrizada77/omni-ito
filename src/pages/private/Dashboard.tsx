@@ -2435,8 +2435,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
         {/* Branding header */}
         <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm ${theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]'
-            }`}>
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm bg-brand text-white`}>
             ITO
           </div>
           <span className="font-semibold tracking-wider text-base">OMNI ITO</span>
@@ -2460,18 +2459,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   navigate(link.path);
                   setIsMobileSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-semibold tracking-wide transition-all relative ${isActive
-                    ? (theme === 'dark' ? 'bg-white/5 text-[#E5DFD3]' : 'bg-black/5 text-[#0A0A0A]')
-                    : 'opacity-65 hover:opacity-100'
+                className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold tracking-wide transition-all relative ${isActive
+                    ? 'bg-brand/12 text-brand'
+                    : 'text-fg-secondary hover:bg-surface-2 hover:text-fg'
                   }`}
               >
                 {/* Active Indicator Line and Glow */}
                 {isActive && (
                   <>
-                    <span className="absolute left-0 top-1/4 bottom-1/4 w-[3px] bg-[#E5DFD3] rounded-r"
-                      style={{ backgroundColor: theme === 'dark' ? '#E5DFD3' : '#0A0A0A' }} />
-                    <span className="absolute left-0 top-1/4 bottom-1/4 w-[12px] bg-[#E5DFD3]/10 blur-[4px] rounded-r"
-                      style={{ backgroundColor: theme === 'dark' ? 'rgba(229,223,211,0.2)' : 'rgba(10,10,10,0.15)' }} />
+                    <span className="absolute left-0 top-1/4 bottom-1/4 w-[3px] rounded-r"
+                      style={{ backgroundColor: 'var(--brand)' }} />
+                    <span className="absolute left-0 top-1/4 bottom-1/4 w-[12px] blur-[4px] rounded-r"
+                      style={{ backgroundColor: 'color-mix(in srgb, var(--brand) 25%, transparent)' }} />
                   </>
                 )}
                 {link.icon}
@@ -2524,12 +2523,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   );
 
   return (
-    <div className={`min-h-screen flex flex-col md:flex-row transition-colors duration-500 ${theme === 'dark' ? 'bg-[#0D0D0C] text-[#E5DFD3]' : 'bg-[#FBFBFA] text-[#0A0A0A]'
-      }`}>
+    <div className="min-h-screen flex flex-col md:flex-row transition-colors duration-500 bg-canvas text-fg">
 
       {/* 1. Desktop Left Sidebar */}
-      <aside className={`hidden md:block w-64 border-r fixed inset-y-0 left-0 p-6 z-40 transition-colors ${theme === 'dark' ? 'border-white/10 bg-black/20 backdrop-blur-md' : 'border-black/5 bg-[#F4F4F3]'
-        }`}>
+      <aside className="hidden md:block w-64 border-r border-line bg-sidebar fixed inset-y-0 left-0 p-6 z-40 transition-colors backdrop-blur-md">
         {renderSidebarContent()}
       </aside>
 
@@ -2537,8 +2534,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       <header className={`md:hidden sticky top-0 z-50 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between transition-colors ${theme === 'dark' ? 'border-white/10 bg-[#0D0D0C]/80' : 'border-black/5 bg-[#FBFBFA]/80'
         }`}>
         <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm ${theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]'
-            }`}>
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm bg-brand text-white`}>
             ITO
           </div>
           <span className="font-semibold tracking-wider text-base">OMNI ITO</span>

@@ -23,6 +23,49 @@
   --animate-fadeIn: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* === Design system (rebrand azul/navy) — ver docs/design-system.md ===
+   Tokens tema-aware: os valores mudam sob .dark; @theme inline expõe como
+   utilities (bg-brand, text-fg, bg-surface, border-line, ...). */
+:root {
+  --brand: #4F6DF5;
+  --brand-strong: #3D5AE0;
+  --brand-contrast: #FFFFFF;
+  --ds-bg: #F3F5FB;
+  --ds-surface: #FFFFFF;
+  --ds-surface-2: #F1F3F9;
+  --ds-sidebar: #FFFFFF;
+  --ds-line: #E9ECF3;
+  --ds-fg: #0F1729;
+  --ds-fg-secondary: #5B6472;
+  --ds-fg-muted: #8A94A6;
+}
+.dark {
+  --brand: #5B7CFA;
+  --brand-strong: #7089FF;
+  --brand-contrast: #0A0E17;
+  --ds-bg: #0A0E17;
+  --ds-surface: #121A2A;
+  --ds-surface-2: #0F1626;
+  --ds-sidebar: #0C111C;
+  --ds-line: #1E2739;
+  --ds-fg: #E6EAF2;
+  --ds-fg-secondary: #9AA4B6;
+  --ds-fg-muted: #6B7688;
+}
+@theme inline {
+  --color-brand: var(--brand);
+  --color-brand-strong: var(--brand-strong);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-canvas: var(--ds-bg);
+  --color-surface: var(--ds-surface);
+  --color-surface-2: var(--ds-surface-2);
+  --color-sidebar: var(--ds-sidebar);
+  --color-line: var(--ds-line);
+  --color-fg: var(--ds-fg);
+  --color-fg-secondary: var(--ds-fg-secondary);
+  --color-fg-muted: var(--ds-fg-muted);
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
