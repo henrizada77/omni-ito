@@ -2581,7 +2581,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       </aside>
 
       {/* 2. Mobile Top Navigation Header */}
-      <header className={`md:hidden sticky top-0 z-50 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between transition-colors ${theme === 'dark' ? 'border-white/10 bg-[#0D0D0C]/80' : 'border-black/5 bg-[#FBFBFA]/80'
+      <header className={`md:hidden sticky top-0 z-50 backdrop-blur-md border-b px-6 py-4 flex items-center justify-between transition-colors ${theme === 'dark' ? 'border-white/10 bg-surface-2/80' : 'border-black/5 bg-[#FBFBFA]/80'
         }`}>
         <div className="flex items-center gap-3">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm bg-brand text-white`}>
@@ -2599,7 +2599,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           </span>
           <button
             onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-            className={`p-2 rounded-lg border transition-colors ${theme === 'dark' ? 'border-white/10 bg-[#0D0D0C]' : 'border-black/10 bg-[#FBFBFA]'
+            className={`p-2 rounded-lg border transition-colors ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-[#FBFBFA]'
               }`}
           >
             {isMobileSidebarOpen ? <X size={16} /> : <Menu size={16} />}
@@ -2614,7 +2614,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             onClick={() => setIsMobileSidebarOpen(false)}
             className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden"
           />
-          <aside className={`fixed inset-y-0 left-0 w-64 p-6 z-50 transform transition-transform duration-300 ease-in-out md:hidden ${theme === 'dark' ? 'bg-[#0D0D0C] border-r border-white/10' : 'bg-[#FBFBFA] border-r border-black/10'
+          <aside className={`fixed inset-y-0 left-0 w-64 p-6 z-50 transform transition-transform duration-300 ease-in-out md:hidden ${theme === 'dark' ? 'bg-surface-2 border-r border-white/10' : 'bg-[#FBFBFA] border-r border-black/10'
             }`}>
             {renderSidebarContent()}
           </aside>
@@ -3069,7 +3069,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         { label: 'Contratos Finalizados', value: kpiContratos, color: 'text-emerald-400' },
                         { label: 'Envios Pendentes', value: kpiAdmissoesP, color: 'text-amber-400' },
                       ].map((k, i) => (
-                        <div key={i} className={`p-5 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                        <div key={i} className={`p-5 rounded-xl border flex flex-col justify-between h-24 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
                           }`}>
                           <span className="text-[10px] uppercase font-bold tracking-wider opacity-50">{k.label}</span>
                           <span className={`text-3xl font-extrabold font-mono ${k.color}`}>{k.value}</span>
@@ -3077,7 +3077,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       ))}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                      <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
                         <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Ações Rápidas</h4>
                         {[
                           { label: 'Novo Modelo de Documento', icon: <FileText size={15} />, action: () => { setDocsSubTab('modelos'); setShowNewModeloForm(true); } },
@@ -3093,7 +3093,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </button>
                         ))}
                       </div>
-                      <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                      <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
                         <h4 className="text-xs font-bold uppercase tracking-wider opacity-60">Modelos Disponíveis</h4>
                         {modelos.length > 0 ? modelos.map((m: any) => (
                           <div key={m.id} className={`p-3 rounded-lg border flex items-center justify-between text-xs ${theme === 'dark' ? 'border-white/5 bg-white/[0.02]' : 'border-black/5 bg-black/[0.01]'}`}>
@@ -3113,13 +3113,13 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-bold">Modelos de Documentos</h4>
                       <button onClick={() => setShowNewModeloForm(!showNewModeloForm)}
-                        className={`text-xs px-4 py-2 rounded-lg font-bold border transition-colors ${showNewModeloForm ? 'border-rose-500/30 text-rose-400 bg-rose-500/10' : (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-white')
+                        className={`text-xs px-4 py-2 rounded-lg font-bold border transition-colors ${showNewModeloForm ? 'border-rose-500/30 text-rose-400 bg-rose-500/10' : (theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-brand text-white')
                           }`}>{showNewModeloForm ? 'Cancelar' : '+ Novo Modelo'}</button>
                     </div>
 
                     {/* New Modelo Form */}
                     {showNewModeloForm && (
-                      <div className={`p-5 rounded-xl border space-y-4 animate-fadeIn ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'}`}>
+                      <div className={`p-5 rounded-xl border space-y-4 animate-fadeIn ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
                         <h5 className="text-xs font-bold uppercase tracking-wider opacity-60">Criar Novo Modelo</h5>
                         <div>
                           <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Título do Modelo *</label>
@@ -3136,7 +3136,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <div>
                           <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Ou importar PDF/DOCX base</label>
                           <input type="file" accept="application/pdf,.docx,.doc" onChange={handlePdfUpload}
-                            className={`w-full text-[10px] p-1.5 rounded-lg border ${theme === 'dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10'}`} />
+                            className={`w-full text-[10px] p-1.5 rounded-lg border ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10'}`} />
                           {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1">✓ Arquivo importado ({modelFileType.toUpperCase()}): {uploadedPdfName}</p>}
                         </div>
 
@@ -3329,7 +3329,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             } catch (e: any) { notify('Erro: ' + e.message); }
                             finally { setIsSavingModelo(false); }
                           }}
-                          className={`text-xs px-5 py-2 rounded-lg font-bold ${theme === 'dark' ? 'bg-[#E5DFD3] text-black' : 'bg-[#0A0A0A] text-white'} disabled:opacity-50`}>
+                          className={`text-xs px-5 py-2 rounded-lg font-bold ${theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white'} disabled:opacity-50`}>
                           {isSavingModelo ? 'Salvando...' : '✓ Salvar Modelo'}
                         </button>
                       </div>
@@ -3342,7 +3342,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         {modelos.map((m: any) => (
                           <button key={m.id} onClick={() => { setSelectedModeloId(m.id); setDocTemplate(m.conteudo); }}
                             className={`w-full text-left p-3 rounded-lg border text-xs transition-colors ${selectedModeloId === m.id
-                                ? (theme === 'dark' ? 'border-[#E5DFD3]/30 bg-[#E5DFD3]/5 text-[#E5DFD3]' : 'border-black/30 bg-black/5')
+                                ? (theme === 'dark' ? 'border-[#E5DFD3]/30 bg-[#E5DFD3]/5 text-fg' : 'border-black/30 bg-black/5')
                                 : (theme === 'dark' ? 'border-white/5 hover:bg-white/5' : 'border-black/5 hover:bg-black/5')
                               }`}>
                             <span className="font-semibold block">{m.titulo}</span>
@@ -3352,7 +3352,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <div className="pt-2">
                           <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Importar PDF Local</label>
                           <input type="file" accept="application/pdf" onChange={handlePdfUpload}
-                            className={`w-full text-[10px] p-1.5 rounded border ${theme === 'dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10'}`} />
+                            className={`w-full text-[10px] p-1.5 rounded border ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10'}`} />
                           {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1">✓ {uploadedPdfName}</p>}
                         </div>
                       </div>
@@ -3389,7 +3389,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           )}
                         </div>
                         {/* Enviar para Assinatura do Colaborador */}
-                        <div className={`p-4 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'}`}>
+                        <div className={`p-4 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
                           <h5 className="text-xs font-bold uppercase opacity-80 flex items-center gap-1">
                             <Signature size={14} className="text-sky-400" />
                             Enviar para Assinatura do Colaborador
@@ -3400,7 +3400,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <select
                               value={selectedColaboradorForDocId}
                               onChange={e => handleSelectColaboradorForDoc(e.target.value)}
-                              className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10 bg-white'}`}
+                              className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white'}`}
                             >
                               <option value="">-- Escolha um colaborador --</option>
                               {colaboradoresList.map((c: any) => (
@@ -3440,7 +3440,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     notify('Link copiado para a área de transferência!');
                                   }}
                                   className={`text-[9px] px-2.5 rounded font-bold border transition-colors ${
-                                    theme === 'dark' ? 'border-[#E5DFD3]/30 hover:bg-[#E5DFD3]/5 text-[#E5DFD3]' : 'border-black/30 hover:bg-black/5 text-black'
+                                    theme === 'dark' ? 'border-[#E5DFD3]/30 hover:bg-[#E5DFD3]/5 text-fg' : 'border-black/30 hover:bg-black/5 text-black'
                                   }`}
                                 >
                                   Copiar
@@ -3471,7 +3471,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           };
                           const st = statusMap[t.status] || { label: t.status, color: 'bg-white/5 border-white/10 text-white' };
                           return (
-                            <div key={t.id} className={`p-4 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                            <div key={t.id} className={`p-4 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
                               <div>
                                 <span className="text-sm font-semibold block">{t.candidato_nome || '—'}</span>
                                 <span className="text-[10px] opacity-50 font-mono">{t.token?.slice(0, 20)}...</span>
@@ -3482,7 +3482,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         })}
                       </div>
                     ) : (
-                      <div className={`p-8 rounded-xl border text-center ${theme === 'dark' ? 'border-white/5 bg-[#121211]' : 'border-black/5 bg-black/[0.02]'}`}>
+                      <div className={`p-8 rounded-xl border text-center ${theme === 'dark' ? 'border-white/5 bg-surface-2' : 'border-black/5 bg-black/[0.02]'}`}>
                         <p className="text-xs opacity-40 italic">Nenhum envio registrado. Gere um link de admissão na aba Colaboradores.</p>
                       </div>
                     )}
@@ -3545,11 +3545,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 {docsSubTab === 'envio-form' && (
                   <div className="space-y-5 animate-fadeIn">
                     <h4 className="text-sm font-bold">Envio de Formulários para Colaboradores</h4>
-                    <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'}`}>
+                    <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Colaborador Destinatário</label>
-                          <select className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10 bg-white'}`}>
+                          <select className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white'}`}>
                             <option value="">Selecionar colaborador...</option>
                             {colaboradoresList.map((c: any) => (
                               <option key={c.id} value={c.id}>{c.nome} — {c.cargo}</option>
@@ -3558,7 +3558,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         </div>
                         <div>
                           <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Formulário a Enviar</label>
-                          <select className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10 bg-white'}`}>
+                          <select className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white'}`}>
                             <option value="">Selecionar formulário...</option>
                             <option value="avaliacao">Avaliação de Desempenho</option>
                             <option value="pesquisa">Pesquisa de Clima</option>
@@ -3569,7 +3569,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Prazo de Resposta</label>
                         <input type="date" className={`text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
                       </div>
-                      <button className={`text-xs px-5 py-2.5 rounded-lg font-bold ${theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'}`}>
+                      <button className={`text-xs px-5 py-2.5 rounded-lg font-bold ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'}`}>
                         Enviar Formulário
                       </button>
                     </div>
@@ -3586,7 +3586,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     {docsHistorico.length > 0 ? (
                       <div className="space-y-2">
                         {docsHistorico.map((doc: any) => (
-                          <div key={doc.id} className={`p-3.5 rounded-xl border flex items-center justify-between text-xs ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
+                          <div key={doc.id} className={`p-3.5 rounded-xl border flex items-center justify-between text-xs ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'}`}>
                             <div>
                               <span className="font-semibold block">{doc.nome_colaborador || doc.cpf_colaborador || '—'}</span>
                               <span className="opacity-50 text-[10px]">
@@ -3607,13 +3607,13 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         ))}
                       </div>
                     ) : (
-                      <div className={`p-8 rounded-xl border text-center ${theme === 'dark' ? 'border-white/5 bg-[#121211]' : 'border-black/5 bg-black/[0.02]'}`}>
+                      <div className={`p-8 rounded-xl border text-center ${theme === 'dark' ? 'border-white/5 bg-surface-2' : 'border-black/5 bg-black/[0.02]'}`}>
                         <p className="text-xs opacity-40 italic">Nenhum documento assinado encontrado no banco de dados.</p>
                       </div>
                     )}
 
                     {/* Integridade */}
-                    <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.03] border-black/5'}`}>
+                    <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.03] border-black/5'}`}>
                       <div className="flex items-center gap-2 text-xs font-bold tracking-widest uppercase opacity-65">
                         <Shield size={13} className="text-emerald-500" />
                         <span>Auditoria & Integridade SHA-256</span>
@@ -3711,7 +3711,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <select
                           value={filterSetor}
                           onChange={(e) => setFilterSetor(e.target.value)}
-                          className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/15 text-black bg-white'
+                          className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/15 text-black bg-white'
                             }`}
                         >
                           {[
@@ -3729,7 +3729,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <option
                               key={opt.value}
                               value={opt.value}
-                              className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}
+                              className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}
                             >
                               {opt.label}
                             </option>
@@ -3744,7 +3744,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <select
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
-                            className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/15 text-black bg-white'
+                            className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/15 text-black bg-white'
                               }`}
                           >
                             {[
@@ -3756,7 +3756,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               <option
                                 key={opt.value}
                                 value={opt.value}
-                                className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}
+                                className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}
                               >
                                 {opt.label}
                               </option>
@@ -3874,7 +3874,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 {/* Sub-tab Cadastrar: Cadastro Direto de Colaborador */}
                 {colabSubTab === 'cadastrar' && (
                   <div className="space-y-6 animate-fadeIn">
-                    <div className={`p-6 rounded-xl border space-y-6 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                    <div className={`p-6 rounded-xl border space-y-6 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                       }`}>
                       <div>
                         <h4 className="text-sm font-bold flex items-center gap-2">
@@ -3932,7 +3932,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <select
                               value={cadastroSetor}
                               onChange={(e) => setCadastroSetor(e.target.value)}
-                              className={`w-full text-xs p-2.5 rounded-lg border focus:outline-none focus:ring-1 ${theme === 'dark' ? 'border-white/15 focus:ring-white/40 bg-[#121211] text-[#E5DFD3]' : 'border-black/15 focus:ring-black/40 bg-white text-[#0A0A0A]'
+                              className={`w-full text-xs p-2.5 rounded-lg border focus:outline-none focus:ring-1 ${theme === 'dark' ? 'border-white/15 focus:ring-white/40 bg-surface-2 text-fg' : 'border-black/15 focus:ring-black/40 bg-white text-fg'
                                 }`}
                             >
                               <option value="Administrativo">Administrativo</option>
@@ -4027,7 +4027,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   <div className="space-y-8 animate-fadeIn">
 
                     {/* Link Generator Form */}
-                    <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                    <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                       }`}>
                       <h4 className="text-sm font-bold flex items-center gap-2">
                         <Zap size={16} className="text-amber-500" /> Geração de Link de Admissão Público
@@ -4131,7 +4131,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 };
                                 const friendlyStatus = statMap[t.status] || 'Preenchendo Ficha';
                                 return (
-                                  <option key={t.id} value={t.id} className={theme === 'dark' ? 'bg-[#0D0D0C]' : 'bg-white'}>
+                                  <option key={t.id} value={t.id} className={theme === 'dark' ? 'bg-surface-2' : 'bg-white'}>
                                     {t.candidato_nome} ({friendlyStatus})
                                   </option>
                                 );
@@ -4210,7 +4210,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         return (
                           <>
                             {selectedTokenRow?.status === 'aguardando_homologacao' && (
-                              <div className={`p-4 rounded-xl border space-y-3 mt-4 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                              <div className={`p-4 rounded-xl border space-y-3 mt-4 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                                 }`}>
                                 <label className="block text-[10px] font-bold uppercase opacity-65 tracking-wider">
                                   Escolher Modelo de Contrato para Envio ao Candidato
@@ -4218,7 +4218,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 <select
                                   value={approvalTemplateId}
                                   onChange={(e) => setApprovalTemplateId(e.target.value)}
-                                  className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                     }`}
                                 >
                                   <option value="default">Contrato de Admissão Padrão (Helvetica)</option>
@@ -4237,7 +4237,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             )}
 
                             {selectedTokenRow?.status === 'aguardando_assinatura_rh' && (
-                              <div className={`p-5 rounded-xl border space-y-4 mt-4 animate-fadeIn ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                              <div className={`p-5 rounded-xl border space-y-4 mt-4 animate-fadeIn ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                                 }`}>
                                 <div className="space-y-1">
                                   <h5 className="text-xs font-bold text-amber-500 flex items-center gap-1.5">
@@ -4273,7 +4273,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                                 <div className="text-[9px] uppercase tracking-wider opacity-40 pt-1">Ou assine digitalmente abaixo</div>
 
-                                <div className={`relative border rounded-xl overflow-hidden ${theme === 'dark' ? 'bg-[#121211] border-white/15' : 'bg-black/5 border-black/15'
+                                <div className={`relative border rounded-xl overflow-hidden ${theme === 'dark' ? 'bg-surface-2 border-white/15' : 'bg-black/5 border-black/15'
                                   }`}>
                                   <canvas
                                     ref={repCanvasRef}
@@ -4301,7 +4301,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     type="button"
                                     onClick={handleFinalizeRepresentativeSignature}
                                     disabled={repSigPointsCount < 5 || isFinishingAdmission}
-                                    className={`text-[10px] px-4 py-1.5 rounded font-bold transition-colors ${theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+                                    className={`text-[10px] px-4 py-1.5 rounded font-bold transition-colors ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'
                                       } disabled:opacity-50`}
                                   >
                                     {isFinishingAdmission ? 'Consolidando...' : 'Assinar e Concluir Admissão'}
@@ -4386,7 +4386,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           }`}
                       >
                         {colaboradoresList.filter(c => c.status !== 'desligado').map(c => (
-                          <option key={c.id} value={c.id} className={theme === 'dark' ? 'bg-[#0D0D0C]' : 'bg-white'}>
+                          <option key={c.id} value={c.id} className={theme === 'dark' ? 'bg-surface-2' : 'bg-white'}>
                             {c.nome} ({c.cargo})
                           </option>
                         ))}
@@ -4408,7 +4408,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <label
                             key={key}
                             className={`flex items-center justify-between p-3 rounded-lg border ${isLocked ? 'opacity-40 cursor-not-allowed bg-black/10' : 'cursor-pointer'
-                              } ${theme === 'dark' ? 'border-white/5 bg-[#121211] hover:bg-white/[0.02]' : 'border-black/5 bg-black/[0.02] hover:bg-black/[0.04]'
+                              } ${theme === 'dark' ? 'border-white/5 bg-surface-2 hover:bg-white/[0.02]' : 'border-black/5 bg-black/[0.02] hover:bg-black/[0.04]'
                               }`}
                           >
                             <div className="flex flex-col">
@@ -4436,7 +4436,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       {Object.entries(tasks).map(([key, value]) => (
                         <label
                           key={key}
-                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer ${theme === 'dark' ? 'border-white/5 bg-[#121211] hover:bg-white/[0.02]' : 'border-black/5 bg-black/[0.02] hover:bg-black/[0.04]'
+                          className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer ${theme === 'dark' ? 'border-white/5 bg-surface-2 hover:bg-white/[0.02]' : 'border-black/5 bg-black/[0.02] hover:bg-black/[0.04]'
                             }`}
                         >
                           <span className="capitalize opacity-80">{key.replace(/([A-Z])/g, ' $1')}</span>
@@ -4453,7 +4453,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   </div>
 
                   <div className="space-y-6 flex flex-col justify-between">
-                    <div className={`p-5 rounded-xl border space-y-4 text-center ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.03] border-black/5'
+                    <div className={`p-5 rounded-xl border space-y-4 text-center ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.03] border-black/5'
                       }`}>
                       <h4 className="text-xs font-bold tracking-widest uppercase opacity-65">Status de Onboarding</h4>
                       <div className="relative inline-flex items-center justify-center">
@@ -4531,7 +4531,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       associationsList={dbColaboradorBeneficios}
                     />
 
-                    <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                    <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                       }`}>
                       <div className="flex items-center justify-between pb-2 border-b border-white/5">
                         <h4 className="text-xs font-bold tracking-widest uppercase opacity-65 flex items-center gap-2">
@@ -4642,7 +4642,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   const totalDesconto = optantes.reduce((s, o) => s + o.desconto, 0);
                   const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
                   return (
-                    <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10 bg-white shadow-sm'}`}>
+                    <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white shadow-sm'}`}>
                       <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}>
                         <div className="flex items-center gap-2.5">
                           <span className="text-base">🚌</span>
@@ -4770,7 +4770,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-white/10 gap-3">
                         <div>
                           <h2 className="text-xl font-bold tracking-tight">Férias & ASO</h2>
-                          <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-[#E5DFD3]/45' : 'text-black/45'}`}>
+                          <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-fg/45' : 'text-black/45'}`}>
                             Controle ocupacional, exames médicos e vencimentos de períodos de férias.
                           </p>
                         </div>
@@ -4813,7 +4813,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Filter Controls Row */}
-                      <div className={`p-4 rounded-xl border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.01] border-black/5'
+                      <div className={`p-4 rounded-xl border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.01] border-black/5'
                         }`}>
                         <div>
                           <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Buscar Colaborador</label>
@@ -4822,7 +4822,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             placeholder="Nome do colaborador..."
                             value={searchQueryFeriasAso}
                             onChange={e => setSearchQueryFeriasAso(e.target.value)}
-                            className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           />
                         </div>
@@ -4831,7 +4831,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <select
                             value={filterSetorFeriasAso}
                             onChange={e => setFilterSetorFeriasAso(e.target.value)}
-                            className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           >
                             <option value="Todos">Todos os Setores</option>
@@ -4845,7 +4845,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <select
                             value={filterStatusAso}
                             onChange={e => setFilterStatusAso(e.target.value)}
-                            className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           >
                             <option value="Todos">Todos ASO</option>
@@ -4860,7 +4860,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <select
                             value={filterStatusFerias}
                             onChange={e => setFilterStatusFerias(e.target.value)}
-                            className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           >
                             <option value="Todos">Todas as Férias</option>
@@ -4873,7 +4873,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Table View */}
-                      <div className={`border rounded-xl overflow-hidden ${theme === 'dark' ? 'border-white/5 bg-[#121211]' : 'border-black/5 bg-white'
+                      <div className={`border rounded-xl overflow-hidden ${theme === 'dark' ? 'border-white/5 bg-surface-2' : 'border-black/5 bg-white'
                         }`}>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left text-xs border-collapse">
@@ -4914,7 +4914,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                       }`}>
                                       <td className="p-4">
                                         <div className="flex items-center gap-3">
-                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${theme === 'dark' ? 'bg-[#E5DFD3]/10 text-[#E5DFD3]' : 'bg-[#0A0A0A]/5 text-[#0A0A0A]'
+                                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${theme === 'dark' ? 'bg-[#E5DFD3]/10 text-fg' : 'bg-[#0A0A0A]/5 text-fg'
                                             }`}>
                                             {initials}
                                           </div>
@@ -4977,7 +4977,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                               setQuickFeriasInicio(c.ferias_inicio || '');
                                               setQuickFeriasDias(c.ferias_dias ? String(c.ferias_dias) : '');
                                             }}
-                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-[#E5DFD3]' : 'border-black/10 hover:bg-black/5 text-[#0A0A0A]'
+                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-fg' : 'border-black/10 hover:bg-black/5 text-fg'
                                               }`}
                                             title="Atualizar vencimentos diretamente"
                                           >
@@ -4985,7 +4985,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                           </button>
                                           <button
                                             onClick={() => setActiveColaboradorForDrawer(c)}
-                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${theme === 'dark' ? 'border-[#E5DFD3]/30 bg-white/5 hover:bg-white/10 text-[#E5DFD3]' : 'border-[#0A0A0A]/30 bg-black/5 hover:bg-black/10 text-[#0A0A0A]'
+                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${theme === 'dark' ? 'border-[#E5DFD3]/30 bg-white/5 hover:bg-white/10 text-fg' : 'border-[#0A0A0A]/30 bg-black/5 hover:bg-black/10 text-fg'
                                               }`}
                                             title="Ver prontuário do colaborador"
                                           >
@@ -5010,7 +5010,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
                           />
                           <div className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm p-6 rounded-2xl border z-50 space-y-4 ${theme === 'dark'
-                              ? 'bg-[#0D0D0C]/90 border-white/10 text-white glass-card-dark'
+                              ? 'bg-surface-2/90 border-white/10 text-white glass-card-dark'
                               : 'bg-white/90 border-black/10 text-black glass-card-light shadow-xl'
                             }`}>
                             <div>
@@ -5026,7 +5026,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   type="date"
                                   value={quickAsoDate}
                                   onChange={e => setQuickAsoDate(e.target.value)}
-                                  className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                     }`}
                                 />
                               </div>
@@ -5036,7 +5036,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   type="date"
                                   value={quickFeriasDate}
                                   onChange={e => setQuickFeriasDate(e.target.value)}
-                                  className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                     }`}
                                 />
                               </div>
@@ -5070,7 +5070,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                         value={quickFeriasInicio}
                                         onChange={e => setQuickFeriasInicio(e.target.value)}
                                         title="Início das férias"
-                                        className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`}
+                                        className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`}
                                       />
                                       <input
                                         type="number"
@@ -5079,7 +5079,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                         value={quickFeriasDias}
                                         onChange={e => setQuickFeriasDias(e.target.value)}
                                         title="Dias de férias"
-                                        className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`}
+                                        className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`}
                                       />
                                     </div>
                                     <p className="text-[9px] opacity-50">O vencimento das férias será atualizado para o início + 12 meses.</p>
@@ -5098,7 +5098,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 <button
                                   onClick={handleSaveQuickDates}
                                   disabled={isSavingQuickDates}
-                                  className={`flex-1 py-2 rounded font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-[#E5DFD3] text-[#0d0d0c] hover:bg-[#c4beb1]' : 'bg-[#0A0A0A] text-white hover:bg-black/90'
+                                  className={`flex-1 py-2 rounded font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-[#E5DFD3] text-[#0d0d0c] hover:bg-[#c4beb1]' : 'bg-brand text-white hover:bg-black/90'
                                     } disabled:opacity-50`}
                                 >
                                   {isSavingQuickDates ? 'Salvando...' : '✓ Salvar Alterações'}
@@ -5208,7 +5208,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className="flex flex-col md:flex-row md:items-center justify-between pb-4 border-b border-white/10 gap-3">
                         <div>
                           <h2 className="text-xl font-bold tracking-tight">Avaliações de Desempenho & Carreira</h2>
-                          <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-[#E5DFD3]/45' : 'text-black/45'}`}>
+                          <p className={`text-xs mt-1 ${theme === 'dark' ? 'text-fg/45' : 'text-black/45'}`}>
                             Acompanhamento de planos de carreira, trilhas de progressão e avaliações dos colaboradores.
                           </p>
                         </div>
@@ -5276,7 +5276,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <select
                               value={filterSetorAvaliacoes}
                               onChange={(e) => setFilterSetorAvaliacoes(e.target.value)}
-                              className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent transition-colors ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent transition-colors ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                             >
                               <option value="Todos">Todos os Setores</option>
@@ -5299,7 +5299,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <select
                               value={filterStatusPromo}
                               onChange={(e) => setFilterStatusPromo(e.target.value)}
-                              className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent transition-colors ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent transition-colors ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                             >
                               <option value="Todos">Todos</option>
@@ -5311,12 +5311,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Main Table */}
-                      <div className={`border rounded-xl overflow-hidden ${theme === 'dark' ? 'border-white/5 bg-[#0D0D0C]' : 'border-black/5 bg-white shadow-sm'
+                      <div className={`border rounded-xl overflow-hidden ${theme === 'dark' ? 'border-white/5 bg-surface-2' : 'border-black/5 bg-white shadow-sm'
                         }`}>
                         <div className="overflow-x-auto">
                           <table className="w-full text-left border-collapse">
                             <thead>
-                              <tr className={`border-b text-[9px] font-bold uppercase tracking-wider ${theme === 'dark' ? 'border-white/5 bg-white/2 text-[#E5DFD3]/60' : 'border-black/5 bg-black/[0.01] text-black/50'
+                              <tr className={`border-b text-[9px] font-bold uppercase tracking-wider ${theme === 'dark' ? 'border-white/5 bg-white/2 text-fg/60' : 'border-black/5 bg-black/[0.01] text-black/50'
                                 }`}>
                                 <th className="p-4">Colaborador</th>
                                 <th className="p-4">Setor</th>
@@ -5477,7 +5477,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   {/* Calendar Grid Container */}
                   <div className={`lg:col-span-8 p-6 rounded-2xl border ${
-                    theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm'
+                    theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-white border-black/10 shadow-sm'
                   }`}>
                     {/* Controls */}
                     <div className="flex items-center justify-between mb-6">
@@ -5499,7 +5499,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             setSelectedCalendarDay(1);
                           }}
                           className={`p-2 rounded-lg border text-xs font-bold transition-all ${
-                            theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-[#0D0D0C]' : 'border-black/10 hover:bg-black/5 bg-white'
+                            theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-surface-2' : 'border-black/10 hover:bg-black/5 bg-white'
                           }`}
                         >
                           ◀ Mês Ant.
@@ -5515,7 +5515,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             setSelectedCalendarDay(1);
                           }}
                           className={`p-2 rounded-lg border text-xs font-bold transition-all ${
-                            theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-[#0D0D0C]' : 'border-black/10 hover:bg-black/5 bg-white'
+                            theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-surface-2' : 'border-black/10 hover:bg-black/5 bg-white'
                           }`}
                         >
                           Próx. Mês ▶
@@ -5632,7 +5632,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   {/* Day Details Panel */}
                   <div className="lg:col-span-4 space-y-4">
                     <div className={`p-5 rounded-2xl border ${
-                      theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm'
+                      theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-white border-black/10 shadow-sm'
                     }`}>
                       <h4 className="text-xs font-bold uppercase tracking-wider opacity-60 mb-4">
                         Eventos do Dia {selectedCalendarDay ? `${selectedCalendarDay}/${currentMonth + 1}/${currentYear}` : '—'}
@@ -5713,7 +5713,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     </div>
 
                     {/* Aniversariantes do mês + day off de aniversário */}
-                    <div className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
+                    <div className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
                       <h4 className="text-xs font-bold uppercase tracking-wider opacity-60 mb-4 flex items-center gap-2">
                         🎂 Aniversariantes de {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][currentMonth]}
                       </h4>
@@ -5801,7 +5801,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   </a>
                 </div>
 
-                <div className={`rounded-2xl border p-6 space-y-5 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
+                <div className={`rounded-2xl border p-6 space-y-5 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
                   <div>
                     <label className="block text-[9px] font-bold uppercase opacity-50 mb-1 tracking-wider">Título</label>
                     <input value={culturaTitulo} onChange={e => setCulturaTitulo(e.target.value)}
@@ -5822,7 +5822,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       {culturaAtualizadoEm ? `Última publicação: ${new Date(culturaAtualizadoEm).toLocaleString('pt-BR')}` : 'Ainda não publicado'}
                     </span>
                     <button onClick={handleSaveCultura} disabled={culturaSaving || culturaLoading}
-                      className={`py-2.5 px-5 rounded-lg font-bold text-xs transition-colors disabled:opacity-50 ${theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-white' : 'bg-[#0A0A0A] text-white hover:bg-black'}`}>
+                      className={`py-2.5 px-5 rounded-lg font-bold text-xs transition-colors disabled:opacity-50 ${theme === 'dark' ? 'bg-brand text-white hover:bg-white' : 'bg-brand text-white hover:bg-black'}`}>
                       {culturaSaving ? 'Publicando…' : '✓ Publicar Manual'}
                     </button>
                   </div>
@@ -5835,7 +5835,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         </main>
 
         {/* Footer */}
-        <footer className={`py-6 border-t text-center text-xs opacity-50 transition-colors ${theme === 'dark' ? 'border-white/5 bg-[#0D0D0C]' : 'border-black/5 bg-[#FBFBFA]'
+        <footer className={`py-6 border-t text-center text-xs opacity-50 transition-colors ${theme === 'dark' ? 'border-white/5 bg-surface-2' : 'border-black/5 bg-[#FBFBFA]'
           }`}>
           <p>© 2026 Instituto Thiago Omena. Sistema OMNI ITO - Uso Exclusivo e Proprietário.</p>
           <p className="mt-0.5 font-mono text-[9px]">Autenticado e Monitorado via Row Level Security (RLS)</p>
@@ -5871,10 +5871,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
           />
           {/* Drawer Panel */}
-          <div className={`fixed top-0 right-0 h-full w-full max-w-md p-6 z-50 transform transition-transform duration-300 ease-in-out border-l flex flex-col justify-between ${theme === 'dark'
-              ? 'bg-[#0D0D0C]/95 border-white/10 text-[#E5DFD3] glass-card-dark'
-              : 'bg-[#FBFBFA]/95 border-black/10 text-[#0A0A0A] glass-card-light'
-            }`}>
+          <div className="fixed top-0 right-0 h-full w-full max-w-md p-6 z-50 transform transition-transform duration-300 ease-in-out border-l border-line flex flex-col justify-between bg-surface/95 backdrop-blur-xl text-fg">
             <div className="space-y-6 overflow-y-auto pr-2">
 
               {/* Header de perfil */}
@@ -6062,7 +6059,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         {isEditingDrawer ? (
                           type === 'select' ? (
                             <select value={val || ''} onChange={e => setDrawerEditData((p: any) => ({ ...p, [field]: e.target.value }))}
-                              className={`w-full text-xs p-1.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-[#121211]' : 'border-black/10 bg-white'}`}>
+                              className={`w-full text-xs p-1.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white'}`}>
                               <option value="">—</option>
                               {normalizedOpts.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                             </select>
@@ -6083,7 +6080,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                   {isEditingDrawer && (
                     <button onClick={handleSaveDrawerEdit} disabled={isSavingDrawer}
-                      className={`w-full py-2 rounded font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-[#E5DFD3] text-black' : 'bg-[#0A0A0A] text-white'} disabled:opacity-50`}>
+                      className={`w-full py-2 rounded font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white'} disabled:opacity-50`}>
                       {isSavingDrawer ? 'Salvando...' : '✓ Salvar Alterações'}
                     </button>
                   )}
@@ -6153,12 +6150,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <div className="flex items-center gap-1">
                               <button onClick={() => handleViewDocument(doc.url_arquivo)}
                                 title="Abrir / imprimir para assinatura física"
-                                className={`p-1 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-[#E5DFD3]' : 'text-[#0A0A0A]'}`}>
+                                className={`p-1 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-fg' : 'text-fg'}`}>
                                 <Printer size={13} />
                               </button>
                               <button onClick={() => handleViewDocument(doc.url_arquivo)}
                                 title="Abrir documento"
-                                className={`p-1 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-[#E5DFD3]' : 'text-[#0A0A0A]'}`}>
+                                className={`p-1 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-fg' : 'text-fg'}`}>
                                 <ExternalLink size={13} />
                               </button>
                             </div>
@@ -6174,7 +6171,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   <div className="pt-4 border-t border-white/10 space-y-4">
                     {activeColaboradorForDrawer.status === 'desligado' ? (
                       <>
-                      <div className={`p-4 rounded-xl border text-xs space-y-2 ${theme === 'dark' ? 'bg-rose-500/5 border-rose-500/10 text-[#E5DFD3]' : 'bg-rose-500/5 border-rose-500/10 text-rose-800'
+                      <div className={`p-4 rounded-xl border text-xs space-y-2 ${theme === 'dark' ? 'bg-rose-500/5 border-rose-500/10 text-fg' : 'bg-rose-500/5 border-rose-500/10 text-rose-800'
                         }`}>
                         <div className="flex items-center gap-1.5 text-rose-500 font-bold uppercase tracking-wider text-[10px]">
                           <AlertTriangle size={12} /> Colaborador Desligado
@@ -6201,7 +6198,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         if (!deslig) return null;
                         if (deslig.entrevista_realizada_em) {
                           return (
-                            <div className={`p-4 rounded-xl border space-y-2 text-xs ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'}`}>
+                            <div className={`p-4 rounded-xl border space-y-2 text-xs ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
                               <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">✓ Entrevista de Desligamento — {new Date(deslig.entrevista_realizada_em).toLocaleDateString('pt-BR')}</h5>
                               <p><b>Motivo real:</b> {deslig.entrevista_motivo_real || '—'}</p>
                               <p><b>Pontos positivos:</b> {deslig.entrevista_pontos_positivos || '—'}</p>
@@ -6212,20 +6209,20 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           );
                         }
                         return (
-                          <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'}`}>
+                          <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
                             <h5 className="text-[10px] font-bold uppercase tracking-wider text-amber-500">🗒 Entrevista de Desligamento — pendente</h5>
                             <div className="space-y-2 text-xs">
-                              <select value={entrevistaDraft.motivo_real} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_real: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`}>
+                              <select value={entrevistaDraft.motivo_real} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_real: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`}>
                                 {['Remuneração', 'Liderança', 'Carreira', 'Clima', 'Pessoal', 'Outro'].map(m => <option key={m} value={m}>{m}</option>)}
                               </select>
-                              <input placeholder="Detalhe do motivo (opcional)" value={entrevistaDraft.motivo_texto} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_texto: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
-                              <textarea rows={2} placeholder="O que funcionou bem?" value={entrevistaDraft.pontos_positivos} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_positivos: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
-                              <textarea rows={2} placeholder="O que a clínica pode melhorar?" value={entrevistaDraft.pontos_melhorar} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_melhorar: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <input placeholder="Detalhe do motivo (opcional)" value={entrevistaDraft.motivo_texto} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_texto: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
+                              <textarea rows={2} placeholder="O que funcionou bem?" value={entrevistaDraft.pontos_positivos} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_positivos: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
+                              <textarea rows={2} placeholder="O que a clínica pode melhorar?" value={entrevistaDraft.pontos_melhorar} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_melhorar: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
                               <div>
                                 <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Recomendaria trabalhar aqui? (0–10)</label>
-                                <input type="number" min={0} max={10} value={entrevistaDraft.recomendaria} onChange={e => setEntrevistaDraft(p => ({ ...p, recomendaria: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                                <input type="number" min={0} max={10} value={entrevistaDraft.recomendaria} onChange={e => setEntrevistaDraft(p => ({ ...p, recomendaria: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
                               </div>
-                              <textarea rows={2} placeholder="Comentários finais (opcional)" value={entrevistaDraft.comentarios} onChange={e => setEntrevistaDraft(p => ({ ...p, comentarios: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'}`} />
+                              <textarea rows={2} placeholder="Comentários finais (opcional)" value={entrevistaDraft.comentarios} onChange={e => setEntrevistaDraft(p => ({ ...p, comentarios: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
                               <button
                                 disabled={isSavingEntrevista}
                                 onClick={async () => {
@@ -6256,7 +6253,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       })()}
                       </>
                     ) : isOffboardingMode ? (
-                      <div className={`p-4 rounded-xl border space-y-3.5 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                      <div className={`p-4 rounded-xl border space-y-3.5 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                         }`}>
                         <h5 className="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1">
                           ⚠️ Formulário de Desligamento
@@ -6269,7 +6266,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               required
                               value={offboardDate}
                               onChange={e => setOffboardDate(e.target.value)}
-                              className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                             />
                           </div>
@@ -6278,11 +6275,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <select
                               value={offboardTipo}
                               onChange={e => setOffboardTipo(e.target.value as any)}
-                              className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                             >
-                              <option value="sem_justa_causa" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Sem justa causa (empresa desliga)</option>
-                              <option value="pedido_demissao" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Pedido de demissão (colaborador sai)</option>
+                              <option value="sem_justa_causa" className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}>Sem justa causa (empresa desliga)</option>
+                              <option value="pedido_demissao" className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}>Pedido de demissão (colaborador sai)</option>
                             </select>
                           </div>
                           <div>
@@ -6290,11 +6287,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <select
                               value={offboardModalidade}
                               onChange={e => setOffboardModalidade(e.target.value as any)}
-                              className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                             >
-                              <option value="indenizado_ou_dispensado" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Aviso indenizado / dispensado</option>
-                              <option value="trabalhado" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Aviso trabalhado</option>
+                              <option value="indenizado_ou_dispensado" className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}>Aviso indenizado / dispensado</option>
+                              <option value="trabalhado" className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}>Aviso trabalhado</option>
                             </select>
                           </div>
                           {offboardDate && (() => {
@@ -6315,7 +6312,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               placeholder="Descreva brevemente o motivo..."
                               value={offboardReason}
                               onChange={e => setOffboardReason(e.target.value)}
-                              className={`w-full p-2.5 rounded border bg-transparent resize-none focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                              className={`w-full p-2.5 rounded border bg-transparent resize-none focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                             />
                           </div>
@@ -6488,7 +6485,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               </div>
                               <button
                                 onClick={() => handleDownloadAttachment(path)}
-                                className={`p-1.5 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-[#E5DFD3]' : 'text-[#0A0A0A]'}`}
+                                className={`p-1.5 rounded hover:bg-white/10 ${theme === 'dark' ? 'text-fg' : 'text-fg'}`}
                                 title="Visualizar documento privado"
                               >
                                 <ExternalLink size={13} />
@@ -6504,7 +6501,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                   {/* Área de Upload de Anexos */}
                   {hasFullAccess && (
-                    <div className={`p-4 rounded-xl border space-y-3 mt-4 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                    <div className={`p-4 rounded-xl border space-y-3 mt-4 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                       }`}>
                       <h5 className="text-[10px] font-bold uppercase tracking-wider opacity-75">➕ Enviar Novo Documento ou Foto</h5>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -6513,14 +6510,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <select
                             value={uploadFileType}
                             onChange={(e) => setUploadFileType(e.target.value as any)}
-                            className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           >
-                            <option value="identidade" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Identidade (RG/CNH)</option>
-                            <option value="residencia" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Comprovante de Residência</option>
-                            <option value="aso" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Atestado de Saúde Ocupacional (ASO)</option>
-                            <option value="foto" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Foto de Perfil</option>
-                            <option value="outros" className={theme === 'dark' ? 'bg-[#0D0D0C] text-white' : 'bg-white text-black'}>Outros Documentos</option>
+                            <option value="identidade" className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}>Identidade (RG/CNH)</option>
+                            <option value="residencia" className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}>Comprovante de Residência</option>
+                            <option value="aso" className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}>Atestado de Saúde Ocupacional (ASO)</option>
+                            <option value="foto" className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}>Foto de Perfil</option>
+                            <option value="outros" className={theme === 'dark' ? 'bg-surface-2 text-white' : 'bg-white text-black'}>Outros Documentos</option>
                           </select>
                         </div>
                         <div>
@@ -6530,7 +6527,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             type="file"
                             accept="image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
                             onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                            className={`w-full text-[10px] p-1.5 rounded border ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-[10px] p-1.5 rounded border ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           />
                         </div>
@@ -6538,7 +6535,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <button
                         onClick={handleUploadColaboradorFile}
                         disabled={isUploadingFile || !uploadFile}
-                        className={`w-full py-2 rounded-lg font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-[#E5DFD3] text-black' : 'bg-[#0A0A0A] text-white'
+                        className={`w-full py-2 rounded-lg font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white'
                           } disabled:opacity-50`}
                       >
                         {isUploadingFile ? 'Enviando...' : '✓ Fazer Upload'}
@@ -6568,14 +6565,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                   {/* Form Section */}
                   {isRegisteringOcorrencia && (
-                    <form onSubmit={handleRegisterOcorrencia} className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                    <form onSubmit={handleRegisterOcorrencia} className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                       }`}>
                       <div>
                         <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tipo de Ocorrência</label>
                         <select
                           value={ocTipo}
                           onChange={(e) => setOcTipo(e.target.value)}
-                          className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                          className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                             }`}
                         >
                           <option value="Atraso">Atraso</option>
@@ -6594,7 +6591,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             required
                             value={ocData}
                             onChange={(e) => setOcData(e.target.value)}
-                            className={`w-full text-xs p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-xs p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           />
                         </div>
@@ -6605,7 +6602,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             placeholder="Ex: 45 min ou 02:00h"
                             value={ocDesvio}
                             onChange={(e) => setOcDesvio(e.target.value)}
-                            className={`w-full text-xs p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-xs p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           />
                         </div>
@@ -6619,7 +6616,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           placeholder="Descreva o ocorrido..."
                           value={ocJustificativa}
                           onChange={(e) => setOcJustificativa(e.target.value)}
-                          className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                          className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                             }`}
                         />
                       </div>
@@ -6638,8 +6635,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         type="submit"
                         disabled={isSubmittingOcorrencia}
                         className={`w-full py-2.5 rounded text-[10px] font-bold tracking-wider uppercase transition-colors ${theme === 'dark'
-                            ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]'
-                            : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+                            ? 'bg-brand text-white hover:bg-brand-strong'
+                            : 'bg-brand text-white hover:bg-brand-strong'
                           } disabled:opacity-50`}
                       >
                         {isSubmittingOcorrencia ? 'Salvando...' : 'Gravar Ocorrência'}
@@ -6660,7 +6657,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         };
 
                         return (
-                          <div key={oc.id} className={`p-3.5 rounded-xl border space-y-2.5 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                          <div key={oc.id} className={`p-3.5 rounded-xl border space-y-2.5 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
                             }`}>
                             <div className="flex items-center justify-between">
                               <span className={`px-2 py-0.5 rounded text-[9px] font-bold border ${badgeColors[oc.tipo] || 'bg-white/10 text-white'}`}>
@@ -6725,7 +6722,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                     {/* Form Cadastro Advertência */}
                     {isRegisteringAdvertencia && (
-                      <form onSubmit={handleRegisterAdvertencia} className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#121211] border-white/10' : 'bg-black/5 border-black/10'
+                      <form onSubmit={handleRegisterAdvertencia} className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                         }`}>
                         <div>
                           <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Falta</label>
@@ -6734,7 +6731,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             required
                             value={advDataFalta}
                             onChange={(e) => setAdvDataFalta(e.target.value)}
-                            className={`w-full text-xs p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-xs p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           />
                         </div>
@@ -6747,7 +6744,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             placeholder="Descreva a atitude/falta cometida pelo funcionário..."
                             value={advDescricaoSituacao}
                             onChange={(e) => setAdvDescricaoSituacao(e.target.value)}
-                            className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                            className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                               }`}
                           />
                         </div>
@@ -6756,8 +6753,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           type="submit"
                           disabled={isSavingAdvertencia}
                           className={`w-full py-2.5 rounded text-[10px] font-bold tracking-wider uppercase transition-colors ${theme === 'dark'
-                              ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]'
-                              : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+                              ? 'bg-brand text-white hover:bg-brand-strong'
+                              : 'bg-brand text-white hover:bg-brand-strong'
                             } disabled:opacity-50`}
                         >
                           {isSavingAdvertencia ? 'Salvando...' : 'Emitir Advertência'}
@@ -6771,7 +6768,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         const colabAdvs = warningsMap[activeColaboradorForDrawer.id] || [];
                         return colabAdvs.length > 0 ? (
                           colabAdvs.map((adv: any) => (
-                          <div key={adv.id} className={`p-3.5 rounded-xl border space-y-2.5 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                          <div key={adv.id} className={`p-3.5 rounded-xl border space-y-2.5 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
                             }`}>
                             <div className="flex items-center justify-between">
                               <span className="px-2 py-0.5 rounded text-[9px] font-bold border bg-rose-500/10 border-rose-500/20 text-rose-500">
@@ -6851,7 +6848,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               <span className="text-[8px] uppercase tracking-wider opacity-50 block">Cargo Atual</span>
                               <span className="text-xs font-bold">{plano.cargo_atual}</span>
                             </div>
-                            <div className="px-2 py-1 rounded bg-[#E5DFD3]/10 text-xs">➔</div>
+                            <div className="px-2 py-1 rounded bg-brand/10 text-brand text-xs">➔</div>
                             <div className="text-right">
                               <span className="text-[8px] uppercase tracking-wider opacity-50 block">Próximo Nível</span>
                               <span className="text-xs font-bold text-emerald-400">{plano.proximo_cargo}</span>
@@ -6874,7 +6871,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <span className="text-[9px] font-bold uppercase tracking-wider opacity-50 block">Critérios para Promoção</span>
 
                       {/* Critério: Tempo de Casa */}
-                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
                         }`}>
                         <div>
                           <span className="text-[10px] font-bold block">Tempo de Casa</span>
@@ -6890,7 +6887,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Critério: Ocorrências */}
-                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
                         }`}>
                         <div>
                           <span className="text-[10px] font-bold block">Ocorrências (Últimos 6 meses)</span>
@@ -6906,7 +6903,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
 
                       {/* Critério: Avaliação Desempenho */}
-                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                      <div className={`p-3.5 rounded-xl border flex items-center justify-between ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
                         }`}>
                         <div>
                           <span className="text-[10px] font-bold block">Avaliação Desempenho</span>
@@ -6976,7 +6973,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           colabAvaliacoes.map((a) => {
                             const parsed = parseEvaluationComments(a.comentarios);
                             return (
-                              <div key={a.id} className={`p-3 rounded-xl border space-y-2 ${theme === 'dark' ? 'bg-[#121211] border-white/5' : 'bg-black/[0.02] border-black/5'
+                              <div key={a.id} className={`p-3 rounded-xl border space-y-2 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'
                                 }`}>
                                 <div className="flex items-center justify-between text-[10px]">
                                   <div className="flex items-center gap-1.5">
@@ -7092,7 +7089,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           `}</style>
           
           <div className={`relative w-full max-w-4xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
-            theme === 'dark' ? 'bg-[#121211] border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
+            theme === 'dark' ? 'bg-surface-2 border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
           }`}>
             <LetterheadWatermark />
 
@@ -7146,7 +7143,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       onChange={e => setEvalForm(p => ({ ...p, dataFeedback: e.target.value }))}
                       disabled={evalModalReadOnly}
                       className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent transition-colors ${
-                        theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                        theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                       }`}
                     />
                   )}
@@ -7166,7 +7163,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       onChange={e => setEvalForm(p => ({ ...p, periodoAvaliado: e.target.value }))}
                       disabled={evalModalReadOnly}
                       className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent transition-colors ${
-                        theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                        theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                       }`}
                     />
                   )}
@@ -7174,7 +7171,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
 
               {/* 1. Desempenho Geral */}
-              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">1. Desempenho Geral</h3>
                 <div>
                   <span className="block text-[10px] font-bold uppercase opacity-70 mb-2 print:text-black">Avalie o desempenho do colaborador durante o período:</span>
@@ -7228,7 +7225,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       onChange={e => setEvalForm(p => ({ ...p, comentariosGestor: e.target.value }))}
                       disabled={evalModalReadOnly}
                       className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none focus:outline-none ${
-                        theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                        theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                       }`}
                     />
                   )}
@@ -7236,7 +7233,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
 
               {/* 2. Pontos Fortes */}
-              <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">2. Pontos Fortes</h3>
                 {evalModalReadOnly ? (
                   <div className="text-xs space-y-1.5 print:text-black">
@@ -7263,14 +7260,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     onChange={e => setEvalForm(p => ({ ...p, pontosFortes: e.target.value }))}
                     disabled={evalModalReadOnly}
                     className={`w-full text-xs p-2.5 rounded border bg-transparent resize-none focus:outline-none ${
-                      theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                      theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                     }`}
                   />
                 )}
               </div>
 
               {/* 3. Pontos de Melhorias */}
-              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <div className="flex justify-between items-center">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">3. Pontos de Melhorias</h3>
                   {!evalModalReadOnly && (
@@ -7307,7 +7304,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 onChange={e => updatePontoMelhoriaRow(idx, 'oportunidade', e.target.value)}
                                 disabled={evalModalReadOnly}
                                 className={`w-full text-xs p-1.5 rounded border bg-transparent ${
-                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                               />
                             )}
@@ -7324,7 +7321,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 onChange={e => updatePontoMelhoriaRow(idx, 'acao', e.target.value)}
                                 disabled={evalModalReadOnly}
                                 className={`w-full text-xs p-1.5 rounded border bg-transparent ${
-                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                               />
                             )}
@@ -7349,7 +7346,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
 
               {/* 4. Plano de Desenvolvimento (PDI) */}
-              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <div className="flex justify-between items-center">
                   <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">4. Plano de Desenvolvimento</h3>
                   {!evalModalReadOnly && (
@@ -7388,7 +7385,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 onChange={e => updatePdiRow(idx, 'objetivo', e.target.value)}
                                 disabled={evalModalReadOnly}
                                 className={`w-full text-xs p-1.5 rounded border bg-transparent ${
-                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                               />
                             )}
@@ -7405,7 +7402,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 onChange={e => updatePdiRow(idx, 'acao', e.target.value)}
                                 disabled={evalModalReadOnly}
                                 className={`w-full text-xs p-1.5 rounded border bg-transparent ${
-                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                               />
                             )}
@@ -7422,7 +7419,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 onChange={e => updatePdiRow(idx, 'prazo', e.target.value)}
                                 disabled={evalModalReadOnly}
                                 className={`w-full text-xs p-1.5 rounded border bg-transparent ${
-                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                               />
                             )}
@@ -7439,7 +7436,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 onChange={e => updatePdiRow(idx, 'responsavel', e.target.value)}
                                 disabled={evalModalReadOnly}
                                 className={`w-full text-xs p-1.5 rounded border bg-transparent ${
-                                  theme === 'dark' ? 'border-white/10 text-white bg-[#0D0D0C]' : 'border-black/10 text-black bg-white'
+                                  theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
                                 }`}
                               />
                             )}
@@ -7464,7 +7461,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               </div>
 
               {/* 5. Avaliação de Competências */}
-              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+              <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1 print:w-full">5. Avaliação de Competências</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse print-border">
@@ -7539,7 +7536,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:grid-cols-1 print:gap-4 print:pt-4">
                 
                 {/* 6. Ciência das Partes */}
-                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">6. Ciência das Partes</h3>
                   <p className="text-[10px] opacity-70 italic print:text-black">Declaro estar ciente e de acordo com o feedback recebido.</p>
                   
@@ -7560,7 +7557,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 </div>
 
                 {/* 7. Controle Interno (RH) */}
-                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-[#181816] border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
+                <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/5' : 'bg-black/[0.02] border-black/5'} print:border-black print:bg-transparent print:p-0 print:space-y-2`}>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 print:text-black print:border-b print:pb-1">7. Controle Interno (RH)</h3>
                   
                   <div className="space-y-3 print:space-y-1.5 print:pt-1">
@@ -7621,7 +7618,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     type="submit"
                     disabled={isSavingAvaliacao}
                     className={`px-4 py-2 rounded-lg text-xs font-bold tracking-wider uppercase transition-colors ${
-                      theme === 'dark' ? 'bg-[#E5DFD3] text-black hover:bg-[#D4CBB7]' : 'bg-[#0A0A0A] text-white hover:bg-[#2A2A2A]'
+                      theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'
                     } disabled:opacity-50`}
                   >
                     {isSavingAvaliacao ? 'Gravando...' : 'Gravar Avaliação'}
@@ -7684,7 +7681,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           `}</style>
           
           <div className={`relative w-full max-w-2xl rounded-2xl shadow-2xl p-6 md:p-8 overflow-y-auto max-h-[90vh] print-modal flex flex-col justify-between ${
-            theme === 'dark' ? 'bg-[#121211] border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
+            theme === 'dark' ? 'bg-surface-2 border border-white/10 text-white' : 'bg-white border border-black/10 text-black shadow-lg'
           }`}>
             <LetterheadWatermark />
 
