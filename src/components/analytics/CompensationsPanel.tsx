@@ -110,11 +110,11 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
       ? 'Nenhum benefício vinculado a colaboradores'
       : 'Sem benefícios do tipo adicional';
 
-  // 2. Paridade Salarial por Gênero (Feminino vs Masculino)
+  // 2. Paridade Salarial por Gênero (Feminino vs Masculino) - Considera TODOS os colaboradores
   const getGenderParityData = () => {
     const sectorMap: Record<string, { sector: string; mTotal: number; mCount: number; fTotal: number; fCount: number }> = {};
     
-    activeColabs.forEach(c => {
+    colaboradoresList.forEach(c => {
       if (!c.setor) return;
       const cleanSalary = parseSalary(c.salario || '');
       if (cleanSalary <= 0) return;
@@ -143,22 +143,25 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
 
   const parityData = getGenderParityData();
 
-  // Um colaborador só entra no gráfico se tiver gênero 'M'/'F', setor e salário
-  // legível. Quem cai fora precisa ser contado e mostrado: sem isso, um gráfico
-  // vazio parece "não há disparidade" quando na verdade é "não há dado".
+  // Um colaborador entra no gráfico se tiver setor, gênero ('M' ou 'F') e salário legível (>0)
+  const colabsComDadosParidade = colaboradoresList.filter(c => {
+    const hasSetor = !!c.setor;
+    const hasGenero = c.genero === 'M' || c.genero === 'F';
+    const hasSalario = parseSalary(c.salario || '') > 0;
+    return hasSetor && hasGenero && hasSalario;
+  });
+
   const foraDoGrafico = {
-    semGenero: activeColabs.filter(c => c.genero !== 'M' && c.genero !== 'F').length,
-    semSetor: activeColabs.filter(c => !c.setor).length,
-    semSalario: activeColabs.filter(c => parseSalary(c.salario || '') <= 0).length
+    semGenero: colaboradoresList.filter(c => c.genero !== 'M' && c.genero !== 'F').length,
+    semSetor: colaboradoresList.filter(c => !c.setor).length,
+    semSalario: colaboradoresList.filter(c => parseSalary(c.salario || '') <= 0).length
   };
-  const totalFora = activeColabs.length - parityData.reduce(
-    (acc, s) => acc + ((s.Masculino > 0 ? 1 : 0) + (s.Feminino > 0 ? 1 : 0)), 0
-  );
+  const totalFora = colaboradoresList.length - colabsComDadosParidade.length;
 
   const motivosVazio = [
-    foraDoGrafico.semGenero > 0 && `${foraDoGrafico.semGenero} sem gênero informado`,
+    foraDoGrafico.semGenero > 0 && `${foraDoGrafico.semGenero} sem gênero`,
     foraDoGrafico.semSetor > 0 && `${foraDoGrafico.semSetor} sem setor`,
-    foraDoGrafico.semSalario > 0 && `${foraDoGrafico.semSalario} sem salário legível`
+    foraDoGrafico.semSalario > 0 && `${foraDoGrafico.semSalario} sem salário`
   ].filter(Boolean) as string[];
 
   // 3. Satisfação Média — vem do canal anônimo /pesquisa (pesquisas_satisfacao).
@@ -317,8 +320,7 @@ export default function CompensationsPanel({ theme, colaboradoresList, benefitsL
               </div>
               {totalFora > 0 && (
                 <p className="text-[10px] opacity-60 leading-relaxed pt-1">
-                  {totalFora} de {activeColabs.length} colaboradores ativos ficaram fora deste
-                  gráfico{motivosVazio.length > 0 && <> ({motivosVazio.join(', ')})</>}.
+                  {totalFora} de {colaboradoresList.length} colaboradores ficaram fora deste gráfico{motivosVazio.length > 0 && <> por falta de dados: {motivosVazio.join(', ')}</>}.
                 </p>
               )}
             </>

@@ -31,7 +31,8 @@ import {
   BookOpen,
   UserPlus,
   Trophy,
-  Camera
+  Camera,
+  Search
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
@@ -56,6 +57,8 @@ const RiscoManager = lazy(() => import('../../components/risco/RiscoManager'));
 const FolhaManager = lazy(() => import('../../components/folha/FolhaManager'));
 const VagasManager = lazy(() => import('../../components/vagas/VagasManager'));
 const FuncionarioMesManager = lazy(() => import('../../components/funcionariomes/FuncionarioMesManager'));
+import Logo from '../../components/common/Logo';
+
 const OrganogramaManager = lazy(() => import('../../components/organograma/OrganogramaManager'));
 import LetterheadWatermark from '../../components/common/LetterheadWatermark';
 import CopilotWidget from '../../components/copilot/CopilotWidget';
@@ -151,7 +154,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   // --- MÓDULO 1: DOCUMENTOS ---
   const [modelos, setModelos] = useState<any[]>([]);
   const [selectedModeloId, setSelectedModeloId] = useState<string>('');
-  const [docTemplate, setDocTemplate] = useState('Termo de Consentimento de Uso de Imagem\n\nEu, {{nome}}, portador do CPF {{cpf}}, autorizo o Instituto Thiago Omena no setor de {{setor}}...');
+  const [docTemplate, setDocTemplate] = useState('Termo de Consentimento de Uso de Imagem\n\nEu, {{nome}}, portador do CPF {{cpf}}, autorizo o ITO no setor de {{setor}}...');
 
   // Variáveis do contrato. Nascem vazias de propósito: o que não for preenchido
   // sai como "_______" no documento, o que é visível. Valor de exemplo herdado
@@ -1431,7 +1434,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       setCadastroSalario('');
       setCadastroAdmissao('');
       setCadastroAniversario('');
-      fetchColaboradoresList();
+      fetchDashboardKpis();
       setColabSubTab('quadro');
     } catch (err: any) {
       notify('Erro ao cadastrar colaborador: ' + err.message);
@@ -1449,10 +1452,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   useEffect(() => {
     if (activePath === '/app/colaboradores') {
       fetchTokensList();
-      fetchColaboradoresList();
+      fetchDashboardKpis();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePath]);
+
+
 
   useEffect(() => {
     // Inscrição Supabase Realtime para tabelas críticas (documentos, colaboradores, advertências, avaliações)
@@ -1464,7 +1469,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         (payload) => {
           console.log('Realtime notification received (documentos):', payload);
           fetchTokensList();
-          fetchColaboradoresList();
+          fetchDashboardKpis();
         }
       )
       .on(
@@ -1472,7 +1477,6 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         { event: '*', schema: 'public', table: 'colaboradores' },
         (payload) => {
           console.log('Realtime change received (colaboradores):', payload);
-          fetchColaboradoresList();
           fetchDashboardKpis();
         }
       )
@@ -1481,7 +1485,6 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         { event: '*', schema: 'public', table: 'colaborador_advertencias' },
         (payload) => {
           console.log('Realtime change received (advertencias):', payload);
-          fetchColaboradoresList();
           fetchDashboardKpis();
         }
       )
@@ -2485,12 +2488,33 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       <div className="space-y-8 flex-1 min-h-0 overflow-y-auto sidebar-scroll pr-1 -mr-1">
 
         {/* Branding header */}
-        <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm bg-brand text-white`}>
-            ITO
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Logo className="w-8 h-8 text-brand" />
+            <span className="font-rounded font-extrabold tracking-wide text-base">OMNI ITO</span>
           </div>
-          <span className="font-rounded font-extrabold tracking-wide text-base">OMNI ITO</span>
         </div>
+
+        {/* Barra de Busca Privada da Sidebar (Trigger Ctrl+K) */}
+        <button
+          onClick={() => {
+            const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true });
+            window.dispatchEvent(event);
+          }}
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+            theme === 'dark'
+              ? 'bg-[#0A0E17]/60 border-[#1E2739] text-[#9AA4B6] hover:bg-[#121A2A] hover:border-[#4F6DF5]/40'
+              : 'bg-[#F1F3F9] border-[#E9ECF3] text-[#5B6472] hover:bg-white hover:border-[#4F6DF5]/40'
+          }`}
+        >
+          <div className="flex items-center gap-2">
+            <Search size={15} className="text-[#4F6DF5]" />
+            <span>Buscar...</span>
+          </div>
+          <kbd className="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-[#4F6DF5]/10 text-[#4F6DF5] border border-[#4F6DF5]/20">
+            Ctrl K
+          </kbd>
+        </button>
 
         {/* Links list */}
         <nav className="flex flex-col gap-1.5">
@@ -2668,7 +2692,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       </div>
                       <div className="relative md:max-w-[62%]">
                         <p className="font-rounded text-[11px] font-bold tracking-[0.18em] uppercase mb-2.5 text-fg-muted">
-                          Instituto Thiago Omena · Omni RH
+                          ITO · Omni RH
                         </p>
                         <h2 className="font-display text-[28px] md:text-[34px] font-semibold tracking-tight leading-[1.05] text-fg">
                           {saudHora}, {primeiroNome}! <span aria-hidden>{saudEmoji}</span>
@@ -5857,7 +5881,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         {/* Footer */}
         <footer className={`py-6 border-t text-center text-xs opacity-50 transition-colors ${theme === 'dark' ? 'border-white/5 bg-surface-2' : 'border-black/5 bg-surface'
           }`}>
-          <p>© 2026 Instituto Thiago Omena. Sistema OMNI ITO - Uso Exclusivo e Proprietário.</p>
+          <p>© 2026 ITO. Sistema OMNI ITO - Uso Exclusivo e Proprietário.</p>
           <p className="mt-0.5 font-mono text-[9px]">Autenticado e Monitorado via Row Level Security (RLS)</p>
         </footer>
 

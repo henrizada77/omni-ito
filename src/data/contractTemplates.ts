@@ -426,7 +426,7 @@ export function buildContractText(
 }
 
 export const DEFAULT_MODELS = [
-  { id: '1', titulo: 'Termo de Uso de Imagem', conteudo: 'Eu, {{nome}}, portador do CPF {{cpf}}, autorizo o Instituto Thiago Omena no setor de {{setor}}...' },
+  { id: '1', titulo: 'Termo de Uso de Imagem', conteudo: 'Eu, {{nome}}, portador do CPF {{cpf}}, autorizo o ITO no setor de {{setor}}...' },
   { id: '2', titulo: 'Contrato de Experiência', conteudo: CONTRATO_EXPERIENCIA_TEXT },
   { id: '3', titulo: 'Termo de Compromisso - Regimento Interno', conteudo: REGIMENTO_INTERNO_TEXT },
   { id: '4', titulo: 'Termo de Formalização de Banco de Horas', conteudo: BANCO_HORAS_TEXT },

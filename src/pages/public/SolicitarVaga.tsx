@@ -114,7 +114,7 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm ${
             theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]'
           }`}>ITO</div>
-          <span className="font-semibold tracking-wider text-base">INSTITUTO THIAGO OMENA</span>
+          <span className="font-semibold tracking-wider text-base">ITO</span>
         </div>
 
         {submitted ? (
@@ -258,7 +258,7 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
 
         <div className="text-center mt-4 flex items-center justify-center gap-1 opacity-60">
           <Briefcase size={11} />
-          <span className="text-[11px]">Abertura de vaga · Instituto Thiago Omena</span>
+          <span className="text-[11px]">Abertura de vaga · ITO</span>
         </div>
       </div>
     </div>

@@ -127,7 +127,7 @@ export default function TesteComportamental({ theme, setTheme }: TesteComportame
       <div className="w-full max-w-2xl relative z-10 my-8">
         <div className="flex items-center gap-3 justify-center mb-8">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold tracking-tight text-sm ${theme === 'dark' ? 'bg-[#E5DFD3] text-[#0D0D0C]' : 'bg-[#0A0A0A] text-[#FBFBFA]'}`}>ITO</div>
-          <span className="font-semibold tracking-wider text-base">INSTITUTO THIAGO OMENA</span>
+          <span className="font-semibold tracking-wider text-base">ITO</span>
         </div>
         {children}
       </div>

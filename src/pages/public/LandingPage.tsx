@@ -178,7 +178,7 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
             <p className="text-base md:text-lg text-fg-secondary leading-relaxed">
               O portal de gente do{' '}
               <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand via-brand-strong to-brand">
-                Instituto Thiago Omena
+                ITO
               </span>
               . Admissões, contratos, onboarding e o bem-estar do time — reunidos em um só lugar, com a delicadeza que as pessoas merecem.
             </p>

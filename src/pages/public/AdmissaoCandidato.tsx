@@ -416,7 +416,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
           }`}>
             ITO
           </div>
-          <span className="font-semibold tracking-wider text-base">INSTITUTO THIAGO OMENA</span>
+          <span className="font-semibold tracking-wider text-base">ITO</span>
         </div>
 
         {/* 1. Cadastral Form Screen */}
@@ -454,7 +454,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
             <div className="space-y-3">
               <h2 className="text-xl font-bold">Dados Recebidos pelo RH</h2>
               <p className="text-xs opacity-70 max-w-md mx-auto leading-relaxed">
-                Olá, <strong>{nome}</strong>. Seus documentos admissionais foram carregados no sistema. Nossa equipe do RH Thiago Omena revisará as informações e liberará o contrato oficial para a sua assinatura digital em instantes neste mesmo link.
+                Olá, <strong>{nome}</strong>. Seus documentos admissionais foram carregados no sistema. Nossa equipe do RH ITO revisará as informações e liberará o contrato oficial para a sua assinatura digital em instantes neste mesmo link.
               </p>
             </div>
             <div className="text-[10px] opacity-40 font-mono flex items-center justify-center gap-1.5 pt-4 border-t border-white/5">
@@ -572,7 +572,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
             <div className="space-y-3">
               <h2 className="text-xl font-bold">Processo de Admissão Finalizado!</h2>
               <p className="text-xs opacity-70 max-w-md mx-auto leading-relaxed">
-                Parabéns! Seu contrato de admissão e documentos admissionais foram assinados eletronicamente e arquivados com sucesso na sua ficha de colaborador. Seja bem-vindo ao <strong>Instituto Thiago Omena</strong>.
+                Parabéns! Seu contrato de admissão e documentos admissionais foram assinados eletronicamente e arquivados com sucesso na sua ficha de colaborador. Seja bem-vindo ao <strong>ITO</strong>.
               </p>
             </div>
             <div className="text-[10px] opacity-40 font-mono flex items-center justify-center gap-1.5 pt-4 border-t border-white/5">
@@ -593,7 +593,7 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
             <div className="space-y-3">
               <h2 className="text-xl font-bold">Assinatura do Candidato Registrada!</h2>
               <p className="text-xs opacity-70 max-w-md mx-auto leading-relaxed">
-                Olá, <strong>{nome}</strong>. Sua assinatura digital foi coletada e gravada no contrato de trabalho. O documento foi encaminhado para a assinatura conjunta e finalização do representante legal do Instituto Thiago Omena.
+                Olá, <strong>{nome}</strong>. Sua assinatura digital foi coletada e gravada no contrato de trabalho. O documento foi encaminhado para a assinatura conjunta e finalização do representante legal do ITO.
               </p>
             </div>
             <div className="text-[10px] opacity-40 font-mono flex items-center justify-center gap-1.5 pt-4 border-t border-white/5">

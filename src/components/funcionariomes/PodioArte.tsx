@@ -131,7 +131,7 @@ export default function PodioArte({ top3, fotos, competencia, theme }: PodioArte
             );
           })}
 
-          <text x="540" y="1030" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="22" fill={fg} opacity="0.4">Instituto Thiago Omena</text>
+          <text x="540" y="1030" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="22" fill={fg} opacity="0.4">ITO</text>
         </svg>
       </div>
 

@@ -13,6 +13,7 @@ import FuncionarioMes from './pages/public/FuncionarioMes';
 import PulseSemanal from './pages/public/PulseSemanal';
 import ManualCultura from './pages/public/ManualCultura';
 import ProtectedRoute from './components/ProtectedRoute';
+import CommandPalette from './components/common/CommandPalette';
 import AccessDenied403 from './pages/errors/AccessDenied403';
 import NotFound404 from './pages/errors/NotFound404';
 
@@ -227,6 +228,17 @@ export default function App() {
         <Route path="/403" element={<AccessDenied403 theme={theme} />} />
         <Route path="*" element={<NotFound404 theme={theme} />} />
       </Routes>
+
+      {/* Global Command Palette (Ctrl+K) */}
+      <CommandPalette
+        theme={theme}
+        setTheme={setTheme}
+        isAuthenticated={!!user}
+        onLogout={async () => {
+          await supabase.auth.signOut();
+          setUser(null);
+        }}
+      />
     </BrowserRouter>
   );
 }
