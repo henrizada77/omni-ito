@@ -24,7 +24,6 @@ const manualImages = Object.entries(
 export default function ManualCultura({ theme, setTheme }: ManualCulturaProps) {
   const [currentPage, setCurrentPage] = useState(0);
   const [viewMode, setViewMode] = useState<'single' | 'grid'>('single');
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,10 +55,8 @@ export default function ManualCultura({ theme, setTheme }: ManualCulturaProps) {
     if (!containerRef.current) return;
     if (!document.fullscreenElement) {
       containerRef.current.requestFullscreen().catch(err => console.error(err));
-      setIsFullscreen(true);
     } else {
       document.exitFullscreen().catch(err => console.error(err));
-      setIsFullscreen(false);
     }
   };
 

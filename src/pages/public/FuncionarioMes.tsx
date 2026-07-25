@@ -52,9 +52,7 @@ export default function FuncionarioMes({ theme, setTheme }: FuncionarioMesProps)
   const [showVotanteDropdown, setShowVotanteDropdown] = useState(false);
 
   // Votado (quem recebe o voto)
-  const [searchVotado, setSearchVotado] = useState('');
   const [selectedVotado, setSelectedVotado] = useState<Colab | null>(null);
-  const [showVotadoDropdown, setShowVotadoDropdown] = useState(false);
 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -150,10 +148,6 @@ export default function FuncionarioMes({ theme, setTheme }: FuncionarioMesProps)
   // Filtragem: busca a partir do 4º caractere (len >= 4)
   const filteredVotantes = searchVotante.trim().length >= 4
     ? colaboradores.filter(c => c.nome.toLowerCase().includes(searchVotante.trim().toLowerCase()))
-    : [];
-
-  const filteredVotados = searchVotado.trim().length >= 4
-    ? colaboradores.filter(c => c.id !== selectedVotante?.id && c.nome.toLowerCase().includes(searchVotado.trim().toLowerCase()))
     : [];
 
   const chrome = (children: React.ReactNode) => (
