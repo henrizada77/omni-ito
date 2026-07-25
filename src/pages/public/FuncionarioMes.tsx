@@ -66,14 +66,11 @@ export default function FuncionarioMes({ theme, setTheme }: FuncionarioMesProps)
       : 'light bg-[#FBFBFA] text-[#0A0A0A] antialiased';
   }, [theme]);
 
-  // Click outside listener para fechar dropdowns
+  // Click outside listener para fechar dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (votanteRef.current && !votanteRef.current.contains(event.target as Node)) {
         setShowVotanteDropdown(false);
-      }
-      if (votadoRef.current && !votadoRef.current.contains(event.target as Node)) {
-        setShowVotadoDropdown(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
