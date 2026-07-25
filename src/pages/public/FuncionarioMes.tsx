@@ -58,7 +58,6 @@ export default function FuncionarioMes({ theme, setTheme }: FuncionarioMesProps)
   const [error, setError] = useState('');
 
   const votanteRef = useRef<HTMLDivElement>(null);
-  const votadoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     document.body.className = theme === 'dark'
