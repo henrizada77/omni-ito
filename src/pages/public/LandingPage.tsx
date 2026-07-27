@@ -164,23 +164,22 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
       <div className="max-w-6xl mx-auto px-6 py-16 flex flex-col lg:flex-row items-center justify-between gap-12 min-h-screen relative z-10">
 
         {/* Pitch Text Left Column */}
-        <div className="max-w-xl space-y-7 text-center lg:text-left reveal-up">
+        <div className="max-w-2xl space-y-7 text-center lg:text-left reveal-up">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-rounded font-bold tracking-wide border border-line glass-fill">
             <Heart size={12} className="text-brand" />
             Feito com cuidado · seguro e auditado
           </div>
 
           <div className="space-y-3">
-            <h1 className="font-display text-[40px] md:text-[54px] font-semibold tracking-tight leading-[1.03]">
-              Cuidar de quem
-              <br />cuida de pessoas.
+            <h1 className="font-display text-[30px] md:text-[38px] font-semibold tracking-tight leading-[1.1]">
+              <span className="lg:whitespace-nowrap">A tecnologia organiza processos.</span>
+              <br /><span className="lg:whitespace-nowrap">As pessoas transformam vidas.</span>
             </h1>
             <p className="text-base md:text-lg text-fg-secondary leading-relaxed">
-              O portal de gente do{' '}
               <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-brand via-brand-strong to-brand">
-                ITO
+                Omni ITO
               </span>
-              . Admissões, contratos, onboarding e o bem-estar do time — reunidos em um só lugar, com a delicadeza que as pessoas merecem.
+              : Tudo o que você precisa em um só lugar: admissões, documentos, benefícios, treinamentos, pesquisas e comunicação interna.
             </p>
           </div>
 
