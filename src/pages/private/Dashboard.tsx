@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useRef, useEffect, useMemo, useCallback, lazy, Suspense } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Shield,
@@ -32,7 +32,30 @@ import {
   UserPlus,
   Trophy,
   Camera,
-  Search
+  Search,
+  ArrowRight,
+  Banknote,
+  Bus,
+  Cake,
+  Check,
+  CheckCircle2,
+  CheckSquare,
+  ChevronLeft,
+  ChevronRight,
+  ClipboardList,
+  Info,
+  Landmark,
+  MapPin,
+  Palmtree,
+  Pencil,
+  PenLine,
+  Plus,
+  RefreshCw,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  Square,
+  Undo2
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
@@ -56,6 +79,10 @@ const PontoManager = lazy(() => import('../../components/ponto/PontoManager'));
 const RiscoManager = lazy(() => import('../../components/risco/RiscoManager'));
 const FolhaManager = lazy(() => import('../../components/folha/FolhaManager'));
 const VagasManager = lazy(() => import('../../components/vagas/VagasManager'));
+const EndomarketingManager = lazy(() => import('../../components/endomarketing/EndomarketingManager'));
+// Constantes ficam num módulo à parte (não no manager lazy) para o calendário
+// pintar o dot por categoria sem baixar o chunk do formulário.
+import { corDaCategoria, type AcaoEndomarketing } from '../../components/endomarketing/constants';
 const FuncionarioMesManager = lazy(() => import('../../components/funcionariomes/FuncionarioMesManager'));
 import Logo from '../../components/common/Logo';
 
@@ -2295,6 +2322,35 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     return map;
   }, [dbAdvertencias]);
 
+  // Ações de endomarketing (sprint33). São o único evento da Agenda criado à
+  // mão — o resto do calendário é derivado de `colaboradores`. A lista é
+  // buscada aqui, e não dentro do manager, porque o calendário e a sub-aba
+  // precisam da MESMA fonte: criar uma ação tem que acender o dot na hora.
+  const [acoesEndomarketing, setAcoesEndomarketing] = useState<AcaoEndomarketing[]>([]);
+  const [carregandoEndomarketing, setCarregandoEndomarketing] = useState(true);
+  const [abaAgenda, setAbaAgenda] = useState<'calendario' | 'endomarketing'>('calendario');
+
+  const carregarEndomarketing = useCallback(async () => {
+    if (!hasFullAccess) {
+      setCarregandoEndomarketing(false);
+      return;
+    }
+    setCarregandoEndomarketing(true);
+    const { data, error } = await supabase
+      .from('acoes_endomarketing')
+      .select('*')
+      .order('criado_em', { ascending: false });
+    if (error) {
+      console.error('Carregar ações de endomarketing falhou:', error.message);
+      setAcoesEndomarketing([]);
+    } else {
+      setAcoesEndomarketing((data || []) as AcaoEndomarketing[]);
+    }
+    setCarregandoEndomarketing(false);
+  }, [hasFullAccess]);
+
+  useEffect(() => { carregarEndomarketing(); }, [carregarEndomarketing]);
+
   const calendarEvents = useMemo(() => {
     const list: any[] = [];
 
@@ -2386,7 +2442,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         id: `aniv-${col.id}`,
         date: `${currentYear}-${mm}-${dd}`,
         type: 'aniversario',
-        label: `Aniversário: ${col.nome} 🎂`,
+        label: `Aniversário: ${col.nome}`,
         desc: `${col.nome} (${col.cargo || 'colaborador'}) faz aniversário em ${dd}/${mm}.`,
         colaborador: col
       });
@@ -2409,8 +2465,27 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       }
     });
 
+    // 7. Ações de endomarketing — um evento por dia marcado. `cancelada` fica
+    // de fora: some do calendário mas o registro continua na sub-aba.
+    acoesEndomarketing.forEach((acao) => {
+      if (!acao || acao.status === 'cancelada') return;
+      (acao.dias || []).forEach((dia) => {
+        const iso = String(dia).slice(0, 10);
+        if (!iso) return;
+        list.push({
+          id: `endo-${acao.id}-${iso}`,
+          date: iso,
+          type: 'endomarketing',
+          categoria: acao.categoria,
+          label: `${acao.titulo}`,
+          desc: acao.descricao
+            || `Ação de endomarketing (${acao.categoria})${acao.responsavel ? ` — responsável: ${acao.responsavel}` : ''}.`
+        });
+      });
+    });
+
     return list;
-  }, [colaboradoresList, dbAdvertencias, currentYear]);
+  }, [colaboradoresList, dbAdvertencias, currentYear, acoesEndomarketing]);
 
   // Sidebar Links array builder
   // Badge da sidebar: nº de alertas de pulse ainda não vistos (só faz sentido
@@ -2663,6 +2738,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                 {(() => {
                   const hora = new Date().getHours();
                   const saudHora = hora < 12 ? 'Bom dia' : hora < 18 ? 'Boa tarde' : 'Boa noite';
+                  // Saudação mantém o emoji de propósito: é o único ponto
+                  // caloroso/pessoal da tela, não um rótulo de sistema.
                   const saudEmoji = hora < 12 ? '☀️' : hora < 18 ? '🌤️' : '🌙';
                   // AuthUser só tem id/email; derivamos o primeiro nome: admin
                   // conhecido → "Thiago"; RH → 1º token do e-mail capitalizado.
@@ -2695,7 +2772,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           ITO · Omni RH
                         </p>
                         <h2 className="font-display text-[28px] md:text-[34px] font-semibold tracking-tight leading-[1.05] text-fg">
-                          {saudHora}, {primeiroNome}! <span aria-hidden>{saudEmoji}</span>
+                          {saudHora}, {primeiroNome}! {saudEmoji}
                         </h2>
                         <p className="mt-2 text-sm md:text-[15px] text-fg-secondary max-w-md leading-relaxed">
                           Que bom ter você aqui. Hoje é um ótimo dia para cuidar de pessoas.
@@ -2724,7 +2801,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       color: 'emerald',
                       accent: theme === 'dark' ? 'border-t-emerald-500/60' : 'border-t-emerald-500/40',
                       glow: 'shadow-[0_0_24px_-8px_rgba(52,211,153,0.18)]',
-                      icon: '👥'
+                      icon: <Users size={14} />
                     },
                     {
                       label: 'Colaboradores Efetivados',
@@ -2733,7 +2810,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       color: 'sky',
                       accent: theme === 'dark' ? 'border-t-sky-400/60' : 'border-t-sky-400/40',
                       glow: 'shadow-[0_0_24px_-8px_rgba(56,189,248,0.18)]',
-                      icon: '🛡️'
+                      icon: <ShieldCheck size={14} />
                     },
                     {
                       label: 'Contratos Finalizados',
@@ -2742,7 +2819,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       color: 'amber',
                       accent: theme === 'dark' ? 'border-t-amber-400/60' : 'border-t-amber-400/40',
                       glow: 'shadow-[0_0_24px_-8px_rgba(251,191,36,0.18)]',
-                      icon: '📄'
+                      icon: <FileText size={14} />
                     },
                     {
                       label: 'Alertas & Penalidades',
@@ -2755,7 +2832,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       glow: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length > 0
                         ? 'shadow-[0_0_24px_-8px_rgba(251,113,133,0.22)]'
                         : 'shadow-[0_0_24px_-8px_rgba(52,211,153,0.18)]',
-                      icon: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length > 0 ? '⚠️' : '✅'
+                      icon: kpiAsoVencer.length + kpiFeriasVencer.length + kpiExperienciaVencer.length + dbAdvertencias.length > 0 ? <AlertTriangle size={14} /> : <CheckCircle2 size={14} />
                     },
                   ].map((k, i) => {
                     const chip = k.color === 'emerald' ? 'bg-emerald-500/12 text-emerald-500'
@@ -2767,7 +2844,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         key={i}
                         className="group relative p-5 rounded-[20px] glass-fill glass-sheen card-glow border border-line hover:border-brand/40 hover:-translate-y-1 transition-all duration-200"
                       >
-                        <span className={`w-10 h-10 mb-4 rounded-xl grid place-items-center text-lg ${chip}`}>{k.icon}</span>
+                        <span className={`w-10 h-10 mb-4 rounded-xl grid place-items-center ${chip}`}>{k.icon}</span>
                         <p className="font-rounded text-[9px] font-bold tracking-[0.15em] uppercase text-fg-muted mb-1.5 leading-tight">
                           {k.label}
                         </p>
@@ -2881,7 +2958,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <div className="w-full lg:flex-[1] min-w-0 rounded-2xl border border-teal-500/20 glass-fill glass-sheen overflow-hidden">
                       <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-teal-500/8 border-teal-500/15' : 'bg-teal-50 border-teal-200'}`}>
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm ${theme === 'dark' ? 'bg-teal-500/15' : 'bg-teal-100'}`}>🏖</div>
+                          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${theme === 'dark' ? 'bg-teal-500/15' : 'bg-teal-100'}`}><Palmtree size={14} /></div>
                           <span className="font-rounded text-[10px] font-black tracking-[0.15em] uppercase text-teal-400">Em Férias Agora</span>
                         </div>
                         <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-teal-500/15 text-teal-400' : 'bg-teal-100 text-teal-600'}`}>
@@ -2918,7 +2995,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   return (
                     <div className="rounded-2xl border border-rose-500/20 glass-fill glass-sheen overflow-hidden">
                       <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'bg-rose-500/8 border-rose-500/15' : 'bg-rose-50 border-rose-200'}`}>
-                        <span className="font-rounded text-[10px] font-black tracking-[0.15em] uppercase text-rose-400">💸 Rescisões a Pagar</span>
+                        <span className="font-rounded text-[10px] font-black tracking-[0.15em] uppercase text-rose-400 inline-flex items-center gap-1.5"><Banknote size={14} />Rescisões a Pagar</span>
                         <span className={`text-[9px] font-bold px-2.5 py-1 rounded-full ${theme === 'dark' ? 'bg-rose-500/15 text-rose-400' : 'bg-rose-100 text-rose-600'}`}>{pendentes.length}</span>
                       </div>
                       <div className="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -2934,7 +3011,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 <div className="min-w-0 flex-1">
                                   <p className="text-xs font-semibold text-fg truncate">{nomeR}</p>
                                   <p className={`text-[10px] mt-0.5 ${vencido ? 'text-rose-500 font-bold' : 'text-fg-muted'}`}>
-                                    {vencido ? '⚠ Vencido · ' : 'Pagar até '}{new Date(d.data_limite_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}
+                                    {vencido ? <span className="inline-flex items-center gap-1 mr-1"><AlertTriangle size={11} />Vencido ·</span> : 'Pagar até '}{new Date(d.data_limite_pagamento + 'T12:00:00').toLocaleDateString('pt-BR')}
                                   </p>
                                 </div>
                               </div>
@@ -2947,8 +3024,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   await logAuditoria('RESCISAO_PAGAMENTO_MARCADO', { desligamento_id: d.id, colaborador_id: d.colaborador_id });
                                   fetchColaboradoresList();
                                 }}
-                                className={`w-full py-1.5 rounded-lg text-[9px] font-bold tracking-widest uppercase border transition-colors ${theme === 'dark' ? 'border-rose-500/25 text-rose-300 hover:bg-rose-500/10' : 'border-rose-300 text-rose-600 hover:bg-rose-50'}`}
-                              >✓ Marcar pago</button>
+                                className={`w-full py-1.5 rounded-lg text-[9px] font-bold tracking-widest uppercase border transition-colors inline-flex items-center justify-center gap-1.5 ${theme === 'dark' ? 'border-rose-500/25 text-rose-300 hover:bg-rose-500/10' : 'border-rose-300 text-rose-600 hover:bg-rose-50'}`}
+                              ><Check size={13} />Marcar pago</button>
                             </div>
                           );
                         })}
@@ -3162,36 +3239,36 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Ou importar PDF/DOCX base</label>
                           <input type="file" accept="application/pdf,.docx,.doc" onChange={handlePdfUpload}
                             className={`w-full text-[10px] p-1.5 rounded-lg border ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10'}`} />
-                          {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1">✓ Arquivo importado ({modelFileType.toUpperCase()}): {uploadedPdfName}</p>}
+                          {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1.5"><Check size={13} />Arquivo importado ({modelFileType.toUpperCase()}): {uploadedPdfName}</p>}
                         </div>
 
                         {uploadedPdfBase64 && (
                           <div className="space-y-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] mt-3">
                             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
                               <div>
-                                <h6 className="text-[11px] font-bold uppercase tracking-wider opacity-75">📍 Posicionamento das Assinaturas (Prévia)</h6>
+                                <h6 className="text-[11px] font-bold uppercase tracking-wider opacity-75 flex items-center gap-1.5"><MapPin size={14} />Posicionamento das Assinaturas (Prévia)</h6>
                                 <p className="text-[9px] opacity-50 mt-0.5">Clique em qualquer lugar da folha para definir a posição do campo ativo.</p>
                               </div>
                               <div className="flex gap-2">
                                 <button
                                   type="button"
                                   onClick={() => setActivePositioningRole('colaborador')}
-                                  className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${activePositioningRole === 'colaborador'
+                                  className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors inline-flex items-center gap-1.5 ${activePositioningRole === 'colaborador'
                                       ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
                                       : 'border-white/10 opacity-60'
                                     }`}
                                 >
-                                  ✍️ Colaborador
+                                  <PenLine size={13} />Colaborador
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setActivePositioningRole('representante')}
-                                  className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${activePositioningRole === 'representante'
+                                  className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors inline-flex items-center gap-1.5 ${activePositioningRole === 'representante'
                                       ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
                                       : 'border-white/10 opacity-60'
                                     }`}
                                 >
-                                  🏛️ Representante (RH)
+                                  <Landmark size={13} />Representante (RH)
                                 </button>
                               </div>
                             </div>
@@ -3241,7 +3318,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     }}
                                     className="absolute px-1.5 py-0.5 rounded text-[7px] font-bold bg-amber-500 text-black shadow border border-amber-600 pointer-events-none flex items-center gap-0.5 whitespace-nowrap"
                                   >
-                                    <span>Colaborador ✍️</span>
+                                    <span className="inline-flex items-center gap-1">Colaborador <PenLine size={11} /></span>
                                   </div>
                                 )}
 
@@ -3254,7 +3331,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     }}
                                     className="absolute px-1.5 py-0.5 rounded text-[7px] font-bold bg-sky-500 text-white shadow border border-sky-600 pointer-events-none flex items-center gap-0.5 whitespace-nowrap"
                                   >
-                                    <span>RH 🏛️</span>
+                                    <span className="inline-flex items-center gap-1">RH <Landmark size={11} /></span>
                                   </div>
                                 )}
                               </div>
@@ -3355,7 +3432,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             finally { setIsSavingModelo(false); }
                           }}
                           className={`text-xs px-5 py-2 rounded-lg font-bold ${theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white'} disabled:opacity-50`}>
-                          {isSavingModelo ? 'Salvando...' : '✓ Salvar Modelo'}
+                          {isSavingModelo ? 'Salvando...' : <span className="inline-flex items-center gap-1.5"><Check size={13} />Salvar Modelo</span>}
                         </button>
                       </div>
                     )}
@@ -3378,7 +3455,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Importar PDF Local</label>
                           <input type="file" accept="application/pdf" onChange={handlePdfUpload}
                             className={`w-full text-[10px] p-1.5 rounded border ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10'}`} />
-                          {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1">✓ {uploadedPdfName}</p>}
+                          {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1.5"><Check size={13} />{uploadedPdfName}</p>}
                         </div>
                       </div>
                       <div className="space-y-4">
@@ -3408,7 +3485,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <div className={`p-4 rounded-xl border text-xs leading-relaxed font-serif ${theme === 'dark' ? 'bg-[#161615] border-white/5' : 'glass-fill border-line'}`}>
                           <span className="block text-[9px] font-bold uppercase opacity-50 mb-2 tracking-wider">Pré-visualização</span>
                           {selectedModeloId === 'upload' ? (
-                            <p className="text-emerald-500 font-mono text-[10px]">📄 PDF importado: {uploadedPdfName}</p>
+                            <p className="text-emerald-500 font-mono text-[10px] flex items-center gap-1.5"><FileText size={13} />PDF importado: {uploadedPdfName}</p>
                           ) : (
                             <div className="whitespace-pre-wrap opacity-80 min-h-[100px]">{renderTemplateText()}</div>
                           )}
@@ -3492,7 +3569,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             'aguardando_homologacao': { label: 'Aguard. Homologação', color: 'bg-amber-500/10 border-amber-500/20 text-amber-400' },
                             'aguardando_assinatura': { label: 'Aguard. Assinatura', color: 'bg-purple-500/10 border-purple-500/20 text-purple-400' },
                             'aguardando_assinatura_rh': { label: 'Aguard. RH Assinar', color: 'bg-orange-500/10 border-orange-500/20 text-orange-400' },
-                            'concluido': { label: 'Concluído ✓', color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
+                            'concluido': { label: 'Concluído', color: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' },
                           };
                           const st = statusMap[t.status] || { label: t.status, color: 'bg-white/5 border-white/10 text-white' };
                           return (
@@ -3606,7 +3683,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   <div className="space-y-5 animate-fadeIn">
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-bold">Histórico de Documentos Assinados</h4>
-                      <button onClick={fetchDocsHistorico} className="text-[9px] px-2.5 py-1 rounded border border-white/10 hover:bg-white/5 opacity-70">↻ Atualizar</button>
+                      <button onClick={fetchDocsHistorico} className="text-[9px] px-2.5 py-1 rounded border border-white/10 hover:bg-white/5 opacity-70 inline-flex items-center gap-1.5"><RefreshCw size={13} />Atualizar</button>
                     </div>
                     {docsHistorico.length > 0 ? (
                       <div className="space-y-2">
@@ -3857,9 +3934,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                       return colabAdvs.length > 0 && (
                                         <span
                                           title={`${colabAdvs.length} advertência(s) registrada(s)`}
-                                          className="shrink-0 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20"
+                                          className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20"
                                         >
-                                          ⚠️ {colabAdvs.length}
+                                          <AlertTriangle size={11} />{colabAdvs.length}
                                         </span>
                                       );
                                     })()}
@@ -4039,7 +4116,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         {/* Info banner */}
                         <div className={`p-3 rounded-lg border text-xs ${theme === 'dark' ? 'bg-sky-500/10 border-sky-500/20 text-sky-400' : 'bg-sky-500/10 border-sky-500/20 text-sky-700'
                           }`}>
-                          <span className="font-bold">ℹ️ Onboarding:</span> O colaborador será cadastrado com status <span className="font-mono font-bold">ativo</span> e os itens de onboarding (benefícios, EPI, biometria) poderão ser marcados na aba de Onboarding logo após o cadastro.
+                          <span className="font-bold inline-flex items-center gap-1.5"><Info size={13} />Onboarding:</span> O colaborador será cadastrado com status <span className="font-mono font-bold">ativo</span> e os itens de onboarding (benefícios, EPI, biometria) poderão ser marcados na aba de Onboarding logo após o cadastro.
                         </div>
 
                         {/* Actions */}
@@ -4050,7 +4127,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             className={`text-xs px-6 py-2.5 rounded-lg font-bold flex items-center gap-2 transition-colors ${theme === 'dark' ? 'bg-emerald-500 text-white hover:bg-emerald-600' : 'bg-emerald-600 text-white hover:bg-emerald-700'
                               } disabled:opacity-50`}
                           >
-                            {isSavingCadastro ? 'Salvando...' : '✓ Cadastrar Colaborador'}
+                            {isSavingCadastro ? 'Salvando...' : <><Check size={13} />Cadastrar Colaborador</>}
                           </button>
                           <button
                             type="button"
@@ -4273,7 +4350,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   ))}
                                   {uploadedPdfBase64 && (
                                     <option value="upload">
-                                      📄 PDF Carregado: {uploadedPdfName}
+                                      PDF Carregado: {uploadedPdfName}
                                     </option>
                                   )}
                                 </select>
@@ -4520,7 +4597,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                     {onboardingSuccessMessage && (
                       <div className="p-4 rounded-xl border border-emerald-500/20 bg-emerald-500/10 text-emerald-500 text-xs font-bold text-center space-y-2 animate-bounce">
-                        <p>✨ AUTOMATIC TRIGGER DETECTED!</p>
+                        <p className="flex items-center justify-center gap-1.5"><Sparkles size={13} />AUTOMATIC TRIGGER DETECTED!</p>
                         <p className="font-normal opacity-90">Progresso 100%. O status do colaborador na tabela `colaboradores` foi promovido para "Ativo" de forma segura no Supabase!</p>
                       </div>
                     )}
@@ -4689,7 +4766,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <div className={`rounded-2xl border overflow-hidden ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white shadow-sm'}`}>
                       <div className={`px-5 py-3.5 border-b flex items-center justify-between ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}>
                         <div className="flex items-center gap-2.5">
-                          <span className="text-base">🚌</span>
+                          <Bus size={16} />
                           <div>
                             <h3 className="text-sm font-bold">Vale-Transporte — Desconto em Folha</h3>
                             <p className="text-[10px] opacity-50">Optantes ativos · desconto = salário × percentual (teto legal 6%)</p>
@@ -4966,8 +5043,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                             <span className="font-semibold block truncate">{c.nome}</span>
                                             <span className="text-[10px] opacity-50 block truncate">{c.cargo} • {c.setor}</span>
                                             {c.status === 'em_ferias' && (
-                                              <span className="inline-block mt-0.5 text-[8px] font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 rounded-full">
-                                                🏖 Em férias{c.ferias_inicio && c.ferias_dias ? ` · retorna ${new Date(addDaysISO(c.ferias_inicio, c.ferias_dias) + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}
+                                              <span className="inline-flex items-center gap-1 mt-0.5 text-[8px] font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-1.5 py-0.5 rounded-full">
+                                                <Palmtree size={11} />Em férias{c.ferias_inicio && c.ferias_dias ? ` · retorna ${new Date(addDaysISO(c.ferias_inicio, c.ferias_dias) + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}
                                               </span>
                                             )}
                                           </div>
@@ -5021,19 +5098,19 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                               setQuickFeriasInicio(c.ferias_inicio || '');
                                               setQuickFeriasDias(c.ferias_dias ? String(c.ferias_dias) : '');
                                             }}
-                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-fg' : 'border-black/10 hover:bg-black/5 text-fg'
+                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors inline-flex items-center gap-1.5 ${theme === 'dark' ? 'border-white/10 hover:bg-white/5 text-fg' : 'border-black/10 hover:bg-black/5 text-fg'
                                               }`}
                                             title="Atualizar vencimentos diretamente"
                                           >
-                                            ✏️ Datas
+                                            <Pencil size={13} />Datas
                                           </button>
                                           <button
                                             onClick={() => setActiveColaboradorForDrawer(c)}
-                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors ${theme === 'dark' ? 'border-brand/30 bg-white/5 hover:bg-white/10 text-fg' : 'border-brand/30 bg-black/5 hover:bg-black/10 text-fg'
+                                            className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-colors inline-flex items-center gap-1.5 ${theme === 'dark' ? 'border-brand/30 bg-white/5 hover:bg-white/10 text-fg' : 'border-brand/30 bg-black/5 hover:bg-black/10 text-fg'
                                               }`}
                                             title="Ver prontuário do colaborador"
                                           >
-                                            📄 Dossiê
+                                            <FileText size={13} />Dossiê
                                           </button>
                                         </div>
                                       </td>
@@ -5089,7 +5166,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               <div className="pt-3 border-t border-white/10">
                                 {selectedColabForQuickUpdate.status === 'em_ferias' ? (
                                   <div className="space-y-2">
-                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20">🏖 Em Férias</span>
+                                    <span className="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-sky-500/10 text-sky-400 border border-sky-500/20 inline-flex items-center gap-1"><Palmtree size={11} />Em Férias</span>
                                     <p className="text-[10px] opacity-70 leading-relaxed">
                                       {selectedColabForQuickUpdate.ferias_inicio ? `Desde ${new Date(selectedColabForQuickUpdate.ferias_inicio + 'T12:00:00').toLocaleDateString('pt-BR')}` : ''}
                                       {selectedColabForQuickUpdate.ferias_dias ? ` · ${selectedColabForQuickUpdate.ferias_dias} dias` : ''}
@@ -5100,9 +5177,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     <button
                                       onClick={handleRetornarFerias}
                                       disabled={isSavingQuickDates}
-                                      className="w-full py-2 rounded font-bold text-xs border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50"
+                                      className="w-full py-2 rounded font-bold text-xs border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                                     >
-                                      ↩ Retornar de férias (voltar a Ativo)
+                                      <Undo2 size={13} />Retornar de férias (voltar a Ativo)
                                     </button>
                                   </div>
                                 ) : (
@@ -5130,9 +5207,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     <button
                                       onClick={handleColocarEmFerias}
                                       disabled={isSavingQuickDates}
-                                      className="w-full py-2 rounded font-bold text-xs bg-sky-500/15 text-sky-400 border border-sky-500/25 hover:bg-sky-500/25 disabled:opacity-50"
+                                      className="w-full py-2 rounded font-bold text-xs bg-sky-500/15 text-sky-400 border border-sky-500/25 hover:bg-sky-500/25 disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
                                     >
-                                      🏖 Colocar em férias
+                                      <Palmtree size={13} />Colocar em férias
                                     </button>
                                   </div>
                                 )}
@@ -5145,7 +5222,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   className={`flex-1 py-2 rounded font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-black/90'
                                     } disabled:opacity-50`}
                                 >
-                                  {isSavingQuickDates ? 'Salvando...' : '✓ Salvar Alterações'}
+                                  {isSavingQuickDates ? 'Salvando...' : <span className="inline-flex items-center gap-1.5"><Check size={13} />Salvar Alterações</span>}
                                 </button>
                                 <button
                                   onClick={() => setSelectedColabForQuickUpdate(null)}
@@ -5347,8 +5424,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 }`}
                             >
                               <option value="Todos">Todos</option>
-                              <option value="Apto">🛡️ Apto para Promoção</option>
-                              <option value="Em Desenvolvimento">⚙️ Em Desenvolvimento</option>
+                              <option value="Apto">Apto para Promoção</option>
+                              <option value="Em Desenvolvimento">Em Desenvolvimento</option>
                             </select>
                           </div>
                         </div>
@@ -5423,12 +5500,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                       {/* Status Carreira */}
                                       <td className="p-4">
                                         {item.isApto ? (
-                                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                                            🛡️ Apto
+                                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 inline-flex items-center gap-1">
+                                            <ShieldCheck size={11} />Apto
                                           </span>
                                         ) : (
-                                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-white/50 border border-white/5">
-                                            ⚙️ Em Desenv.
+                                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-white/5 text-white/50 border border-white/5 inline-flex items-center gap-1">
+                                            <Settings size={11} />Em Desenv.
                                           </span>
                                         )}
                                       </td>
@@ -5440,12 +5517,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                             setActiveColaboradorForDrawer(item);
                                             setDrawerTab('carreira');
                                           }}
-                                          className={`px-3 py-1.5 rounded font-bold text-[10px] uppercase transition-colors ${theme === 'dark'
+                                          className={`px-3 py-1.5 rounded font-bold text-[10px] uppercase transition-colors inline-flex items-center gap-1.5 ${theme === 'dark'
                                               ? 'bg-white/5 hover:bg-white/10 text-white'
                                               : 'bg-black/5 hover:bg-black/10 text-black'
                                             }`}
                                         >
-                                          ✏️ Avaliar / Trilha
+                                          <Pencil size={13} />Avaliar / Trilha
                                         </button>
                                       </td>
                                     </tr>
@@ -5518,7 +5595,43 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Sub-abas */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setAbaAgenda('calendario')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                      abaAgenda === 'calendario'
+                        ? (theme === 'dark' ? 'bg-white/10 border-white/20' : 'bg-black/10 border-black/20')
+                        : (theme === 'dark' ? 'border-white/10 opacity-60 hover:opacity-100' : 'border-black/10 opacity-60 hover:opacity-100')
+                    }`}
+                  >
+                    Calendário
+                  </button>
+                  <button
+                    onClick={() => setAbaAgenda('endomarketing')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                      abaAgenda === 'endomarketing'
+                        ? (theme === 'dark' ? 'bg-white/10 border-white/20' : 'bg-black/10 border-black/20')
+                        : (theme === 'dark' ? 'border-white/10 opacity-60 hover:opacity-100' : 'border-black/10 opacity-60 hover:opacity-100')
+                    }`}
+                  >
+                    Endomarketing
+                  </button>
+                </div>
+
+                {abaAgenda === 'endomarketing' && (
+                  <Suspense fallback={<div className="py-12 text-center text-xs opacity-60">Carregando…</div>}>
+                    <EndomarketingManager
+                      theme={theme}
+                      userEmail={user?.email || ''}
+                      lista={acoesEndomarketing}
+                      carregando={carregandoEndomarketing}
+                      onChange={carregarEndomarketing}
+                    />
+                  </Suspense>
+                )}
+
+                <div className={`grid grid-cols-1 lg:grid-cols-12 gap-8 ${abaAgenda === 'calendario' ? '' : 'hidden'}`}>
                   {/* Calendar Grid Container */}
                   <div className={`lg:col-span-8 p-6 rounded-2xl border ${
                     theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-white border-black/10 shadow-sm'
@@ -5542,11 +5655,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             }
                             setSelectedCalendarDay(1);
                           }}
-                          className={`p-2 rounded-lg border text-xs font-bold transition-all ${
+                          className={`p-2 rounded-lg border text-xs font-bold transition-all inline-flex items-center gap-1.5 ${
                             theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-surface-2' : 'border-black/10 hover:bg-black/5 bg-white'
                           }`}
                         >
-                          ◀ Mês Ant.
+                          <ChevronLeft size={13} />Mês Ant.
                         </button>
                         <button
                           onClick={() => {
@@ -5558,11 +5671,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             }
                             setSelectedCalendarDay(1);
                           }}
-                          className={`p-2 rounded-lg border text-xs font-bold transition-all ${
+                          className={`p-2 rounded-lg border text-xs font-bold transition-all inline-flex items-center gap-1.5 ${
                             theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-surface-2' : 'border-black/10 hover:bg-black/5 bg-white'
                           }`}
                         >
-                          Próx. Mês ▶
+                          Próx. Mês<ChevronRight size={13} />
                         </button>
                       </div>
                     </div>
@@ -5623,6 +5736,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     else if (ev.type === 'advertencia') dotColor = 'bg-rose-500 animate-pulse';
                                     else if (ev.type === 'admissao') dotColor = 'bg-violet-500';
                                     else if (ev.type === 'aniversario') dotColor = 'bg-pink-500';
+                                    else if (ev.type === 'endomarketing') dotColor = corDaCategoria(ev.categoria);
 
                                     return (
                                       <span
@@ -5669,6 +5783,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <span className="w-2.5 h-2.5 rounded-full bg-pink-500" />
                         <span>Aniversário</span>
                       </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full bg-fuchsia-500" />
+                        <span>Endomarketing</span>
+                      </div>
                     </div>
 
                   </div>
@@ -5713,7 +5831,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               } else if (ev.type === 'aniversario') {
                                 cardColor = 'border-pink-500/20 bg-pink-500/5';
                                 badgeColor = 'bg-pink-500/10 text-pink-400 border-pink-500/20';
-                                labelType = 'ANIVERSÁRIO 🎂';
+                                labelType = 'ANIVERSÁRIO';
+                              } else if (ev.type === 'endomarketing') {
+                                cardColor = 'border-fuchsia-500/20 bg-fuchsia-500/5';
+                                badgeColor = 'bg-fuchsia-500/10 text-fuchsia-400 border-fuchsia-500/20';
+                                labelType = String(ev.categoria || 'ENDOMARKETING').toUpperCase();
                               }
 
                               return (
@@ -5735,13 +5857,13 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   {ev.colaborador && (
                                     <button
                                       onClick={() => setActiveColaboradorForDrawer(ev.colaborador)}
-                                      className={`w-full py-1.5 rounded text-[9px] font-bold tracking-widest uppercase border transition-colors ${
+                                      className={`w-full py-1.5 rounded text-[9px] font-bold tracking-widest uppercase border transition-colors inline-flex items-center justify-center gap-1.5 ${
                                         theme === 'dark'
                                           ? 'border-white/10 hover:bg-white/5 text-white'
                                           : 'border-black/10 hover:bg-black/5 text-black'
                                       }`}
                                     >
-                                      🔍 Abrir Prontuário
+                                      <Search size={13} />Abrir Prontuário
                                     </button>
                                   )}
                                 </div>
@@ -5759,7 +5881,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     {/* Aniversariantes do mês + day off de aniversário */}
                     <div className={`p-5 rounded-2xl border ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
                       <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60 mb-4 flex items-center gap-2">
-                        🎂 Aniversariantes de {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][currentMonth]}
+                        <Cake size={14} />Aniversariantes de {['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'][currentMonth]}
                       </h4>
                       <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-1 scrollbar-thin">
                         {(() => {
@@ -5800,7 +5922,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 <div className="mt-2.5">
                                   {concedido ? (
                                     <span className={`inline-flex items-center gap-1 text-[9px] font-bold tracking-wide uppercase px-2 py-1 rounded-lg ${theme === 'dark' ? 'bg-emerald-500/12 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
-                                      ✓ Day off concedido em {currentYear}
+                                      <Check size={11} />Day off concedido em {currentYear}
                                     </span>
                                   ) : (
                                     <button
@@ -5808,7 +5930,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                       disabled={concedendoDayOff === c.id}
                                       className={`w-full py-1.5 rounded-lg text-[9px] font-bold tracking-widest uppercase border transition-colors disabled:opacity-50 ${theme === 'dark' ? 'border-pink-500/25 text-pink-300 hover:bg-pink-500/10' : 'border-pink-300 text-pink-600 hover:bg-pink-50'}`}
                                     >
-                                      {concedendoDayOff === c.id ? 'Concedendo…' : '🎁 Conceder day off'}
+                                      {concedendoDayOff === c.id ? 'Concedendo…' : <span className="inline-flex items-center gap-1.5"><Gift size={13} />Conceder day off</span>}
                                     </button>
                                   )}
                                 </div>
@@ -5867,7 +5989,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     </span>
                     <button onClick={handleSaveCultura} disabled={culturaSaving || culturaLoading}
                       className={`py-2.5 px-5 rounded-lg font-bold text-xs transition-colors disabled:opacity-50 ${theme === 'dark' ? 'bg-brand text-white hover:bg-white' : 'bg-brand text-white hover:bg-black'}`}>
-                      {culturaSaving ? 'Publicando…' : '✓ Publicar Manual'}
+                      {culturaSaving ? 'Publicando…' : <span className="inline-flex items-center gap-1.5"><Check size={13} />Publicar Manual</span>}
                     </button>
                   </div>
                 </div>
@@ -5961,7 +6083,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         const colabAdvs = warningsMap[activeColaboradorForDrawer.id] || [];
                         return colabAdvs.length > 0 && (
                           <span className="shrink-0 inline-flex items-center gap-1 text-[8px] font-extrabold uppercase bg-rose-500/10 text-rose-500 border border-rose-500/20 px-1.5 py-0.5 rounded">
-                            ⚠️ {colabAdvs.length}
+                            <AlertTriangle size={11} />{colabAdvs.length}
                           </span>
                         );
                       })()}
@@ -6053,7 +6175,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   <div className="flex justify-between items-center">
                     <h4 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Dados Pessoais & Endereço</h4>
                     <button onClick={() => { setIsEditingDrawer(!isEditingDrawer); setDrawerEditData({}); }} className={`text-[9px] px-2.5 py-1 rounded font-bold border transition-colors ${isEditingDrawer ? 'border-rose-500/30 text-rose-400 bg-rose-500/10' : (theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5')
-                      }`}>{isEditingDrawer ? 'Cancelar' : '✏️ Editar'}</button>
+                      }`}>{isEditingDrawer ? 'Cancelar' : <span className="inline-flex items-center gap-1.5"><Pencil size={13} />Editar</span>}</button>
                   </div>
 
                   {([
@@ -6125,7 +6247,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   {isEditingDrawer && (
                     <button onClick={handleSaveDrawerEdit} disabled={isSavingDrawer}
                       className={`w-full py-2 rounded font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white'} disabled:opacity-50`}>
-                      {isSavingDrawer ? 'Salvando...' : '✓ Salvar Alterações'}
+                      {isSavingDrawer ? 'Salvando...' : <span className="inline-flex items-center gap-1.5"><Check size={13} />Salvar Alterações</span>}
                     </button>
                   )}
                   {/* Vale-Transporte (opt-in + % de desconto) */}
@@ -6140,7 +6262,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className={`rounded-xl border p-4 space-y-2 ${theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'}`}>
                         <div className="flex items-center justify-between">
                           <span className="text-[9px] uppercase opacity-50 font-bold tracking-wider">Vale-Transporte</span>
-                          <span className="text-sm">🚌</span>
+                          <Bus size={14} />
                         </div>
                         {isEditingDrawer ? (
                           <div className="space-y-2">
@@ -6243,7 +6365,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         if (deslig.entrevista_realizada_em) {
                           return (
                             <div className={`p-4 rounded-xl border space-y-2 text-xs ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
-                              <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">✓ Entrevista de Desligamento — {new Date(deslig.entrevista_realizada_em).toLocaleDateString('pt-BR')}</h5>
+                              <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1.5"><Check size={14} />Entrevista de Desligamento — {new Date(deslig.entrevista_realizada_em).toLocaleDateString('pt-BR')}</h5>
                               <p><b>Motivo real:</b> {deslig.entrevista_motivo_real || '—'}</p>
                               <p><b>Pontos positivos:</b> {deslig.entrevista_pontos_positivos || '—'}</p>
                               <p><b>A melhorar:</b> {deslig.entrevista_pontos_melhorar || '—'}</p>
@@ -6254,7 +6376,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         }
                         return (
                           <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
-                            <h5 className="text-[10px] font-bold uppercase tracking-wider text-amber-500">🗒 Entrevista de Desligamento — pendente</h5>
+                            <h5 className="text-[10px] font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1.5"><ClipboardList size={14} />Entrevista de Desligamento — pendente</h5>
                             <div className="space-y-2 text-xs">
                               <select value={entrevistaDraft.motivo_real} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_real: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`}>
                                 {['Remuneração', 'Liderança', 'Carreira', 'Clima', 'Pessoal', 'Outro'].map(m => <option key={m} value={m}>{m}</option>)}
@@ -6290,7 +6412,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   finally { setIsSavingEntrevista(false); }
                                 }}
                                 className="w-full py-2 rounded-lg font-bold text-xs bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors"
-                              >{isSavingEntrevista ? 'Salvando…' : '✓ Registrar Entrevista'}</button>
+                              >{isSavingEntrevista ? 'Salvando…' : <span className="inline-flex items-center gap-1.5"><Check size={13} />Registrar Entrevista</span>}</button>
                             </div>
                           </div>
                         );
@@ -6300,7 +6422,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className={`p-4 rounded-xl border space-y-3.5 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                         }`}>
                         <h5 className="text-[10px] font-bold uppercase tracking-wider text-rose-500 flex items-center gap-1">
-                          ⚠️ Formulário de Desligamento
+                          <AlertTriangle size={14} />Formulário de Desligamento
                         </h5>
                         <div className="space-y-3 text-xs">
                           <div>
@@ -6367,7 +6489,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               disabled={isSavingOffboard || !offboardDate}
                               className="flex-1 py-2 rounded-lg font-bold text-xs bg-rose-600 text-white hover:bg-rose-700 disabled:opacity-50 transition-colors"
                             >
-                              {isSavingOffboard ? 'Processando...' : '✓ Confirmar Desligamento'}
+                              {isSavingOffboard ? 'Processando...' : <span className="inline-flex items-center gap-1.5"><Check size={13} />Confirmar Desligamento</span>}
                             </button>
                             <button
                               type="button"
@@ -6386,7 +6508,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         onClick={() => setIsOffboardingMode(true)}
                         className="w-full py-2.5 rounded-lg border border-rose-500/25 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500 font-bold text-xs transition-colors flex items-center justify-center gap-1.5"
                       >
-                        ⚠️ Desligar Colaborador
+                        <AlertTriangle size={13} />Desligar Colaborador
                       </button>
                     )}
                   </div>
@@ -6547,7 +6669,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                   {hasFullAccess && (
                     <div className={`p-4 rounded-xl border space-y-3 mt-4 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                       }`}>
-                      <h5 className="text-[10px] font-bold uppercase tracking-wider opacity-75">➕ Enviar Novo Documento ou Foto</h5>
+                      <h5 className="text-[10px] font-bold uppercase tracking-wider opacity-75 flex items-center gap-1.5"><Plus size={14} />Enviar Novo Documento ou Foto</h5>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                           <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Tipo de Anexo</label>
@@ -6582,7 +6704,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         className={`w-full py-2 rounded-lg font-bold text-xs transition-colors ${theme === 'dark' ? 'bg-brand text-white' : 'bg-brand text-white'
                           } disabled:opacity-50`}
                       >
-                        {isUploadingFile ? 'Enviando...' : '✓ Fazer Upload'}
+                        {isUploadingFile ? 'Enviando...' : <span className="inline-flex items-center gap-1.5"><Check size={13} />Fazer Upload</span>}
                       </button>
                     </div>
                   )}
@@ -6837,7 +6959,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 }}
                                 className="flex items-center gap-1 hover:underline text-rose-500 font-bold"
                               >
-                                📄 Visualizar / Imprimir
+                                <FileText size={13} />Visualizar / Imprimir
                               </button>
                             </div>
                           </div>
@@ -6892,7 +7014,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               <span className="text-[8px] uppercase tracking-wider opacity-50 block">Cargo Atual</span>
                               <span className="text-xs font-bold">{plano.cargo_atual}</span>
                             </div>
-                            <div className="px-2 py-1 rounded bg-brand/10 text-brand text-xs">➔</div>
+                            <div className="px-2 py-1 rounded bg-brand/10 text-brand flex items-center"><ArrowRight size={13} /></div>
                             <div className="text-right">
                               <span className="text-[8px] uppercase tracking-wider opacity-50 block">Próximo Nível</span>
                               <span className="text-xs font-bold text-emerald-400">{plano.proximo_cargo}</span>
@@ -6974,11 +7096,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className="text-base font-extrabold flex items-center justify-center gap-1.5">
                         {isEligibleForPromotion ? (
                           <>
-                            <span className="text-emerald-400">🛡️ Apto para Promoção</span>
+                            <span className="text-emerald-400 inline-flex items-center gap-1.5"><ShieldCheck size={14} />Apto para Promoção</span>
                           </>
                         ) : (
                           <>
-                            <span className="opacity-40">⚙️ Em Desenvolvimento</span>
+                            <span className="opacity-40 inline-flex items-center gap-1.5"><Settings size={14} />Em Desenvolvimento</span>
                           </>
                         )}
                       </div>
@@ -7002,11 +7124,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                               setSelectedEvalForModal(null);
                               setShowEvalModal(true);
                             }}
-                            className={`text-[9px] px-2.5 py-1 rounded font-bold uppercase transition-all ${
+                            className={`text-[9px] px-2.5 py-1 rounded font-bold uppercase transition-all inline-flex items-center gap-1.5 ${
                               theme === 'dark' ? 'bg-white/5 border border-white/10 hover:bg-white/10 text-white' : 'bg-black/5 border-black/10 hover:bg-black/10 text-black'
                             }`}
                           >
-                            ✏️ Avaliar
+                            <Pencil size={13} />Avaliar
                           </button>
                         )}
                       </div>
@@ -7058,9 +7180,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                     setSelectedEvalForModal(a);
                                     setShowEvalModal(true);
                                   }}
-                                  className="w-full text-center py-1 rounded text-[9px] font-bold uppercase transition-all bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 mt-1"
+                                  className="w-full text-center py-1 rounded text-[9px] font-bold uppercase transition-all bg-black/5 hover:bg-black/10 dark:bg-white/5 dark:hover:bg-white/10 mt-1 inline-flex items-center justify-center gap-1.5"
                                 >
-                                  📄 Ver Relatório Completo
+                                  <FileText size={13} />Ver Relatório Completo
                                 </button>
                               </div>
                             );
@@ -7156,7 +7278,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     theme === 'dark' ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-black'
                   }`}
                 >
-                  🖨️ Imprimir / PDF
+                  <Printer size={13} />Imprimir / PDF
                 </button>
                 <button
                   type="button"
@@ -7225,7 +7347,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         const isSelected = evalForm.desempenhoGeral === level;
                         return (
                           <div key={level} className="flex items-center gap-2">
-                            <span className="text-sm font-semibold select-none">{isSelected ? '☑' : '☐'}</span>
+                            <span className="inline-flex items-center font-semibold select-none">{isSelected ? <CheckSquare size={14} /> : <Square size={14} />}</span>
                             <span className={isSelected ? 'font-bold' : 'opacity-70'}>{level}</span>
                           </div>
                         );
@@ -7241,13 +7363,13 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             type="button"
                             disabled={evalModalReadOnly}
                             onClick={() => setEvalForm(p => ({ ...p, desempenhoGeral: level }))}
-                            className={`py-2 px-1 rounded-lg text-center font-bold text-[10px] uppercase border transition-all ${
+                            className={`py-2 px-1 rounded-lg text-center font-bold text-[10px] uppercase border transition-all flex items-center justify-center gap-1 ${
                               isSelected
                                 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
                                 : (theme === 'dark' ? 'border-white/5 bg-white/2 hover:bg-white/5 opacity-60' : 'border-black/5 bg-black/2 hover:bg-black/5 opacity-60')
                             }`}
                           >
-                            {isSelected ? '✓ ' : ''}{level}
+                            {isSelected ? <Check size={13} /> : null}{level}
                           </button>
                         );
                       })}
@@ -7378,7 +7500,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 className="text-rose-500 hover:text-rose-400 font-bold text-xs"
                                 disabled={evalForm.pontosMelhoria.length <= 1}
                               >
-                                ✕
+                                <X size={13} />
                               </button>
                             </td>
                           )}
@@ -7493,7 +7615,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 className="text-rose-500 hover:text-rose-400 font-bold text-xs"
                                 disabled={evalForm.pdi.length <= 1}
                               >
-                                ✕
+                                <X size={13} />
                               </button>
                             </td>
                           )}
@@ -7538,7 +7660,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                         key={score}
                                         className="font-mono text-xs select-none print:text-black mx-1"
                                       >
-                                        {isChecked ? `☑${score}` : `☐${score}`}
+                                        <span className="inline-flex items-center gap-1">{isChecked ? <CheckSquare size={13} /> : <Square size={13} />}{score}</span>
                                       </span>
                                     );
                                   }
@@ -7615,7 +7737,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       if (evalModalReadOnly) {
                         return (
                           <div key={item.key} className="flex items-center gap-2 text-xs font-mono select-none print:text-black">
-                            <span className="text-sm font-semibold">{isChecked ? '☑' : '☐'}</span>
+                            <span className="inline-flex items-center font-semibold">{isChecked ? <CheckSquare size={14} /> : <Square size={14} />}</span>
                             <span className="opacity-75 print:opacity-100">{item.label}</span>
                           </div>
                         );
@@ -7745,7 +7867,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     theme === 'dark' ? 'bg-white/5 hover:bg-white/10 text-white' : 'bg-black/5 hover:bg-black/10 text-black'
                   }`}
                 >
-                  🖨️ Imprimir / PDF
+                  <Printer size={13} />Imprimir / PDF
                 </button>
                 <button
                   type="button"
