@@ -2,7 +2,7 @@
 
 > Documento de onboarding. Lendo isto do começo ao fim, uma pessoa nova entende **o que é o
 > sistema, como está construído, o que já funciona, o que falta, e as armadilhas**.
-> Última atualização de contexto: julho/2026.
+> Última atualização de contexto: julho/2026 (revisado após sprints 18–32).
 
 ---
 
@@ -33,7 +33,7 @@ SECURITY DEFINER, e (b) duas Edge Functions Deno. O cliente usa **apenas a anon 
 os dados é o **RLS**, não a chave.
 
 - Projeto Supabase do app (ref): **`jyvxhyaeagqljvqqeuwi`** (ver `.env`).
-- Repositório: **`henrizada77/omni-ito`**. Branch de trabalho atual: **`feature/rh-modulos`**.
+- Repositório: **`henrizada77/omni-ito`**. Branch de trabalho atual: **`main`** (o `feature/rh-modulos` já foi mergeado).
 
 ---
 
@@ -99,6 +99,21 @@ Base em `supabase/supabase_setup.sql`; o resto vem dos `sprint*.sql`.
 - **`logs_auditoria`** — trilha de auditoria (IP/UA preenchidos por trigger).
 - **`colaborador_advertencias`** — advertências disciplinares.
 
+**Tabelas adicionadas nos sprints 18–32:**
+- **`copilot_conversas`** / **`copilot_mensagens`** — histórico do assistente Copilot (sprint18; ver Edge Function `copilot`).
+- **`pulse_semanal`** — respostas do termômetro de clima semanal, anônimas (sprint19).
+- **`folha_lancamentos`** — lançamentos de folha por colaborador (Desconto/Adiantamento/Insalubridade/
+  Periculosidade/Hora Extra/Inclusão/Falta/Outro), `valor numeric`, `descricao`, competência (sprint21).
+- **`colaboradores`** ganhou: `status='em_ferias'` + `ferias_inicio`/`ferias_dias` (sprint26),
+  `day_off_aniversario_ano` (sprint27), `vt_opta`/`vt_percentual` (vale-transporte, sprint28).
+- **`desligamentos`** — cálculo de aviso prévio (tipo, modalidade, datas, aviso, pagamento) 1:1 com colaborador (sprint28).
+- **`documentos_institucionais`** — conteúdos editáveis pelo RH e lidos publicamente (ex.: **Manual de Cultura**), um registro por `tipo` (sprint29).
+- **`movimentacoes_pessoal`** — histórico de admissões/desligamentos importados de planilha (analytics de turnover, sprint29).
+- **`solicitacoes_vaga`** — requisições de vaga abertas pelos coordenadores (setor, cargo, funções, requisitos, urgência) (sprint30).
+- **`testes_comportamentais`** — teste DISC por link/token; guarda `respostas` (blocos mais/menos) e `resultado` (perfis pressão/natural/net + dominante) (sprint31).
+- **`funcionario_mes_rodadas`** (+ votos) — rodadas de eleição do Funcionário do Mês por competência, com `top3` no fechamento (sprint32).
+- **`organograma_nos`** — árvore hierárquica editável (parent_id, título, vínculo opcional a colaborador).
+
 **Buckets de Storage** (privados): **`contratos-assinados`** (PDFs assinados) e
 **`documentos-envios`** (anexos da admissão: RG, comprovante, ASO).
 
@@ -108,24 +123,39 @@ Base em `supabase/supabase_setup.sql`; o resto vem dos `sprint*.sql`.
 
 Sidebar (todos exigem `coordenadora_rh`, exceto Analytics que o `ti` também vê):
 
-1. **Dashboard** — KPIs e alertas.
-2. **Colaboradores** — quadro, ficha (drawer) com edição, ocorrências, desligamento.
-3. **Onboarding** — checklist de integração.
-4. **Documentos** — modelos, geração de link de assinatura, assinatura bilateral do RH.
-5. **Benefícios** — cadastro e associação de benefícios.
-6. **Férias & ASO** — vencimentos (datas em `colaboradores`, cálculo client-side).
-7. **Avaliações** — avaliação de desempenho estruturada.
-8. **Cargos & Carreira** — catálogo de cargos, trilhas com degraus, workflow de promoções.
-9. **Voz do Time** — pesquisa de satisfação + ouvidoria (leitura das respostas anônimas).
-10. **Espelho de Ponto** — integração Secullum (ver §7).
-11. **Agenda RH** — calendário derivado de vencimentos/admissões/advertências.
-12. **Analytics** — Overview, Turnover, Saúde & Segurança, Compensação, Jurídico.
+Ordem real das rotas em `App.tsx` (`APP_ROUTES`); todos exigem `coordenadora_rh`, exceto Analytics (o `ti` também vê):
+
+1. **Dashboard** (`/app/dashboard`) — KPIs, alertas e indicadores de clima.
+2. **Documentos** (`/app/documentos`) — modelos, geração de link de assinatura, assinatura bilateral do RH.
+3. **Colaboradores** (`/app/colaboradores`) — quadro, ficha (drawer) com edição, ocorrências, desligamento, prontuário (`ColaboradorProntuarioModal`).
+4. **Onboarding** (`/app/onboarding`) — checklist de integração.
+5. **Benefícios** (`/app/beneficios`) — cadastro e associação de benefícios.
+6. **Férias & ASO** (`/app/ferias-aso`) — vencimentos (datas em `colaboradores`, cálculo client-side).
+7. **Avaliações** (`/app/avaliacoes`) — avaliação de desempenho estruturada.
+8. **Cargos & Carreira** (`/app/cargos`) — catálogo de cargos, trilhas com degraus, workflow de promoções.
+9. **Vagas** (`/app/vagas`) — funil de recrutamento (`VagasManager`) + testes comportamentais DISC (`TestesPanel`).
+10. **Funcionário do Mês** (`/app/funcionario-mes`) — gestão das rodadas de eleição (`FuncionarioMesManager`, arte do pódio).
+11. **Voz do Time / Feedback** (`/app/feedback`) — pesquisa de satisfação + ouvidoria + Pulse (leitura das respostas anônimas).
+12. **Espelho de Ponto** (`/app/ponto`) — integração Secullum (ver §7).
+13. **Riscos** (`/app/riscos`) — mapa/gestão de riscos ocupacionais (`RiscoManager`).
+14. **Folha** (`/app/folha`) — lançamentos de folha, compensação e senioridade (`FolhaManager`).
+15. **Agenda RH** (`/app/agenda`) — calendário derivado de vencimentos/admissões/advertências/aniversários.
+16. **Manual de Cultura** (`/app/cultura`) — edição do conteúdo institucional lido publicamente.
+17. **Analytics** (`/app/analytics`) — Overview, Turnover, Saúde & Segurança, Compensação, Jurídico, **Clima**.
+
+> Além da sidebar há um **Command Palette** (`src/components/common/CommandPalette.tsx`) para navegação/busca rápida,
+> um **Organograma** editável (`OrganogramaManager`) e o widget **Copilot** (`CopilotWidget` + Edge Function `copilot`).
 
 ### Páginas públicas (sem login)
 - **`/`** — landing + login/cadastro.
 - **`/admissao/:token`** — fluxo do candidato (ficha → assinatura do contrato).
 - **`/pesquisa`** — pesquisa de satisfação anônima (rate limit 1 envio/3h por dispositivo, via `localStorage`).
 - **`/ouvidoria`** — ouvidoria anônima (elogio/sugestão/reclamação/denúncia; mesmo rate limit).
+- **`/pulse`** — Pulse Semanal: termômetro de clima em 4 humores, anônimo.
+- **`/funcionario-do-mes`** — votação do Funcionário do Mês (identificação por trecho do próprio nome, 1 voto).
+- **`/cultura`** — Manual de Cultura (leitura pública do conteúdo editado pelo RH).
+- **`/solicitar-vaga`** — coordenadores abrem requisição de vaga.
+- **`/teste-comportamental/:token`** — candidato responde o teste DISC por link.
 
 ---
 
@@ -187,22 +217,33 @@ src/
   types/index.ts             # tipos do domínio
   components/
     ProtectedRoute.tsx
-    analytics/               # Overview, Turnover, HealthSafety, Compensations, Legal
+    analytics/               # Overview, Turnover, HealthSafety, Compensations, Legal, Clima
     benefits/BenefitsManager.tsx
     cargos/CargosManager.tsx
+    colaboradores/ColaboradorProntuarioModal.tsx
+    common/                  # CommandPalette, Logo, LetterheadWatermark
+    copilot/CopilotWidget.tsx
     documents/               # FormManager, AdmissionForm
     feedback/FeedbackManager.tsx
+    folha/FolhaManager.tsx
+    funcionariomes/          # FuncionarioMesManager, PodioArte
+    organograma/OrganogramaManager.tsx
     ponto/PontoManager.tsx
+    risco/RiscoManager.tsx
+    vagas/                   # VagasManager, TestesPanel
   pages/
-    public/  LandingPage, AdmissaoCandidato, PesquisaSatisfacao, Ouvidoria
+    public/  LandingPage, AdmissaoCandidato, PesquisaSatisfacao, Ouvidoria,
+             PulseSemanal, FuncionarioMes, ManualCultura, SolicitarVaga, TesteComportamental
     private/ Dashboard.tsx   # ~6k linhas — quase todos os módulos internos vivem aqui
     errors/  AccessDenied403, NotFound404
 supabase/
   supabase_setup.sql         # schema base
-  sprint8..sprint17_*.sql    # migrations incrementais (rodadas à mão no SQL Editor)
+  sprint8..sprint32_*.sql    # migrations incrementais (rodadas à mão no SQL Editor)
+  organograma.sql, apoio_*.sql, fix_*.sql   # migrations avulsas
   functions/
     gerar-contrato-pdf/      # gera/assina PDF de contrato
     pontofopag-sync/         # sync do ponto (Secullum), mock-first
+    copilot/                 # assistente Copilot (chat)
 ```
 
 > ⚠️ **`Dashboard.tsx` é gigante (~6.000 linhas)** e concentra a maioria dos módulos internos. Novos
@@ -239,26 +280,37 @@ secret de Edge Function.
 
 ## 10. Situação atual (julho/2026) — o que está pronto e o que falta
 
-### Feito no código (branch `feature/rh-modulos`, buildando, type-check limpo)
-- Rota da Agenda RH corrigida (dava 404).
-- Seletor de **gênero** no drawer do colaborador (M/F/O/NI).
-- **Cargos & Carreira** (catálogo, trilhas, promoções).
-- **Voz do Time** (pesquisa + ouvidoria anônimas, rate limit 3h, links públicos na landing).
-- **Comparativo salarial ITO × Mercado Alagoas** por cargo.
-- Modelo **"Contrato de Experiência (com Testemunhas)"**.
-- Fixes: cadastro/login (mensagens de e-mail não confirmado), **SPA routing na Vercel**,
-  **menu suspenso no tema escuro**, **CORS da Edge Function** (libera localhost + `*.vercel.app`).
-- **Espelho de Ponto** (Secullum, mock-first).
-- **Renderização do contrato de texto no PDF** (antes gerava certificado genérico).
+### Feito no código (mergeado na `main`, buildando, type-check limpo)
+**Até o sprint17 (base já documentada):**
+- Rota da Agenda RH corrigida; seletor de **gênero** (M/F/O/NI); **Cargos & Carreira**;
+  **Voz do Time** (pesquisa + ouvidoria anônimas, rate limit 3h); **Comparativo salarial ITO × Mercado Alagoas**;
+  modelo "Contrato de Experiência (com Testemunhas)"; **Espelho de Ponto** (Secullum, mock-first);
+  **renderização do contrato de texto no PDF**; fixes de cadastro/login, SPA routing Vercel, tema escuro, CORS.
+
+**Sprints 18–32 (novos módulos):**
+- **Copilot** — assistente em chat (widget + tabelas + Edge Function `copilot`) (sprint18).
+- **Pulse Semanal** — termômetro de clima anônimo, com painel Clima no Analytics (sprint19).
+- **Bucket `contratos-assinados`** criado por migration (sprint20).
+- **Folha** — lançamentos de folha e gestão de compensação (sprint21).
+- **Novos termos/documentos** de contrato: monitoramento, confidencialidade, EPI, LGPD (sprints 22–25).
+- **Status `em_ferias`** + período de férias; **day-off de aniversário**; **vale-transporte** (sprints 26–28).
+- **Desligamentos** — cálculo de aviso prévio, datas e pagamento (sprint28).
+- **Manual de Cultura** editável + público; **movimentações de pessoal** para turnover (sprint29).
+- **Solicitação de vaga** pública + **Vagas/Recrutamento**; **testes comportamentais DISC** por token (sprints 30–31).
+- **Funcionário do Mês** — votação pública + gestão de rodadas com pódio (sprint32).
+- **Organograma** editável, **Command Palette**, **Prontuário do colaborador** e forte repaginação de design
+  (liquid glass, tipografia serif, migração de tokens creme→azul/navy).
 
 ### ⏳ Pendências operacionais (precisam de ação no Supabase — não são código)
 1. **Republicar as Edge Functions:**
    ```bash
    npx supabase functions deploy gerar-contrato-pdf --project-ref jyvxhyaeagqljvqqeuwi
    npx supabase functions deploy pontofopag-sync    --project-ref jyvxhyaeagqljvqqeuwi
+   npx supabase functions deploy copilot            --project-ref jyvxhyaeagqljvqqeuwi
    ```
    (A `gerar-contrato-pdf` precisa da versão nova pra renderizar o contrato de verdade.)
-2. **Rodar as migrations** que ainda não foram aplicadas: `sprint12` … `sprint17` (na ordem, no SQL Editor).
+2. **Rodar as migrations** que ainda não foram aplicadas, **na ordem numérica** de sprint até o `sprint32`
+   (além de `organograma.sql` e os `apoio_*`/`fix_*` avulsos), no SQL Editor. Cada arquivo é idempotente.
 3. **Criar os buckets** (se ainda não existirem): `contratos-assinados` e `documentos-envios` (privados).
    As **policies de Storage** devem ser criadas pela **UI** (Storage → Policies), porque `alter/create policy`
    em `storage.objects` dá erro de owner no SQL Editor. *A assinatura em si só precisa do bucket existir*
@@ -267,7 +319,7 @@ secret de Edge Function.
    apontar pro domínio de produção (senão o link de confirmação de e-mail vai pra localhost). **Recomendação:**
    para ferramenta interna, considerar **desligar "Confirm email"** (Providers → Email).
 5. **Secullum:** setar os secrets quando tiver as credenciais (fica em mock até lá).
-6. **PR:** os commits estão em `feature/rh-modulos` no remoto; o PR é aberto pela UI do GitHub
+6. **PR:** o `feature/rh-modulos` já foi mergeado na `main`; PRs futuros são abertos pela UI do GitHub
    (o `gh` CLI não está instalado nesta máquina).
 
 ---
@@ -306,7 +358,7 @@ secret de Edge Function.
 
 - **Projeto Supabase (app):** `jyvxhyaeagqljvqqeuwi`
 - **Logs da função:** `https://supabase.com/dashboard/project/jyvxhyaeagqljvqqeuwi/functions/<nome>/logs`
-- **Repo/branch:** `henrizada77/omni-ito` → `feature/rh-modulos`
+- **Repo/branch:** `henrizada77/omni-ito` → `main`
 - **Empresa:** BIOLIFE CLÍNICA MÉDICA LTDA — CNPJ 37.037.182/0001-85 — Maceió/AL
 - **Migrations:** rodar em ordem numérica de sprint; cada arquivo é idempotente.
 - **Type-check antes de commitar:** `npx tsc --noEmit -p tsconfig.app.json`
