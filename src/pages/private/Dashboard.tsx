@@ -55,7 +55,10 @@ import {
   ShieldCheck,
   Sparkles,
   Square,
-  Undo2
+  Undo2,
+  Link2,
+  Copy,
+  Ban
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
@@ -440,6 +443,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const [movimentacoesList, setMovimentacoesList] = useState<any[]>([]);
   const [entrevistaDraft, setEntrevistaDraft] = useState({ motivo_real: 'Remuneração', motivo_texto: '', pontos_positivos: '', pontos_melhorar: '', recomendaria: '7', comentarios: '' });
   const [isSavingEntrevista, setIsSavingEntrevista] = useState(false);
+  // Gerar/revogar o link público da entrevista de saída (sprint34).
+  const [isMexendoLinkEntrevista, setIsMexendoLinkEntrevista] = useState(false);
 
   // Férias & ASO Panel States
   const [searchQueryFeriasAso, setSearchQueryFeriasAso] = useState('');
@@ -6365,7 +6370,18 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         if (deslig.entrevista_realizada_em) {
                           return (
                             <div className={`p-4 rounded-xl border space-y-2 text-xs ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
-                              <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1.5"><Check size={14} />Entrevista de Desligamento — {new Date(deslig.entrevista_realizada_em).toLocaleDateString('pt-BR')}</h5>
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <h5 className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 flex items-center gap-1.5"><Check size={14} />Entrevista de Desligamento — {new Date(deslig.entrevista_realizada_em).toLocaleDateString('pt-BR')}</h5>
+                                {/* Quem respondeu muda como o RH lê o conteúdo: o ex-colaborador
+                                    fala por si; o RH digitando é sempre relato de segunda mão. */}
+                                <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border ${
+                                  deslig.entrevista_origem === 'ex_colaborador'
+                                    ? 'bg-sky-500/10 text-sky-500 border-sky-500/20'
+                                    : 'bg-white/5 opacity-60 border-white/10'
+                                }`}>
+                                  {deslig.entrevista_origem === 'ex_colaborador' ? 'Respondida pelo ex-colaborador' : 'Registrada pelo RH'}
+                                </span>
+                              </div>
                               <p><b>Motivo real:</b> {deslig.entrevista_motivo_real || '—'}</p>
                               <p><b>Pontos positivos:</b> {deslig.entrevista_pontos_positivos || '—'}</p>
                               <p><b>A melhorar:</b> {deslig.entrevista_pontos_melhorar || '—'}</p>
@@ -6374,9 +6390,87 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             </div>
                           );
                         }
+                        // Mesma conta da RPC submit_entrevista_desligamento: data_termino + 15.
+                        // Se já venceu, gerar link não adianta — o banco recusaria o envio.
+                        const prazoEntrevista = new Date(`${deslig.data_termino}T00:00:00`);
+                        prazoEntrevista.setDate(prazoEntrevista.getDate() + 15);
+                        const prazoLabel = prazoEntrevista.toLocaleDateString('pt-BR');
+                        const prazoVencido = prazoEntrevista < new Date(new Date().toDateString());
+                        const linkAtivo = !!deslig.entrevista_token && deslig.entrevista_token_ativo !== false;
+                        const linkUrl = deslig.entrevista_token
+                          ? `${window.location.origin}/entrevista-desligamento/${deslig.entrevista_token}`
+                          : '';
+                        const mexerNoLink = async (patch: any, evento: string, msg: string) => {
+                          setIsMexendoLinkEntrevista(true);
+                          try {
+                            const { error } = await supabase.from('desligamentos').update(patch).eq('id', deslig.id);
+                            if (error) throw error;
+                            await logAuditoria(evento, { desligamento_id: deslig.id, colaborador_id: deslig.colaborador_id });
+                            notify(msg);
+                            fetchColaboradoresList();
+                          } catch (err: any) { notify('Erro no link da entrevista: ' + err.message); }
+                          finally { setIsMexendoLinkEntrevista(false); }
+                        };
                         return (
                           <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
                             <h5 className="text-[10px] font-bold uppercase tracking-wider text-amber-500 flex items-center gap-1.5"><ClipboardList size={14} />Entrevista de Desligamento — pendente</h5>
+
+                            {/* Caminho preferido: o próprio ex-colaborador responde pelo link.
+                                O formulário manual logo abaixo continua existindo como saída —
+                                muita gente simplesmente não responde, e o RH não pode ficar
+                                sem o registro por causa disso. */}
+                            <div className={`p-3 rounded-lg border space-y-2 ${theme === 'dark' ? 'bg-black/20 border-white/10' : 'bg-white border-black/10'}`}>
+                              <div className="flex items-center justify-between gap-2 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1.5"><Link2 size={13} />Link para o ex-colaborador</span>
+                                <span className={`text-[10px] font-semibold ${prazoVencido ? 'text-rose-500' : 'opacity-60'}`}>
+                                  {prazoVencido ? `Prazo encerrado em ${prazoLabel}` : `Válido até ${prazoLabel}`}
+                                </span>
+                              </div>
+
+                              {linkAtivo ? (
+                                <>
+                                  <div className="flex items-center gap-1.5">
+                                    <input
+                                      readOnly
+                                      value={linkUrl}
+                                      onFocus={e => e.currentTarget.select()}
+                                      className={`flex-1 min-w-0 p-2 rounded border text-[11px] font-mono bg-transparent ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`}
+                                    />
+                                    <button
+                                      title="Copiar link"
+                                      onClick={() => { navigator.clipboard.writeText(linkUrl); notify('Link copiado.'); }}
+                                      className={`p-2 rounded border shrink-0 transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'}`}
+                                    ><Copy size={13} /></button>
+                                  </div>
+                                  <button
+                                    disabled={isMexendoLinkEntrevista}
+                                    onClick={() => mexerNoLink({ entrevista_token_ativo: false }, 'ENTREVISTA_DESLIGAMENTO_LINK_REVOGADO', 'Link revogado.')}
+                                    className="text-[10px] font-bold text-rose-500 hover:underline inline-flex items-center gap-1 disabled:opacity-50"
+                                  ><Ban size={11} />Revogar link</button>
+                                </>
+                              ) : (
+                                <button
+                                  disabled={isMexendoLinkEntrevista || prazoVencido}
+                                  onClick={() => mexerNoLink(
+                                    { entrevista_token: crypto.randomUUID().replace(/-/g, ''), entrevista_token_ativo: true },
+                                    'ENTREVISTA_DESLIGAMENTO_LINK_GERADO',
+                                    'Link gerado.'
+                                  )}
+                                  className="w-full py-2 rounded-lg font-bold text-xs bg-sky-600 text-white hover:bg-sky-700 disabled:opacity-50 transition-colors"
+                                >
+                                  {isMexendoLinkEntrevista
+                                    ? 'Gerando…'
+                                    : <span className="inline-flex items-center gap-1.5"><Link2 size={13} />{deslig.entrevista_token ? 'Gerar novo link' : 'Gerar link'}</span>}
+                                </button>
+                              )}
+
+                              <p className="text-[10px] opacity-55 leading-relaxed">
+                                Aceita uma única resposta e expira em {prazoLabel}. Assim que for respondida,
+                                aparece aqui automaticamente.
+                              </p>
+                            </div>
+
+                            <p className="text-[10px] font-bold uppercase tracking-wider opacity-45 pt-1">ou registre você mesma</p>
                             <div className="space-y-2 text-xs">
                               <select value={entrevistaDraft.motivo_real} onChange={e => setEntrevistaDraft(p => ({ ...p, motivo_real: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`}>
                                 {['Remuneração', 'Liderança', 'Carreira', 'Clima', 'Pessoal', 'Outro'].map(m => <option key={m} value={m}>{m}</option>)}
@@ -6401,7 +6495,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                       entrevista_pontos_positivos: entrevistaDraft.pontos_positivos.trim() || null,
                                       entrevista_pontos_melhorar: entrevistaDraft.pontos_melhorar.trim() || null,
                                       entrevista_recomendaria: isNaN(nota) ? null : Math.max(0, Math.min(10, nota)),
-                                      entrevista_comentarios: entrevistaDraft.comentarios.trim() || null
+                                      entrevista_comentarios: entrevistaDraft.comentarios.trim() || null,
+                                      entrevista_origem: 'rh'
                                     }).eq('id', deslig.id);
                                     if (error) throw error;
                                     await logAuditoria('ENTREVISTA_DESLIGAMENTO_REGISTRADA', { desligamento_id: deslig.id, colaborador_id: deslig.colaborador_id });

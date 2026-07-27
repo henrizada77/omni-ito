@@ -12,6 +12,7 @@ import TesteComportamental from './pages/public/TesteComportamental';
 import FuncionarioMes from './pages/public/FuncionarioMes';
 import PulseSemanal from './pages/public/PulseSemanal';
 import ManualCultura from './pages/public/ManualCultura';
+import EntrevistaDesligamento from './pages/public/EntrevistaDesligamento';
 import ProtectedRoute from './components/ProtectedRoute';
 import CommandPalette from './components/common/CommandPalette';
 import AccessDenied403 from './pages/errors/AccessDenied403';
@@ -174,6 +175,11 @@ export default function App() {
         <Route
           path="/teste-comportamental/:token"
           element={<TesteComportamental theme={theme} setTheme={setTheme} />}
+        />
+
+        <Route
+          path="/entrevista-desligamento/:token"
+          element={<EntrevistaDesligamento theme={theme} setTheme={setTheme} />}
         />
 
         <Route
