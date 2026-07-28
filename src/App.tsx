@@ -66,6 +66,21 @@ export default function App() {
   const [role, setRole] = useState<Role>('ti'); // Default cargo is TI
   const [isInitialSessionCheckDone, setIsInitialSessionCheckDone] = useState(false);
 
+  // O link de recuperação de senha cria uma sessão VÁLIDA. Olhando só para a
+  // sessão, o app não distingue "acabei de entrar" de "vim trocar a senha" — e
+  // mandava a pessoa direto para /app, que é onde ela menos precisava estar.
+  //
+  // A intenção só aparece na URL de retorno (`type=recovery`) e no evento
+  // PASSWORD_RECOVERY. Ler as duas fontes, e não confiar na rota de destino,
+  // é o que faz isso funcionar mesmo se o link cair na raiz — que é o que
+  // acontece enquanto /redefinir-senha não estiver na allowlist de Redirect
+  // URLs do Supabase.
+  const [modoRecuperacaoSenha, setModoRecuperacaoSenha] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return /(^|[#&?])type=recovery(&|$)/.test(window.location.hash)
+      || new URLSearchParams(window.location.search).get('type') === 'recovery';
+  });
+
   useEffect(() => {
     if (theme === 'dark') {
       document.body.className = 'dark bg-[#0D0D0C] text-[#E5DFD3] antialiased';
@@ -86,6 +101,7 @@ export default function App() {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'PASSWORD_RECOVERY') setModoRecuperacaoSenha(true);
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchUserProfile(session.user.id);
@@ -137,6 +153,21 @@ export default function App() {
       setIsInitialSessionCheckDone(true);
     }
   };
+
+  // Recuperação de senha vence qualquer rota: o link pode cair na raiz, em /app
+  // ou em /redefinir-senha, e o destino é sempre a troca de senha. Fica dentro
+  // do BrowserRouter porque a tela usa Link e useNavigate.
+  if (modoRecuperacaoSenha) {
+    return (
+      <BrowserRouter>
+        <RedefinirSenha
+          theme={theme}
+          setTheme={setTheme}
+          onConcluido={() => setModoRecuperacaoSenha(false)}
+        />
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>

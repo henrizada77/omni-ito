@@ -11,7 +11,7 @@
 // de updateUser é o caminho que define a primeira senha.
 
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   KeyRound,
   ShieldCheck,
@@ -27,6 +27,12 @@ import { supabase } from '../../supabaseClient';
 interface RedefinirSenhaProps {
   theme: 'dark' | 'light';
   setTheme: (theme: 'dark' | 'light') => void;
+  /**
+   * Desliga o modo de recuperação no App. Só existe porque o App passa a
+   * renderizar esta tela por cima de qualquer rota quando detecta recuperação —
+   * sem isso, sair daqui não teria efeito: o App renderizaria a tela de novo.
+   */
+  onConcluido?: () => void;
 }
 
 type Estado = 'verificando' | 'invalido' | 'form' | 'salvo';
@@ -34,8 +40,14 @@ type Estado = 'verificando' | 'invalido' | 'form' | 'salvo';
 /** Mínimo do Supabase. Abaixo disso o updateUser recusa. */
 const MIN_SENHA = 6;
 
-export default function RedefinirSenha({ theme, setTheme }: RedefinirSenhaProps) {
+export default function RedefinirSenha({ theme, setTheme, onConcluido }: RedefinirSenhaProps) {
   const navigate = useNavigate();
+
+  /** Toda saída desta tela passa por aqui, senão o App a renderiza de novo. */
+  const sair = () => {
+    onConcluido?.();
+    navigate('/', { replace: true });
+  };
   const [estado, setEstado] = useState<Estado>('verificando');
   const [senha, setSenha] = useState('');
   const [confirmacao, setConfirmacao] = useState('');
@@ -116,9 +128,9 @@ export default function RedefinirSenha({ theme, setTheme }: RedefinirSenhaProps)
     }`}>
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-brand/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute top-6 left-6">
-        <Link to="/" className={`p-2 rounded-lg border transition-colors flex items-center gap-1.5 text-xs ${theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-[#0D0D0C]' : 'border-black/10 hover:bg-black/5 bg-[#FBFBFA]'}`}>
+        <button onClick={sair} className={`p-2 rounded-lg border transition-colors flex items-center gap-1.5 text-xs ${theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-[#0D0D0C]' : 'border-black/10 hover:bg-black/5 bg-[#FBFBFA]'}`}>
           <ArrowLeft size={14} /> Voltar
-        </Link>
+        </button>
       </div>
       <div className="absolute top-6 right-6">
         <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className={`p-2 rounded-lg border transition-colors ${theme === 'dark' ? 'border-white/10 hover:bg-white/5 bg-[#0D0D0C]' : 'border-black/10 hover:bg-black/5 bg-[#FBFBFA]'}`}>
@@ -154,9 +166,9 @@ export default function RedefinirSenha({ theme, setTheme }: RedefinirSenhaProps)
           Links de redefinição valem por tempo limitado e só podem ser usados uma vez.
           Volte à tela de login e peça um novo em "Esqueci minha senha".
         </p>
-        <Link to="/" className={`inline-block w-full py-3 rounded-lg font-bold text-sm text-center transition-colors ${btnPrimary}`}>
+        <button onClick={sair} className={`w-full py-3 rounded-lg font-bold text-sm transition-colors ${btnPrimary}`}>
           Ir para o login
-        </Link>
+        </button>
       </div>
     );
   }
@@ -171,7 +183,7 @@ export default function RedefinirSenha({ theme, setTheme }: RedefinirSenhaProps)
         <p className="text-xs opacity-70 leading-relaxed">
           Pronto. Entre agora com seu e-mail e a senha que você acabou de criar.
         </p>
-        <button onClick={() => navigate('/')} className={`w-full py-3 rounded-lg font-bold text-sm transition-colors ${btnPrimary}`}>
+        <button onClick={sair} className={`w-full py-3 rounded-lg font-bold text-sm transition-colors ${btnPrimary}`}>
           Fazer login
         </button>
       </div>
