@@ -10,7 +10,8 @@ import {
   Star,
   MessageSquare,
   ShieldCheck,
-  Heart
+  Heart,
+  MailCheck
 } from 'lucide-react';
 import { useMouseGlow } from '../../hooks/useMouseGlow';
 import { supabase } from '../../supabaseClient';
@@ -31,7 +32,14 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
   const [authPassword, setAuthPassword] = useState('');
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [authError, setAuthError] = useState('');
+  const [authInfo, setAuthInfo] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
+
+  // Espaço colado junto pelo preenchimento automático ou pelo teclado do celular
+  // vira "credencial inválida" sem nenhuma pista para o usuário. O GoTrue compara
+  // o e-mail em minúsculas, então normalizar aqui não muda quem entra — só evita
+  // que um caractere invisível pareça senha errada.
+  const emailNormalizado = () => authEmail.trim().toLowerCase();
 
   // Mouse Glow hooks
   const glowHero = useMouseGlow();
@@ -40,11 +48,12 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+    setAuthInfo('');
     setAuthLoading(true);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email: authEmail,
+        email: emailNormalizado(),
         password: authPassword
       });
       if (error) throw error;
@@ -57,7 +66,11 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
       if (err?.code === 'email_not_confirmed' || /email not confirmed/i.test(msg)) {
         setAuthError('Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada (e o spam) e clique no link antes de entrar.');
       } else if (/invalid login credentials/i.test(msg)) {
-        setAuthError('E-mail ou senha incorretos. Se você acabou de se cadastrar, confirme o e-mail antes de fazer login.');
+        // O Supabase devolve esta mesma mensagem para senha errada E para conta
+        // sem senha nenhuma (criada por convite ou magic link). Quem cai no
+        // segundo caso pode tentar a senha para sempre que nunca vai entrar —
+        // por isso a mensagem aponta a redefinição, não só "tente de novo".
+        setAuthError('E-mail ou senha incorretos. Se você nunca definiu uma senha (entrou por link enviado pelo RH) ou não lembra dela, use "Esqueci minha senha" logo abaixo.');
       } else {
         setAuthError(msg || 'Erro ao realizar login.');
       }
@@ -66,15 +79,48 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
     }
   };
 
+  // Serve para dois casos que parecem um só na tela: quem esqueceu a senha e
+  // quem nunca teve uma. Conta criada por convite do painel ou por magic link
+  // nasce sem `encrypted_password`, e nesse estado o login por senha falha para
+  // sempre. resetPasswordForEmail define a primeira senha do mesmo jeito que
+  // troca uma existente — é a mesma porta para os dois.
+  const handleResetSenha = async () => {
+    const email = emailNormalizado();
+    setAuthError('');
+    setAuthInfo('');
+
+    if (!email) {
+      setAuthError('Escreva seu e-mail no campo acima para receber o link de redefinição.');
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/redefinir-senha`
+      });
+      if (error) throw error;
+      // Confirmação deliberadamente ambígua ("se tiver cadastro"): dizer que o
+      // e-mail não existe entregaria a qualquer um a lista de quem trabalha aqui.
+      setAuthInfo(`Se ${email} tiver cadastro, o link de redefinição já está a caminho. Verifique a caixa de entrada e o spam — ele vale por tempo limitado e só pode ser usado uma vez.`);
+    } catch (err: any) {
+      setAuthError(err?.message || 'Não foi possível enviar o link agora. Tente de novo em instantes.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
+    setAuthInfo('');
     setAuthLoading(true);
 
     // Espelha a regra do trigger trg_fn_handle_new_user. Só antecipa o erro:
     // quem valida de verdade é o banco, que esta checagem não alcança.
-    const emailDomain = authEmail.split('@')[1];
-    if (authEmail !== TI_EMAIL && emailDomain !== 'itoinstituto.com.br') {
+    const email = emailNormalizado();
+    const emailDomain = email.split('@')[1];
+    if (email !== TI_EMAIL && emailDomain !== 'itoinstituto.com.br') {
       setAuthError('Cadastro restrito a e-mails corporativos @itoinstituto.com.br');
       setAuthLoading(false);
       return;
@@ -88,7 +134,7 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
       // fixo do projeto. Só tem efeito se este domínio estiver na allowlist de
       // Redirect URLs do Supabase — ver Authentication → URL Configuration.
       const { data, error } = await supabase.auth.signUp({
-        email: authEmail,
+        email,
         password: authPassword,
         options: {
           emailRedirectTo: window.location.origin
@@ -115,7 +161,7 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
         // usuário clicar no link enviado. Não é "pode logar agora" — era essa
         // mensagem que enganava, mandando tentar login antes de confirmar.
         alert(
-          'Cadastro criado! Enviamos um e-mail de confirmação para ' + authEmail + '.\n\n' +
+          'Cadastro criado! Enviamos um e-mail de confirmação para ' + email + '.\n\n' +
           'Abra o link do e-mail para ativar a conta ANTES de fazer login. ' +
           'Se o link levar para um endereço que não abre, avise o TI: o redirecionamento do Supabase precisa ser ajustado.'
         );
@@ -247,9 +293,16 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
             </div>
 
             {authError && (
-              <div className="p-3 rounded-lg text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-center gap-2">
-                <AlertTriangle size={14} />
+              <div className="p-3 rounded-lg text-xs font-semibold bg-rose-500/10 border border-rose-500/20 text-rose-500 flex items-start gap-2">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                 <span>{authError}</span>
+              </div>
+            )}
+
+            {authInfo && (
+              <div className="p-3 rounded-lg text-xs font-semibold bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-start gap-2">
+                <MailCheck size={14} className="shrink-0 mt-0.5" />
+                <span>{authInfo}</span>
               </div>
             )}
 
@@ -301,6 +354,17 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
               >
                 {authLoading ? 'Só um instante…' : (authMode === 'login' ? 'Entrar' : 'Criar meu acesso')}
               </button>
+
+              {authMode === 'login' && (
+                <button
+                  type="button"
+                  onClick={handleResetSenha}
+                  disabled={authLoading}
+                  className="w-full text-center text-[11px] font-semibold text-fg-muted hover:text-brand transition-colors disabled:opacity-50"
+                >
+                  Esqueci minha senha
+                </button>
+              )}
 
             </form>
 
