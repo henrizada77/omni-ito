@@ -13,6 +13,7 @@ import FuncionarioMes from './pages/public/FuncionarioMes';
 import PulseSemanal from './pages/public/PulseSemanal';
 import ManualCultura from './pages/public/ManualCultura';
 import EntrevistaDesligamento from './pages/public/EntrevistaDesligamento';
+import RedefinirSenha from './pages/public/RedefinirSenha';
 import ProtectedRoute from './components/ProtectedRoute';
 import CommandPalette from './components/common/CommandPalette';
 import AccessDenied403 from './pages/errors/AccessDenied403';
@@ -175,6 +176,14 @@ export default function App() {
         <Route
           path="/teste-comportamental/:token"
           element={<TesteComportamental theme={theme} setTheme={setTheme} />}
+        />
+
+        {/* Fora de "/" de propósito: a raiz manda para /app assim que vê sessão,
+            e o link de recuperação cria sessão ao ser aberto. Apontado para a
+            raiz, o usuário cairia no painel sem nunca trocar a senha. */}
+        <Route
+          path="/redefinir-senha"
+          element={<RedefinirSenha theme={theme} setTheme={setTheme} />}
         />
 
         <Route
