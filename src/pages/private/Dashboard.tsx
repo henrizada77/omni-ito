@@ -4757,8 +4757,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     const clean = String(s || '').replace('R$', '').replace(/\./g, '').replace(',', '.').trim();
                     return parseFloat(clean) || 0;
                   };
+                  // 'pendente' é quem está em onboarding: já optou pelo VT na ficha
+                  // de admissão, mas ainda não virou 'ativo'. Entra no relatório
+                  // porque o desconto precisa estar previsto antes da primeira
+                  // folha, não descoberto depois dela. Só 'desligado' fica de fora.
                   const optantes = colaboradoresList
-                    .filter(c => c && c.vt_opta && (c.status === 'ativo' || c.status === 'em_ferias'))
+                    .filter(c => c && c.vt_opta && (c.status === 'ativo' || c.status === 'em_ferias' || c.status === 'pendente'))
                     .map(c => {
                       const base = parseSalario(c.salario);
                       const perc = c.vt_percentual ?? 6;
@@ -4774,7 +4778,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           <Bus size={16} />
                           <div>
                             <h3 className="text-sm font-bold">Vale-Transporte — Desconto em Folha</h3>
-                            <p className="text-[10px] opacity-50">Optantes ativos · desconto = salário × percentual (teto legal 6%)</p>
+                            <p className="text-[10px] opacity-50">Optantes ativos e em admissão · desconto = salário × percentual (teto legal 6%)</p>
                           </div>
                         </div>
                         <div className="text-right">
@@ -4797,7 +4801,17 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             <tbody>
                               {optantes.map(({ c, base, perc, desconto }) => (
                                 <tr key={c.id} className={`border-t ${theme === 'dark' ? 'border-white/5' : 'border-black/5'}`}>
-                                  <td className="p-3 font-semibold">{c.nome}</td>
+                                  <td className="p-3 font-semibold">
+                                    {c.nome}
+                                    {/* Sem essa marca, um valor previsto some no meio dos
+                                        efetivos e vira desconto lançado em quem ainda nem
+                                        começou. */}
+                                    {c.status === 'pendente' && (
+                                      <span className="ml-2 px-1.5 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20 align-middle">
+                                        Em admissão
+                                      </span>
+                                    )}
+                                  </td>
                                   <td className="p-3 opacity-70">{c.cargo || '—'}</td>
                                   <td className="p-3 text-right font-mono opacity-80">{brl(base)}</td>
                                   <td className="p-3 text-right font-mono opacity-80">{perc}%</td>
