@@ -221,8 +221,13 @@ export default function FichaColaborador({
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity"
           />
           {/* Drawer Panel */}
-          <div className="fixed top-0 right-0 h-full w-full max-w-md p-6 z-50 transform transition-transform duration-300 ease-in-out border-l border-line flex flex-col justify-between glass-fill glass-blur glass-sheen text-fg">
-            <div className="space-y-6 overflow-y-auto pr-2">
+          <div className="fixed top-0 right-0 h-full w-full max-w-md md:max-w-2xl lg:max-w-4xl p-6 z-50 transform transition-transform duration-300 ease-in-out border-l border-line flex flex-col justify-between glass-fill glass-blur glass-sheen text-fg">
+            {/* Cabecalho e abas ficam FORA da area que rola. Antes os tres
+                estavam no mesmo container e o nome da pessoa saia da tela
+                depois de dois palmos de rolagem, junto com a indicacao de qual
+                aba estava aberta - dava para editar a ficha errada sem
+                perceber. */}
+            <div className="shrink-0 space-y-6">
 
               {/* Header de perfil */}
               <div className="relative mb-2 pb-4 border-b border-white/10 overflow-hidden">
@@ -328,6 +333,10 @@ export default function FichaColaborador({
                   );
                 })}
               </div>
+            </div>
+
+            {/* Daqui para baixo e a unica faixa que rola. */}
+            <div className="flex-1 min-h-0 overflow-y-auto pr-2 pt-1">
 
               {/* ─── TAB: PESSOAL ─── */}
               {drawerTab === 'pessoal' && (
@@ -362,6 +371,11 @@ export default function FichaColaborador({
                       }`}>{isEditingDrawer ? 'Cancelar' : <span className="inline-flex items-center gap-1.5"><Pencil size={13} />Editar</span>}</button>
                   </div>
 
+                  {/* Os campos ja nasceram com span: 2 em quem precisa de linha
+                      dupla, mas nao havia grid nenhum acima deles: o col-span-2
+                      nao tinha o que dividir e os 22 campos empilhavam um por
+                      linha. Este grid e o pai que faltava. */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-3">
                   {([
                     { label: 'Nome Completo', field: 'nome', span: 2 },
                     { label: 'CPF', field: 'cpf' },
@@ -427,6 +441,7 @@ export default function FichaColaborador({
                       </div>
                     );
                   })}
+                  </div>
 
                   {isEditingDrawer && (
                     <button onClick={handleSaveDrawerEdit} disabled={isSavingDrawer}
