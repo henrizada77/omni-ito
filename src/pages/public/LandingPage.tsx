@@ -13,6 +13,7 @@ import {
   Heart,
   MailCheck
 } from 'lucide-react';
+import Logo from '../../components/common/Logo';
 import { useMouseGlow } from '../../hooks/useMouseGlow';
 import { supabase } from '../../supabaseClient';
 
@@ -195,6 +196,27 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
       <div aria-hidden className="pointer-events-none absolute -top-24 -left-24 w-[460px] h-[460px] rounded-full bg-brand/20 blur-[130px] animate-floaty" />
       <div aria-hidden className="pointer-events-none absolute top-1/3 -right-32 w-[420px] h-[420px] rounded-full bg-teal-400/10 blur-[130px] animate-floaty2" />
       <div aria-hidden className="pointer-events-none absolute -bottom-32 left-1/3 w-[400px] h-[400px] rounded-full bg-brand/12 blur-[130px] animate-floaty" />
+
+      {/* Marca d'água do infinito — o MESMO SVG da sidebar.
+          Vetor, não PNG: o omni-ito-logo.png tem o xadrez de "transparência"
+          chapado nos pixels (alfa 255 nos cantos, medido), então renderizava um
+          retângulo cinza claro em vez de uma marca.
+          Como os traços usam currentColor, a cor vem de text-brand e o tom
+          acompanha o tema sem precisar de dois arquivos.
+          Vem DEPOIS dos blobs de propósito: por baixo daquele blur de 130px a
+          logo não seria uma marca, seria mais uma mancha azul. Por cima, o que
+          se lê é o contorno.
+          Sem z-index: acima dos blobs por ordem no DOM, abaixo de todo o
+          conteúdo (z-10/z-20). O overflow-hidden do container absorve o
+          sangramento, então nada disso cria rolagem horizontal. */}
+      <div
+        aria-hidden
+        className={`pointer-events-none select-none absolute -bottom-24 -right-24 w-[420px] md:w-[680px] lg:w-[860px] text-brand ${
+          theme === 'dark' ? 'opacity-[0.10]' : 'opacity-[0.07]'
+        }`}
+      >
+        <Logo className="w-full h-auto" />
+      </div>
 
       {/* Header theme button */}
       <div className="absolute top-6 right-6 z-20">
