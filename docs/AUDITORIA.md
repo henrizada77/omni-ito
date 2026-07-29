@@ -15,6 +15,7 @@
 | 2026-07-28 | **4,1** | Decisão de produto: sistema interno do Instituto. ARQ-01 (multi-tenancy) sai do escopo; escalabilidade reavaliada contra o requisito real |
 | 2026-07-29 | **4,5** | Rodada 1: CI, lint de verdade, Error Boundary, cabeçalhos HTTP, e mais 6 itens |
 | 2026-07-29 | **4,9** | `sprint36` aplicado em produção: 3 das 4 falhas críticas fechadas, índices de FK criados. Rodada 2: SEC-03 no código, BD-03 desarmado |
+| 2026-07-29 | **5,1** | Rodada 3: primeira suíte de testes — 32 casos sobre o cálculo trabalhista, verificados por mutação, rodando no CI |
 
 ### Rodada 1 — 2026-07-29
 
@@ -42,6 +43,41 @@ Critério de escolha: gravidade Alta ou Crítica **com** esforço Pequeno. Nada 
 | **BD-03** migration que reabria as brechas | ✅ resolvido | Os três blocos `create policy ... to anon` foram removidos de `run_pending_migrations.sql`. Rodar aquele arquivo não traz mais as brechas de volta. O arquivo ficou (ainda cria tabelas), com histórico no cabeçalho |
 | **BD-05** `SECURITY DEFINER` sem `search_path` | 🟡 script pronto, **falta rodar** | Bloco `DO` no `sprint37` que corrige **todas** as pendentes de uma vez, sem depender de listar nome por nome |
 | Backdoor de e-mail dentro de policies RLS | 🟡 script pronto, **falta rodar** | Achado durante esta rodada, não estava no relatório original: o mesmo Gmail aparecia em 5 policies (`beneficios`, `colaborador_beneficios`, `planos_carreira`, `avaliacoes_desempenho`, `storage.objects`). Substituído pela função `tem_papel_administrativo()` |
+
+### Rodada 3 — 2026-07-29
+
+| Item | Estado | O que foi feito |
+|---|---|---|
+| **DEV-01** zero testes automatizados | 🟡 primeira suíte no ar | Vitest instalado, **32 testes** sobre as funções puras de cálculo: aviso prévio proporcional, teto de 90 dias, prazo de quitação (CLT 477 §6º) e turnover semestral com dedupe por CPF. Ligado ao CI |
+| **COD-08** 29 de fevereiro no aviso prévio | 🆕 achado novo, **não corrigido** | Ver abaixo |
+
+**Sobre a qualidade da suíte.** Trinta e dois testes passando não provam nada por si — um teste que passa trivialmente é pior que nenhum, porque dá falsa confiança. A suíte foi verificada por **mutação**: três regras foram quebradas de propósito e as três foram pegas.
+
+| Mutação | Testes que falharam |
+|---|---|
+| Teto do aviso prévio 90 → 120 dias | 2 |
+| Prazo de quitação 10 → 15 dias | 3 |
+| Dedupe por CPF desligado | 2 |
+
+**Cobertura deliberadamente estreita.** Só `utils/turnover.ts` e `utils/desligamento.ts`. É onde o erro custa passivo trabalhista, não tela feia — e são puras, testáveis sem refatorar nada. O resto do sistema segue sem teste, e `DEV-01` continua aberto.
+
+#### COD-08 — `anosCompletos` erra para quem foi admitido em 29 de fevereiro
+
+| | |
+|---|---|
+| **Gravidade** | Baixa |
+| **Prioridade** | **P3** |
+| **Esforço** | Pequeno |
+
+**Evidência.** `anosCompletos('2024-02-29', '2025-02-28')` devolve **0**, não 1. A função usa `setFullYear`, e 29/02 em ano não bissexto rola para 01/03 — então ela entende que o ano ainda não fechou.
+
+**Impacto.** Três dias de aviso prévio a menos para quem foi admitido em 29/02 e é desligado em 28/02. Pequeno, mas **a favor do empregador**, que é o lado errado para errar num cálculo trabalhista.
+
+**Risco técnico.** Nenhum — é aritmética de data isolada.
+
+**Solução.** Tratar 29/02 como 28/02 em anos não bissextos ao projetar o aniversário. O comportamento atual está **fixado por teste**, então a correção não pode passar despercebida.
+
+> Não corrigi por conta própria: alterar regra de cálculo trabalhista é decisão sua, não minha. O teste documenta o comportamento de hoje.
 
 > ⚠️ **A ordem importa e não é negociável.** As Edge Functions novas só aceitam os cargos `coordenadora_rh` e `superadmin`. O papel `superadmin` **ainda não existe** — a constraint `check_cargo` só admite `coordenadora_rh` e `ti`. Se você deployar as funções antes de rodar o `sprint37`, quem hoje entra pelo e-mail fixo fica trancado para fora.
 >
@@ -1356,10 +1392,10 @@ Segurança explorável hoje e a rede de segurança mínima. **Nada mais deve ser
 | **Responsividade** | **4,0** | 220 usos de `sm:` mostram cuidado real. Perde por 25 grids fixos, 75 larguras fixas e nenhuma adaptação acima de 1280px |
 | **Acessibilidade** | **2,5** | **Pior nota.** Nenhuma das 213 violações foi corrigida — o que mudou é que o lint agora as mede e **trava regressão** nas 18 regras que já estavam limpas. Segue com 190 labels sem `htmlFor`, 245 botões com 12 rótulos, zero `aria-live`, sem landmarks, sem focus trap |
 | **Código** | **5,5** | Comentários acima da média, lint com 30 regras em vez de 2, `strict` explícito, código morto removido. Perde por arquivo de 6.906 linhas e 298 `any` |
-| **DevOps** | **4,5** | **CI existe:** tipos, lint e build a cada push e PR. Deploy do Vercel automático. Perde por zero teste, migrations manuais, três alvos dessincronizados e sem rollback |
+| **DevOps** | **5,5** | **CI existe:** tipos, lint, **testes** e build a cada push e PR. 32 testes cobrindo o cálculo trabalhista, verificados por mutação. Deploy do Vercel automático. Perde por cobertura ainda estreita, migrations manuais, três alvos dessincronizados e sem rollback |
 | **Observabilidade** | **2,0** | Todo erro de render agora passa por um ponto único (`ErrorBoundary`), que é onde o Sentry entra quando existir. Mas ainda não existe: sem telemetria, sem alerta. **Um erro em produção segue sendo descoberto quando alguém liga.** |
 | | | |
-| **QUALIDADE GERAL** | **4,9 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 (rodada 1) → **4,9** (sprint36 em produção + rodada 2) |
+| **QUALIDADE GERAL** | **5,1 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 (rodada 1) → 4,9 (sprint36 + rodada 2) → **5,1** (primeira suíte de testes) |
 
 ### Como ler o 4,1
 
