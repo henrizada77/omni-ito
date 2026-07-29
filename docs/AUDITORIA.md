@@ -17,6 +17,16 @@
 | 2026-07-29 | **4,9** | `sprint36` aplicado em produção: 3 das 4 falhas críticas fechadas, índices de FK criados. Rodada 2: SEC-03 no código, BD-03 desarmado |
 | 2026-07-29 | **4,9** | Rodada 3: primeira suíte de testes — 32 casos sobre o cálculo trabalhista, verificados por mutação, rodando no CI. *(Anotei 5,1 no commit da rodada 3; a média correta era 4,9 — arredondamento meu para cima.)* |
 | 2026-07-29 | **5,0** | Rodada 4: 162 rótulos de formulário ligados aos seus campos |
+| 2026-07-29 | **5,1** | Rodada 5: camada de telemetria com depuração de dado pessoal testada |
+
+### Pendências que dependem de você
+
+| Script | O que destrava | Nota que sobe |
+|---|---|---|
+| `sprint37_papel_superadmin_e_search_path.sql` **+ deploy das 3 funções** | SEC-03 e BD-05 | Segurança 6,0 → ~7,0 |
+| `sprint38_log_erros_cliente.sql` | Persistência da telemetria | Observabilidade 3,0 → ~5,5 |
+
+O `sprint38` é independente e pode rodar a qualquer momento. O `sprint37` tem ordem obrigatória — ver o aviso adiante.
 
 ### Rodada 1 — 2026-07-29
 
@@ -93,6 +103,26 @@ Critério de escolha: gravidade Alta ou Crítica **com** esforço Pequeno. Nada 
 **Os 16 restantes não são script.** São rótulos que encabeçam um *grupo* de opções (rádio, escala de nota). Ali o correto é `<fieldset>` com `<legend>`, não `htmlFor` — é decisão de marcação caso a caso:
 
 `EndomarketingManager:471` · `FichaColaborador:979` · `FormManager:182` · `AdmissaoCandidato:516` · `PesquisaSatisfacao:162,185` · `FuncionarioMes:260,338` · `Ouvidoria:175` · `Dashboard:3343,3444,3892,4480,6221,6240,6302`
+
+### Rodada 5 — 2026-07-29
+
+| Item | Estado | O que foi feito |
+|---|---|---|
+| **DEV-04 / OBS-01** sem observabilidade | 🟡 captura no ar, **persistência pendente** | Camada de telemetria em `src/utils/telemetria.ts`, ligada ao `ErrorBoundary` e aos handlers globais. Persistência depende de rodar o `sprint38` |
+
+**Por que não Sentry.** Mandar payload de erro de um sistema de RH para um SaaS estrangeiro é transferência internacional de dado pessoal (LGPD Art. 33) e é decisão de quem responde pela empresa, não do código. A camada é neutra: grava no Supabase que o Instituto já usa. Trocar o destino depois é mexer em `enviar()`, uma função. A recomendação original da auditoria dizia "Sentry"; isto é uma correção de rota consciente, não um esquecimento.
+
+**O que a camada cobre.** O `ErrorBoundary` pega erro de render. `window.onerror` e `unhandledrejection` pegam o resto — handler de evento, promessa sem catch, chunk que não carrega —, que na prática é onde mora a maioria dos erros de um SPA.
+
+**Depuração de dados pessoais, testada.** Mensagem de erro deste sistema carrega CPF, salário e e-mail com frequência: vem de constraint do Postgres, de payload de formulário, de linha de planilha. Gravar isso criaria **uma segunda base de dados pessoais** fora de qualquer política de acesso. O filtro remove CPF, CNPJ, e-mail, telefone, valor monetário, sequência longa de dígitos e campos sensíveis citados em JSON — com 10 testes.
+
+O teste pegou um defeito real do filtro na primeira execução: a regra de telefone casava no meio de um CPF sem máscara e deixava o primeiro dígito para trás, produzindo `1[TELEFONE]`. Ordem das regras corrigida.
+
+**Teto no servidor, não no cliente.** A RPC recusa acima de 200 registros por minuto. O cliente também tem teto próprio, mas cliente não é lugar de impor limite — o SEC-04 já mostrou o preço disso.
+
+**Retenção desde o primeiro dia.** 90 dias, com função de poda. O `logs_auditoria` cresce sem limite porque ninguém pensou nisso quando a tabela era pequena.
+
+**Verificado no navegador.** Com a RPC ainda inexistente no banco, disparei uma promessa rejeitada e um erro global: os dois foram capturados e etiquetados, o app seguiu renderizado, e **a falha ao registrar não gerou erro em cascata** — que é a propriedade que importa numa camada de telemetria.
 
 > ⚠️ **A ordem importa e não é negociável.** As Edge Functions novas só aceitam os cargos `coordenadora_rh` e `superadmin`. O papel `superadmin` **ainda não existe** — a constraint `check_cargo` só admite `coordenadora_rh` e `ti`. Se você deployar as funções antes de rodar o `sprint37`, quem hoje entra pelo e-mail fixo fica trancado para fora.
 >
@@ -1408,9 +1438,9 @@ Segurança explorável hoje e a rede de segurança mínima. **Nada mais deve ser
 | **Acessibilidade** | **4,0** | 162 dos 178 rótulos de formulário agora estão ligados ao seu campo — o maior obstáculo isolado do sistema saiu. Lint mede o resto e trava regressão. Ainda pesa: 245 botões com 12 rótulos acessíveis (A11Y-02), zero `aria-live`, sem landmarks e sem focus trap (A11Y-03) |
 | **Código** | **5,5** | Comentários acima da média, lint com 30 regras em vez de 2, `strict` explícito, código morto removido. Perde por arquivo de 6.906 linhas e 298 `any` |
 | **DevOps** | **5,5** | **CI existe:** tipos, lint, **testes** e build a cada push e PR. 32 testes cobrindo o cálculo trabalhista, verificados por mutação. Deploy do Vercel automático. Perde por cobertura ainda estreita, migrations manuais, três alvos dessincronizados e sem rollback |
-| **Observabilidade** | **2,0** | Todo erro de render agora passa por um ponto único (`ErrorBoundary`), que é onde o Sentry entra quando existir. Mas ainda não existe: sem telemetria, sem alerta. **Um erro em produção segue sendo descoberto quando alguém liga.** |
+| **Observabilidade** | **3,0** | Camada de captura no ar: render, `window.onerror` e promessa sem catch, com depuração de dado pessoal testada. **Trava em 3,0 porque a persistência depende do `sprint38`** — sem ele nada é gravado e o erro segue sendo descoberto quando alguém liga. Vai a ~5,5 quando rodar. Continua sem alerta ativo e sem tracing |
 | | | |
-| **QUALIDADE GERAL** | **5,0 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 → 4,9 → **5,0** |
+| **QUALIDADE GERAL** | **5,1 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 → 4,9 → 5,0 → **5,1** |
 
 ### Como ler o 4,1
 

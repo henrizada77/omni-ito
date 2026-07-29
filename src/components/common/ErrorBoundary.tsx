@@ -13,6 +13,7 @@
 
 import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RotateCcw } from 'lucide-react';
+import { registrarErro } from '../../utils/telemetria';
 
 interface Props {
   children: ReactNode;
@@ -36,14 +37,13 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(erro: Error, info: ErrorInfo) {
-    // Por enquanto só console: o projeto ainda não tem telemetria (item DEV-04
-    // da auditoria). Quando houver Sentry, é aqui que ele entra — este é o
-    // único ponto do sistema por onde todo erro de render passa.
-    console.error(
-      `[ErrorBoundary${this.props.area ? ` · ${this.props.area}` : ''}]`,
-      erro,
-      info.componentStack
-    );
+    // registrarErro já escreve no console e nunca lança — ver utils/telemetria.
+    // A pilha de componentes vai junto porque é ela que diz QUAL tela quebrou;
+    // a stack do JavaScript sozinha costuma apontar só para o React.
+    registrarErro(erro, {
+      origem: `ErrorBoundary${this.props.area ? `:${this.props.area}` : ''}`,
+      pilhaDeComponentes: (info.componentStack ?? '').slice(0, 200)
+    });
   }
 
   private recarregar = () => {
