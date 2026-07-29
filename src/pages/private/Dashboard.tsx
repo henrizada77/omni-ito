@@ -3225,20 +3225,20 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className={`p-5 rounded-xl border space-y-4 animate-fadeIn ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
                         <h5 className="font-rounded text-xs font-bold uppercase tracking-wider opacity-60">Criar Novo Modelo</h5>
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Título do Modelo *</label>
-                          <input type="text" value={newModeloTitulo} onChange={e => setNewModeloTitulo(e.target.value)}
+                          <label htmlFor="dash-newModeloTitulo" className="block text-[9px] font-bold uppercase opacity-50 mb-1">Título do Modelo *</label>
+                          <input id="dash-newModeloTitulo" type="text" value={newModeloTitulo} onChange={e => setNewModeloTitulo(e.target.value)}
                             placeholder="Ex: Contrato de Experiência 45d"
                             className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${theme === 'dark' ? 'border-white/15' : 'border-black/15'}`} />
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Conteúdo / Texto do Modelo</label>
-                          <textarea rows={6} value={newModeloConteudo} onChange={e => setNewModeloConteudo(e.target.value)}
+                          <label htmlFor="dash-newModeloConteudo" className="block text-[9px] font-bold uppercase opacity-50 mb-1">Conteúdo / Texto do Modelo</label>
+                          <textarea id="dash-newModeloConteudo" rows={6} value={newModeloConteudo} onChange={e => setNewModeloConteudo(e.target.value)}
                             placeholder="Use {{nome}}, {{cpf}}, {{setor}} como variáveis..."
                             className={`w-full text-xs p-2.5 rounded-lg border bg-transparent resize-none focus:outline-none font-mono ${theme === 'dark' ? 'border-white/15' : 'border-black/15'}`} />
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Ou importar PDF/DOCX base</label>
-                          <input type="file" accept="application/pdf,.docx,.doc" onChange={handlePdfUpload}
+                          <label htmlFor="dash-ou-importar-pdf-docx-base" className="block text-[9px] font-bold uppercase opacity-50 mb-1">Ou importar PDF/DOCX base</label>
+                          <input id="dash-ou-importar-pdf-docx-base" type="file" accept="application/pdf,.docx,.doc" onChange={handlePdfUpload}
                             className={`w-full text-[10px] p-1.5 rounded-lg border ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10'}`} />
                           {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1.5"><Check size={13} />Arquivo importado ({modelFileType.toUpperCase()}): {uploadedPdfName}</p>}
                         </div>
@@ -3453,8 +3453,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </button>
                         ))}
                         <div className="pt-2">
-                          <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Importar PDF Local</label>
-                          <input type="file" accept="application/pdf" onChange={handlePdfUpload}
+                          <label htmlFor="dash-importar-pdf-local" className="block text-[9px] font-bold uppercase opacity-50 mb-1">Importar PDF Local</label>
+                          <input id="dash-importar-pdf-local" type="file" accept="application/pdf" onChange={handlePdfUpload}
                             className={`w-full text-[10px] p-1.5 rounded border ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10'}`} />
                           {uploadedPdfBase64 && <p className="text-[10px] text-emerald-500 mt-1 flex items-center gap-1.5"><Check size={13} />{uploadedPdfName}</p>}
                         </div>
@@ -3474,9 +3474,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             { l: 'Atribuições', s: varAtribuicoes, f: setVarAtribuicoes, span: 3 }
                           ].map(({ l, s, f, span }: any) => (
                             <div key={l} className={span === 3 ? 'col-span-full' : ''}>
-                              <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">{l}</label>
+                              <label htmlFor="dash-s" className="block text-[9px] font-bold uppercase opacity-50 mb-1">{l}</label>
                               {span === 3 ? (
-                                <textarea rows={2} value={s} onChange={e => f(e.target.value)} className={`w-full text-xs p-2 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
+                                <textarea id="dash-s" rows={2} value={s} onChange={e => f(e.target.value)} className={`w-full text-xs p-2 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
                               ) : (
                                 <input type="text" value={s} onChange={e => f(e.target.value)} className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
                               )}
@@ -3499,8 +3499,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </h5>
 
                           <div>
-                            <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Selecionar Colaborador</label>
-                            <select
+                            <label htmlFor="dash-selectedColaboradorForDocId" className="block text-[9px] font-bold uppercase opacity-50 mb-1">Selecionar Colaborador</label>
+                            <select id="dash-selectedColaboradorForDocId"
                               value={selectedColaboradorForDocId}
                               onChange={e => handleSelectColaboradorForDoc(e.target.value)}
                               className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white'}`}
@@ -3651,8 +3651,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                     <div className={`p-5 rounded-xl border space-y-4 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'}`}>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Colaborador Destinatário</label>
-                          <select className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white'}`}>
+                          <label htmlFor="dash-colaborador-destinatario" className="block text-[9px] font-bold uppercase opacity-50 mb-1">Colaborador Destinatário</label>
+                          <select id="dash-colaborador-destinatario" className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white'}`}>
                             <option value="">Selecionar colaborador...</option>
                             {colaboradoresList.map((c: any) => (
                               <option key={c.id} value={c.id}>{c.nome} — {c.cargo}</option>
@@ -3660,8 +3660,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Formulário a Enviar</label>
-                          <select className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white'}`}>
+                          <label htmlFor="dash-formulario-a-enviar" className="block text-[9px] font-bold uppercase opacity-50 mb-1">Formulário a Enviar</label>
+                          <select id="dash-formulario-a-enviar" className={`w-full text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10 bg-surface-2' : 'border-black/10 bg-white'}`}>
                             <option value="">Selecionar formulário...</option>
                             <option value="avaliacao">Avaliação de Desempenho</option>
                             <option value="pesquisa">Pesquisa de Clima</option>
@@ -3669,8 +3669,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         </div>
                       </div>
                       <div>
-                        <label className="block text-[9px] font-bold uppercase opacity-50 mb-1">Prazo de Resposta</label>
-                        <input type="date" className={`text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
+                        <label htmlFor="dash-prazo-de-resposta" className="block text-[9px] font-bold uppercase opacity-50 mb-1">Prazo de Resposta</label>
+                        <input id="dash-prazo-de-resposta" type="date" className={`text-xs p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
                       </div>
                       <button className={`text-xs px-5 py-2.5 rounded-lg font-bold ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'}`}>
                         Enviar Formulário
@@ -3816,8 +3816,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                       {/* Search box */}
                       <div className="md:col-span-2">
-                        <label className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Busca rápida</label>
-                        <input
+                        <label htmlFor="dash-searchQuery" className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Busca rápida</label>
+                        <input id="dash-searchQuery"
                           type="text"
                           placeholder="Buscar por Nome ou CPF..."
                           value={searchQuery}
@@ -3829,8 +3829,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                       {/* Dropdown Setor */}
                       <div>
-                        <label className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Filtrar Setor</label>
-                        <select
+                        <label htmlFor="dash-filterSetor" className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Filtrar Setor</label>
+                        <select id="dash-filterSetor"
                           value={filterSetor}
                           onChange={(e) => setFilterSetor(e.target.value)}
                           className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/15 text-black bg-white'
@@ -3862,8 +3862,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       {/* Dropdown Status */}
                       {colabSubTab === 'quadro' && (
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Status</label>
-                          <select
+                          <label htmlFor="dash-filterStatus" className="block text-[9px] font-bold uppercase opacity-60 mb-1 tracking-wider">Status</label>
+                          <select id="dash-filterStatus"
                             value={filterStatus}
                             onChange={(e) => setFilterStatus(e.target.value)}
                             className={`w-full text-xs p-2.5 rounded-lg border bg-transparent focus:outline-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/15 text-black bg-white'
@@ -4010,8 +4010,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         {/* Row 1: Nome + CPF */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Nome Completo *</label>
-                            <input
+                            <label htmlFor="dash-cadastroNome" className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Nome Completo *</label>
+                            <input id="dash-cadastroNome"
                               type="text"
                               value={cadastroNome}
                               onChange={(e) => setCadastroNome(e.target.value)}
@@ -4022,8 +4022,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">CPF *</label>
-                            <input
+                            <label htmlFor="dash-cadastroCpf" className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">CPF *</label>
+                            <input id="dash-cadastroCpf"
                               type="text"
                               value={cadastroCpf}
                               onChange={(e) => setCadastroCpf(e.target.value)}
@@ -4038,8 +4038,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         {/* Row 2: Cargo + Setor */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Cargo *</label>
-                            <input
+                            <label htmlFor="dash-cadastroCargo" className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Cargo *</label>
+                            <input id="dash-cadastroCargo"
                               type="text"
                               value={cadastroCargo}
                               onChange={(e) => setCadastroCargo(e.target.value)}
@@ -4050,8 +4050,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Setor *</label>
-                            <select
+                            <label htmlFor="dash-cadastroSetor" className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Setor *</label>
+                            <select id="dash-cadastroSetor"
                               value={cadastroSetor}
                               onChange={(e) => setCadastroSetor(e.target.value)}
                               className={`w-full text-xs p-2.5 rounded-lg border focus:outline-none focus:ring-1 ${theme === 'dark' ? 'border-white/15 focus:ring-white/40 bg-surface-2 text-fg' : 'border-black/15 focus:ring-black/40 bg-white text-fg'
@@ -4076,8 +4076,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         {/* Row 3: Salário + Admissão */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Salário</label>
-                            <input
+                            <label htmlFor="dash-cadastroSalario" className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Salário</label>
+                            <input id="dash-cadastroSalario"
                               type="text"
                               value={cadastroSalario}
                               onChange={(e) => setCadastroSalario(e.target.value)}
@@ -4087,8 +4087,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             />
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Data de Admissão *</label>
-                            <input
+                            <label htmlFor="dash-cadastroAdmissao" className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Data de Admissão *</label>
+                            <input id="dash-cadastroAdmissao"
                               type="date"
                               value={cadastroAdmissao}
                               onChange={(e) => setCadastroAdmissao(e.target.value)}
@@ -4102,8 +4102,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         {/* Row 4: Aniversário (optional) */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <label className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Data de Aniversário <span className="opacity-50">(opcional)</span></label>
-                            <input
+                            <label htmlFor="dash-cadastroAniversario" className="block text-[10px] font-bold uppercase opacity-60 mb-1 tracking-wider">Data de Aniversário <span className="opacity-50">(opcional)</span></label>
+                            <input id="dash-cadastroAniversario"
                               type="text"
                               value={cadastroAniversario}
                               onChange={(e) => setCadastroAniversario(e.target.value)}
@@ -4157,8 +4157,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
                         <div>
-                          <label className="block text-[10px] font-bold uppercase opacity-60 mb-1">Nome do Candidato</label>
-                          <input
+                          <label htmlFor="dash-newCandidateName" className="block text-[10px] font-bold uppercase opacity-60 mb-1">Nome do Candidato</label>
+                          <input id="dash-newCandidateName"
                             type="text"
                             value={newCandidateName}
                             onChange={(e) => setNewCandidateName(e.target.value)}
@@ -4167,8 +4167,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase opacity-60 mb-1">E-mail</label>
-                          <input
+                          <label htmlFor="dash-newCandidateEmail" className="block text-[10px] font-bold uppercase opacity-60 mb-1">E-mail</label>
+                          <input id="dash-newCandidateEmail"
                             type="email"
                             value={newCandidateEmail}
                             onChange={(e) => setNewCandidateEmail(e.target.value)}
@@ -4177,8 +4177,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase opacity-60 mb-1">Cargo</label>
-                          <input
+                          <label htmlFor="dash-newCandidateCargo" className="block text-[10px] font-bold uppercase opacity-60 mb-1">Cargo</label>
+                          <input id="dash-newCandidateCargo"
                             type="text"
                             value={newCandidateCargo}
                             onChange={(e) => setNewCandidateCargo(e.target.value)}
@@ -4187,8 +4187,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold uppercase opacity-60 mb-1">Setor</label>
-                          <input
+                          <label htmlFor="dash-newCandidateSetor" className="block text-[10px] font-bold uppercase opacity-60 mb-1">Setor</label>
+                          <input id="dash-newCandidateSetor"
                             type="text"
                             value={newCandidateSetor}
                             onChange={(e) => setNewCandidateSetor(e.target.value)}
@@ -4334,10 +4334,10 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                             {selectedTokenRow?.status === 'aguardando_homologacao' && (
                               <div className={`p-4 rounded-xl border space-y-3 mt-4 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                                 }`}>
-                                <label className="block text-[10px] font-bold uppercase opacity-65 tracking-wider">
+                                <label htmlFor="dash-approvalTemplateId" className="block text-[10px] font-bold uppercase opacity-65 tracking-wider">
                                   Escolher Modelo de Contrato para Envio ao Candidato
                                 </label>
-                                <select
+                                <select id="dash-approvalTemplateId"
                                   value={approvalTemplateId}
                                   onChange={(e) => setApprovalTemplateId(e.target.value)}
                                   className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -4500,8 +4500,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                   {colaboradoresList.length > 0 && (
                     <div className="min-w-[200px]">
-                      <label className="block text-xs font-semibold tracking-wider opacity-60 mb-2">Selecionar Colaborador:</label>
-                      <select
+                      <label htmlFor="dash-selectedColaboradorId" className="block text-xs font-semibold tracking-wider opacity-60 mb-2">Selecionar Colaborador:</label>
+                      <select id="dash-selectedColaboradorId"
                         value={selectedColaboradorId}
                         onChange={(e) => handleColaboradorSelectChange(e.target.value)}
                         className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white' : 'border-black/10 text-black'
@@ -4952,8 +4952,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                       <div className={`p-4 rounded-xl border grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 ${theme === 'dark' ? 'glass-fill border-line' : 'bg-black/[0.01] border-black/5'
                         }`}>
                         <div>
-                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Buscar Colaborador</label>
-                          <input
+                          <label htmlFor="dash-searchQueryFeriasAso" className="block text-[8px] font-bold uppercase opacity-50 mb-1">Buscar Colaborador</label>
+                          <input id="dash-searchQueryFeriasAso"
                             type="text"
                             placeholder="Nome do colaborador..."
                             value={searchQueryFeriasAso}
@@ -4963,8 +4963,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           />
                         </div>
                         <div>
-                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Filtrar por Setor</label>
-                          <select
+                          <label htmlFor="dash-filterSetorFeriasAso" className="block text-[8px] font-bold uppercase opacity-50 mb-1">Filtrar por Setor</label>
+                          <select id="dash-filterSetorFeriasAso"
                             value={filterSetorFeriasAso}
                             onChange={e => setFilterSetorFeriasAso(e.target.value)}
                             className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -4977,8 +4977,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Status ASO</label>
-                          <select
+                          <label htmlFor="dash-filterStatusAso" className="block text-[8px] font-bold uppercase opacity-50 mb-1">Status ASO</label>
+                          <select id="dash-filterStatusAso"
                             value={filterStatusAso}
                             onChange={e => setFilterStatusAso(e.target.value)}
                             className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -4992,8 +4992,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Status Férias</label>
-                          <select
+                          <label htmlFor="dash-filterStatusFerias" className="block text-[8px] font-bold uppercase opacity-50 mb-1">Status Férias</label>
+                          <select id="dash-filterStatusFerias"
                             value={filterStatusFerias}
                             onChange={e => setFilterStatusFerias(e.target.value)}
                             className={`w-full text-xs p-2 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -5157,8 +5157,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                             <div className="space-y-3.5 text-xs">
                               <div>
-                                <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Vencimento do Exame ASO</label>
-                                <input
+                                <label htmlFor="dash-quickAsoDate" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Vencimento do Exame ASO</label>
+                                <input id="dash-quickAsoDate"
                                   type="date"
                                   value={quickAsoDate}
                                   onChange={e => setQuickAsoDate(e.target.value)}
@@ -5167,8 +5167,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 />
                               </div>
                               <div>
-                                <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data Limite de Férias</label>
-                                <input
+                                <label htmlFor="dash-quickFeriasDate" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data Limite de Férias</label>
+                                <input id="dash-quickFeriasDate"
                                   type="date"
                                   value={quickFeriasDate}
                                   onChange={e => setQuickFeriasDate(e.target.value)}
@@ -5199,9 +5199,9 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                   </div>
                                 ) : (
                                   <div className="space-y-2">
-                                    <label className="block text-[9px] font-bold uppercase opacity-65">Colocar em férias</label>
+                                    <label htmlFor="dash-quickFeriasInicio" className="block text-[9px] font-bold uppercase opacity-65">Colocar em férias</label>
                                     <div className="grid grid-cols-2 gap-2">
-                                      <input
+                                      <input id="dash-quickFeriasInicio"
                                         type="date"
                                         value={quickFeriasInicio}
                                         onChange={e => setQuickFeriasInicio(e.target.value)}
@@ -5395,8 +5395,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                           {/* Search */}
                           <div className="md:col-span-2">
-                            <label className="block text-[9px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Pesquisar Colaborador</label>
-                            <input
+                            <label htmlFor="dash-searchQueryAvaliacoes" className="block text-[9px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Pesquisar Colaborador</label>
+                            <input id="dash-searchQueryAvaliacoes"
                               type="text"
                               placeholder="Nome do colaborador..."
                               value={searchQueryAvaliacoes}
@@ -5408,8 +5408,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                           {/* Sector */}
                           <div>
-                            <label className="block text-[9px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Filtrar por Setor</label>
-                            <select
+                            <label htmlFor="dash-filterSetorAvaliacoes" className="block text-[9px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Filtrar por Setor</label>
+                            <select id="dash-filterSetorAvaliacoes"
                               value={filterSetorAvaliacoes}
                               onChange={(e) => setFilterSetorAvaliacoes(e.target.value)}
                               className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent transition-colors ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -5431,8 +5431,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                           {/* Promotion Status */}
                           <div>
-                            <label className="block text-[9px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Status Elegibilidade</label>
-                            <select
+                            <label htmlFor="dash-filterStatusPromo" className="block text-[9px] font-bold uppercase tracking-wider opacity-50 mb-1.5">Status Elegibilidade</label>
+                            <select id="dash-filterStatusPromo"
                               value={filterStatusPromo}
                               onChange={(e) => setFilterStatusPromo(e.target.value)}
                               className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent transition-colors ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -5984,14 +5984,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
                 <div className={`rounded-2xl border p-6 space-y-5 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-white border-black/10 shadow-sm'}`}>
                   <div>
-                    <label className="block text-[9px] font-bold uppercase opacity-50 mb-1 tracking-wider">Título</label>
-                    <input value={culturaTitulo} onChange={e => setCulturaTitulo(e.target.value)}
+                    <label htmlFor="dash-culturaTitulo" className="block text-[9px] font-bold uppercase opacity-50 mb-1 tracking-wider">Título</label>
+                    <input id="dash-culturaTitulo" value={culturaTitulo} onChange={e => setCulturaTitulo(e.target.value)}
                       disabled={culturaLoading}
                       className={`w-full text-sm p-2.5 rounded-lg border bg-transparent ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
                   </div>
                   <div>
-                    <label className="block text-[9px] font-bold uppercase opacity-50 mb-1 tracking-wider">Conteúdo</label>
-                    <textarea value={culturaConteudo} onChange={e => setCulturaConteudo(e.target.value)}
+                    <label htmlFor="dash-culturaConteudo" className="block text-[9px] font-bold uppercase opacity-50 mb-1 tracking-wider">Conteúdo</label>
+                    <textarea id="dash-culturaConteudo" value={culturaConteudo} onChange={e => setCulturaConteudo(e.target.value)}
                       disabled={culturaLoading}
                       rows={18}
                       placeholder={culturaLoading ? 'Carregando…' : 'Escreva aqui os valores, missão, princípios e a cultura do Instituto. As quebras de linha são preservadas na página pública.'}
@@ -6664,6 +6664,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                           </div>
                         );
                       }
+                      // Sem htmlFor: o input já vive dentro do label, e é isso que
+                      // associa os dois. Id fixo aqui repetiria a cada item da lista.
                       return (
                         <label key={item.key} className="flex items-center gap-2.5 cursor-pointer text-xs select-none">
                           <input

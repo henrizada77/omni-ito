@@ -535,8 +535,8 @@ function CatalogoView({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="md:col-span-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Título *</label>
-                <input
+                <label htmlFor="cargo-titulo" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Título *</label>
+                <input id="cargo-titulo"
                   type="text"
                   value={cargoDraft.titulo || ''}
                   onChange={e => setCargoDraft({ ...cargoDraft, titulo: e.target.value })}
@@ -546,8 +546,8 @@ function CatalogoView({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Setor</label>
-                <input
+                <label htmlFor="cargo-setor" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Setor</label>
+                <input id="cargo-setor"
                   type="text"
                   value={cargoDraft.setor || ''}
                   onChange={e => setCargoDraft({ ...cargoDraft, setor: e.target.value })}
@@ -557,8 +557,8 @@ function CatalogoView({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">CBO</label>
-                <input
+                <label htmlFor="cargo-cbo" className="text-[10px] font-bold uppercase tracking-wider opacity-60">CBO</label>
+                <input id="cargo-cbo"
                   type="text"
                   value={cargoDraft.cbo || ''}
                   onChange={e => setCargoDraft({ ...cargoDraft, cbo: e.target.value })}
@@ -568,8 +568,8 @@ function CatalogoView({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Faixa mín. (R$)</label>
-                <input
+                <label htmlFor="cargo-faixa-min-r" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Faixa mín. (R$)</label>
+                <input id="cargo-faixa-min-r"
                   type="number"
                   step="0.01"
                   value={cargoDraft.faixa_salarial_min ?? ''}
@@ -579,8 +579,8 @@ function CatalogoView({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Faixa máx. (R$)</label>
-                <input
+                <label htmlFor="cargo-faixa-max-r" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Faixa máx. (R$)</label>
+                <input id="cargo-faixa-max-r"
                   type="number"
                   step="0.01"
                   value={cargoDraft.faixa_salarial_max ?? ''}
@@ -598,8 +598,8 @@ function CatalogoView({
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   <div>
-                    <label className="text-[9px] uppercase tracking-wider opacity-60">Média salarial AL (R$)</label>
-                    <input
+                    <label htmlFor="cargo-media-salarial-al-r" className="text-[9px] uppercase tracking-wider opacity-60">Média salarial AL (R$)</label>
+                    <input id="cargo-media-salarial-al-r"
                       type="number"
                       step="0.01"
                       value={cargoDraft.referencia_salarial_al ?? ''}
@@ -609,8 +609,8 @@ function CatalogoView({
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] uppercase tracking-wider opacity-60">Fonte</label>
-                    <input
+                    <label htmlFor="cargo-fonte" className="text-[9px] uppercase tracking-wider opacity-60">Fonte</label>
+                    <input id="cargo-fonte"
                       type="text"
                       value={cargoDraft.referencia_salarial_fonte ?? ''}
                       onChange={e => setCargoDraft({ ...cargoDraft, referencia_salarial_fonte: e.target.value })}
@@ -619,8 +619,8 @@ function CatalogoView({
                     />
                   </div>
                   <div>
-                    <label className="text-[9px] uppercase tracking-wider opacity-60">Data da referência</label>
-                    <input
+                    <label htmlFor="cargo-data-da-referencia" className="text-[9px] uppercase tracking-wider opacity-60">Data da referência</label>
+                    <input id="cargo-data-da-referencia"
                       type="date"
                       value={cargoDraft.referencia_salarial_data ?? ''}
                       onChange={e => setCargoDraft({ ...cargoDraft, referencia_salarial_data: e.target.value })}
@@ -636,8 +636,8 @@ function CatalogoView({
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Descrição</label>
-                <textarea
+                <label htmlFor="cargo-descricao" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Descrição</label>
+                <textarea id="cargo-descricao"
                   value={cargoDraft.descricao || ''}
                   onChange={e => setCargoDraft({ ...cargoDraft, descricao: e.target.value })}
                   rows={2}
@@ -647,8 +647,8 @@ function CatalogoView({
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Atribuições (uma por linha)</label>
-                <textarea
+                <label htmlFor="cargo-atribuicoes-uma-por-linha" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Atribuições (uma por linha)</label>
+                <textarea id="cargo-atribuicoes-uma-por-linha"
                   value={(cargoDraft.atribuicoes || []).join('\n')}
                   onChange={e =>
                     setCargoDraft({
@@ -663,8 +663,8 @@ function CatalogoView({
               </div>
 
               <div className="md:col-span-2">
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Requisitos / Formação</label>
-                <textarea
+                <label htmlFor="cargo-requisitos-formacao" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Requisitos / Formação</label>
+                <textarea id="cargo-requisitos-formacao"
                   value={cargoDraft.requisitos || ''}
                   onChange={e => setCargoDraft({ ...cargoDraft, requisitos: e.target.value })}
                   rows={2}
@@ -815,8 +815,8 @@ function CatalogoView({
                             </div>
                             <div className="grid grid-cols-2 gap-2 mt-2">
                               <div>
-                                <label className="text-[9px] uppercase tracking-wider opacity-60">Tempo mín. (meses)</label>
-                                <input
+                                <label htmlFor={`cargo-tempo-${d.id}`} className="text-[9px] uppercase tracking-wider opacity-60">Tempo mín. (meses)</label>
+                                <input id={`cargo-tempo-${d.id}`}
                                   type="number"
                                   defaultValue={d.requisito_tempo_meses ?? 12}
                                   onBlur={e => updateDegrauField(d.id, 'requisito_tempo_meses', Number(e.target.value) || 0)}
@@ -824,8 +824,8 @@ function CatalogoView({
                                 />
                               </div>
                               <div>
-                                <label className="text-[9px] uppercase tracking-wider opacity-60">Nota mín. (0-5)</label>
-                                <input
+                                <label htmlFor={`cargo-nota-${d.id}`} className="text-[9px] uppercase tracking-wider opacity-60">Nota mín. (0-5)</label>
+                                <input id={`cargo-nota-${d.id}`}
                                   type="number"
                                   step="0.1"
                                   min="0"
@@ -836,8 +836,8 @@ function CatalogoView({
                                 />
                               </div>
                               <div className="col-span-2">
-                                <label className="text-[9px] uppercase tracking-wider opacity-60">Competências / formações exigidas</label>
-                                <textarea
+                                <label htmlFor={`cargo-competencias-${d.id}`} className="text-[9px] uppercase tracking-wider opacity-60">Competências / formações exigidas</label>
+                                <textarea id={`cargo-competencias-${d.id}`}
                                   defaultValue={d.competencias || ''}
                                   onBlur={e => updateDegrauField(d.id, 'competencias', e.target.value || null)}
                                   rows={2}
@@ -1213,8 +1213,8 @@ function PromocoesView({
 
             <div className="space-y-3">
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Colaborador *</label>
-                <select
+                <label htmlFor="cargo-formColabId" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Colaborador *</label>
+                <select id="cargo-formColabId"
                   value={formColabId}
                   onChange={e => setFormColabId(e.target.value)}
                   className={`w-full text-xs px-3 py-2 rounded-lg border mt-1 ${inputBg}`}
@@ -1229,8 +1229,8 @@ function PromocoesView({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Cargo de destino *</label>
-                <select
+                <label htmlFor="cargo-formCargoDestId" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Cargo de destino *</label>
+                <select id="cargo-formCargoDestId"
                   value={formCargoDestId}
                   onChange={e => setFormCargoDestId(e.target.value)}
                   className={`w-full text-xs px-3 py-2 rounded-lg border mt-1 ${inputBg}`}
@@ -1253,8 +1253,8 @@ function PromocoesView({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Novo salário</label>
-                <input
+                <label htmlFor="cargo-formSalarioNovo" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Novo salário</label>
+                <input id="cargo-formSalarioNovo"
                   type="text"
                   value={formSalarioNovo}
                   onChange={e => setFormSalarioNovo(e.target.value)}
@@ -1264,8 +1264,8 @@ function PromocoesView({
               </div>
 
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">Motivo / Justificativa</label>
-                <textarea
+                <label htmlFor="cargo-formMotivo" className="text-[10px] font-bold uppercase tracking-wider opacity-60">Motivo / Justificativa</label>
+                <textarea id="cargo-formMotivo"
                   value={formMotivo}
                   onChange={e => setFormMotivo(e.target.value)}
                   rows={3}

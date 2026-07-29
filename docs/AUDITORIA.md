@@ -15,7 +15,8 @@
 | 2026-07-28 | **4,1** | Decisão de produto: sistema interno do Instituto. ARQ-01 (multi-tenancy) sai do escopo; escalabilidade reavaliada contra o requisito real |
 | 2026-07-29 | **4,5** | Rodada 1: CI, lint de verdade, Error Boundary, cabeçalhos HTTP, e mais 6 itens |
 | 2026-07-29 | **4,9** | `sprint36` aplicado em produção: 3 das 4 falhas críticas fechadas, índices de FK criados. Rodada 2: SEC-03 no código, BD-03 desarmado |
-| 2026-07-29 | **5,1** | Rodada 3: primeira suíte de testes — 32 casos sobre o cálculo trabalhista, verificados por mutação, rodando no CI |
+| 2026-07-29 | **4,9** | Rodada 3: primeira suíte de testes — 32 casos sobre o cálculo trabalhista, verificados por mutação, rodando no CI. *(Anotei 5,1 no commit da rodada 3; a média correta era 4,9 — arredondamento meu para cima.)* |
+| 2026-07-29 | **5,0** | Rodada 4: 162 rótulos de formulário ligados aos seus campos |
 
 ### Rodada 1 — 2026-07-29
 
@@ -78,6 +79,20 @@ Critério de escolha: gravidade Alta ou Crítica **com** esforço Pequeno. Nada 
 **Solução.** Tratar 29/02 como 28/02 em anos não bissextos ao projetar o aniversário. O comportamento atual está **fixado por teste**, então a correção não pode passar despercebida.
 
 > Não corrigi por conta própria: alterar regra de cálculo trabalhista é decisão sua, não minha. O teste documenta o comportamento de hoje.
+
+### Rodada 4 — 2026-07-29
+
+| Item | Estado | O que foi feito |
+|---|---|---|
+| **A11Y-01** rótulos sem `htmlFor` | 🟢 **162 de 178** | Cada `<label>` ligado ao seu campo em 20 arquivos. Total de avisos do lint: 528 → 367 |
+
+**Como os ids foram escolhidos.** Não são inventados — saem do próprio código (`formData.X`, `handleInputChange('X')`, `name="X"`), então `id="adm-cpf"` descreve o campo de verdade em vez de virar `campo-17`.
+
+**O erro que isso quase introduziu.** Rótulo dentro de `.map()` com id fixo gera **id repetido no DOM**, e aí o `htmlFor` aponta sempre para o primeiro item da lista — o leitor de tela passa a mentir com confiança, que é pior do que não ter rótulo. Cinco casos assim foram detectados e corrigidos com id derivado da chave do item (`cargo-tempo-${d.id}`, `fb-resposta-${m.id}`). Um sexto caso era falso: o `<input>` já vivia dentro do `<label>`, então o atributo foi removido em vez de corrigido.
+
+**Os 16 restantes não são script.** São rótulos que encabeçam um *grupo* de opções (rádio, escala de nota). Ali o correto é `<fieldset>` com `<legend>`, não `htmlFor` — é decisão de marcação caso a caso:
+
+`EndomarketingManager:471` · `FichaColaborador:979` · `FormManager:182` · `AdmissaoCandidato:516` · `PesquisaSatisfacao:162,185` · `FuncionarioMes:260,338` · `Ouvidoria:175` · `Dashboard:3343,3444,3892,4480,6221,6240,6302`
 
 > ⚠️ **A ordem importa e não é negociável.** As Edge Functions novas só aceitam os cargos `coordenadora_rh` e `superadmin`. O papel `superadmin` **ainda não existe** — a constraint `check_cargo` só admite `coordenadora_rh` e `ti`. Se você deployar as funções antes de rodar o `sprint37`, quem hoje entra pelo e-mail fixo fica trancado para fora.
 >
@@ -1390,12 +1405,12 @@ Segurança explorável hoje e a rede de segurança mínima. **Nada mais deve ser
 | **UX** | **5,5** | Fluxos completos e coerentes, 57 toasts, textos em português claro. Erro de render agora tem tela de recuperação em vez de tela branca. Perde por `confirm()` nativo e formulário longo sem retomada |
 | **UI** | **4,5** | Identidade visual consistente, tema claro/escuro, glassmorphism bem executado. Perde por 687 ocorrências de texto abaixo de 12px e ausência de componentes base |
 | **Responsividade** | **4,0** | 220 usos de `sm:` mostram cuidado real. Perde por 25 grids fixos, 75 larguras fixas e nenhuma adaptação acima de 1280px |
-| **Acessibilidade** | **2,5** | **Pior nota.** Nenhuma das 213 violações foi corrigida — o que mudou é que o lint agora as mede e **trava regressão** nas 18 regras que já estavam limpas. Segue com 190 labels sem `htmlFor`, 245 botões com 12 rótulos, zero `aria-live`, sem landmarks, sem focus trap |
+| **Acessibilidade** | **4,0** | 162 dos 178 rótulos de formulário agora estão ligados ao seu campo — o maior obstáculo isolado do sistema saiu. Lint mede o resto e trava regressão. Ainda pesa: 245 botões com 12 rótulos acessíveis (A11Y-02), zero `aria-live`, sem landmarks e sem focus trap (A11Y-03) |
 | **Código** | **5,5** | Comentários acima da média, lint com 30 regras em vez de 2, `strict` explícito, código morto removido. Perde por arquivo de 6.906 linhas e 298 `any` |
 | **DevOps** | **5,5** | **CI existe:** tipos, lint, **testes** e build a cada push e PR. 32 testes cobrindo o cálculo trabalhista, verificados por mutação. Deploy do Vercel automático. Perde por cobertura ainda estreita, migrations manuais, três alvos dessincronizados e sem rollback |
 | **Observabilidade** | **2,0** | Todo erro de render agora passa por um ponto único (`ErrorBoundary`), que é onde o Sentry entra quando existir. Mas ainda não existe: sem telemetria, sem alerta. **Um erro em produção segue sendo descoberto quando alguém liga.** |
 | | | |
-| **QUALIDADE GERAL** | **5,1 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 (rodada 1) → 4,9 (sprint36 + rodada 2) → **5,1** (primeira suíte de testes) |
+| **QUALIDADE GERAL** | **5,0 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 → 4,9 → **5,0** |
 
 ### Como ler o 4,1
 

@@ -472,8 +472,8 @@ export default function FichaColaborador({
                             </label>
                             {vtOpta && (
                               <div>
-                                <label className="block text-[9px] font-bold uppercase opacity-50 mb-0.5">% de desconto em folha (teto legal 6%)</label>
-                                <input type="number" step="0.5" min="0" max="6" value={vtPerc}
+                                <label htmlFor="ficha-vtPerc" className="block text-[9px] font-bold uppercase opacity-50 mb-0.5">% de desconto em folha (teto legal 6%)</label>
+                                <input id="ficha-vtPerc" type="number" step="0.5" min="0" max="6" value={vtPerc}
                                   onChange={e => setDrawerEditData((p: any) => ({ ...p, vt_percentual: parseFloat(e.target.value) || 0 }))}
                                   className={`w-full text-xs p-1.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10' : 'border-black/10'}`} />
                               </div>
@@ -673,8 +673,8 @@ export default function FichaColaborador({
                               <textarea rows={2} placeholder="O que funcionou bem?" value={entrevistaDraft.pontos_positivos} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_positivos: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
                               <textarea rows={2} placeholder="O que a clínica pode melhorar?" value={entrevistaDraft.pontos_melhorar} onChange={e => setEntrevistaDraft(p => ({ ...p, pontos_melhorar: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
                               <div>
-                                <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Recomendaria trabalhar aqui? (0–10)</label>
-                                <input type="number" min={0} max={10} value={entrevistaDraft.recomendaria} onChange={e => setEntrevistaDraft(p => ({ ...p, recomendaria: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
+                                <label htmlFor="ficha-recomendaria" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Recomendaria trabalhar aqui? (0–10)</label>
+                                <input id="ficha-recomendaria" type="number" min={0} max={10} value={entrevistaDraft.recomendaria} onChange={e => setEntrevistaDraft(p => ({ ...p, recomendaria: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
                               </div>
                               <textarea rows={2} placeholder="Comentários finais (opcional)" value={entrevistaDraft.comentarios} onChange={e => setEntrevistaDraft(p => ({ ...p, comentarios: e.target.value }))} className={`w-full p-2.5 rounded border bg-transparent resize-none ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'}`} />
                               <button
@@ -715,8 +715,8 @@ export default function FichaColaborador({
                         </h5>
                         <div className="space-y-3 text-xs">
                           <div>
-                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Comunicação *</label>
-                            <input
+                            <label htmlFor="ficha-offboardDate" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Comunicação *</label>
+                            <input id="ficha-offboardDate"
                               type="date"
                               required
                               value={offboardDate}
@@ -726,8 +726,8 @@ export default function FichaColaborador({
                             />
                           </div>
                           <div>
-                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tipo de Desligamento *</label>
-                            <select
+                            <label htmlFor="ficha-offboardTipo" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tipo de Desligamento *</label>
+                            <select id="ficha-offboardTipo"
                               value={offboardTipo}
                               onChange={e => setOffboardTipo(e.target.value as any)}
                               className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -738,8 +738,8 @@ export default function FichaColaborador({
                             </select>
                           </div>
                           <div>
-                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Modalidade do Aviso *</label>
-                            <select
+                            <label htmlFor="ficha-offboardModalidade" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Modalidade do Aviso *</label>
+                            <select id="ficha-offboardModalidade"
                               value={offboardModalidade}
                               onChange={e => setOffboardModalidade(e.target.value as any)}
                               className={`w-full p-2.5 rounded border bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -761,8 +761,8 @@ export default function FichaColaborador({
                             );
                           })()}
                           <div>
-                            <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Motivo do Desligamento</label>
-                            <textarea
+                            <label htmlFor="ficha-offboardReason" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Motivo do Desligamento</label>
+                            <textarea id="ficha-offboardReason"
                               rows={2.5}
                               placeholder="Descreva brevemente o motivo..."
                               value={offboardReason}
@@ -961,8 +961,8 @@ export default function FichaColaborador({
                       <h5 className="text-[10px] font-bold uppercase tracking-wider opacity-75 flex items-center gap-1.5"><Plus size={14} />Enviar Novo Documento ou Foto</h5>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[8px] font-bold uppercase opacity-50 mb-1">Tipo de Anexo</label>
-                          <select
+                          <label htmlFor="ficha-uploadFileType" className="block text-[8px] font-bold uppercase opacity-50 mb-1">Tipo de Anexo</label>
+                          <select id="ficha-uploadFileType"
                             value={uploadFileType}
                             onChange={(e) => setUploadFileType(e.target.value as any)}
                             className={`w-full text-xs p-2 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -1023,8 +1023,8 @@ export default function FichaColaborador({
                     <form onSubmit={handleRegisterOcorrencia} className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                       }`}>
                       <div>
-                        <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tipo de Ocorrência</label>
-                        <select
+                        <label htmlFor="ficha-ocTipo" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tipo de Ocorrência</label>
+                        <select id="ficha-ocTipo"
                           value={ocTipo}
                           onChange={(e) => setOcTipo(e.target.value)}
                           className={`w-full text-xs p-2.5 rounded border focus:outline-none bg-transparent ${theme === 'dark' ? 'border-white/10 text-white bg-surface-2' : 'border-black/10 text-black bg-white'
@@ -1040,8 +1040,8 @@ export default function FichaColaborador({
 
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Ocorrência</label>
-                          <input
+                          <label htmlFor="ficha-ocData" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Ocorrência</label>
+                          <input id="ficha-ocData"
                             type="date"
                             required
                             value={ocData}
@@ -1051,8 +1051,8 @@ export default function FichaColaborador({
                           />
                         </div>
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tempo de Desvio (Opcional)</label>
-                          <input
+                          <label htmlFor="ficha-ocDesvio" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Tempo de Desvio (Opcional)</label>
+                          <input id="ficha-ocDesvio"
                             type="text"
                             placeholder="Ex: 45 min ou 02:00h"
                             value={ocDesvio}
@@ -1064,8 +1064,8 @@ export default function FichaColaborador({
                       </div>
 
                       <div>
-                        <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Justificativa / Motivo</label>
-                        <textarea
+                        <label htmlFor="ficha-ocJustificativa" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Justificativa / Motivo</label>
+                        <textarea id="ficha-ocJustificativa"
                           required
                           rows={3}
                           placeholder="Descreva o ocorrido..."
@@ -1077,8 +1077,8 @@ export default function FichaColaborador({
                       </div>
 
                       <div>
-                        <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Atestado / Anexo (PDF/Imagem)</label>
-                        <input
+                        <label htmlFor="ficha-atestado-anexo-pdf-imagem" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Atestado / Anexo (PDF/Imagem)</label>
+                        <input id="ficha-atestado-anexo-pdf-imagem"
                           type="file"
                           accept=".pdf,image/*"
                           onChange={(e) => setOcFile(e.target.files?.[0] || null)}
@@ -1180,8 +1180,8 @@ export default function FichaColaborador({
                       <form onSubmit={handleRegisterAdvertencia} className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-surface-2 border-white/10' : 'bg-black/5 border-black/10'
                         }`}>
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Falta</label>
-                          <input
+                          <label htmlFor="ficha-advDataFalta" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Falta</label>
+                          <input id="ficha-advDataFalta"
                             type="date"
                             required
                             value={advDataFalta}
@@ -1192,8 +1192,8 @@ export default function FichaColaborador({
                         </div>
 
                         <div>
-                          <label className="block text-[9px] font-bold uppercase opacity-65 mb-1">Descrição Detalhada da Situação</label>
-                          <textarea
+                          <label htmlFor="ficha-advDescricaoSituacao" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Descrição Detalhada da Situação</label>
+                          <textarea id="ficha-advDescricaoSituacao"
                             required
                             rows={4}
                             placeholder="Descreva a atitude/falta cometida pelo funcionário..."

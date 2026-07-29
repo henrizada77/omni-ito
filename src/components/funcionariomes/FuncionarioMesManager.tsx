@@ -208,12 +208,12 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
           <div className="text-[11px] font-bold uppercase tracking-wider opacity-70">Abrir nova rodada</div>
           <div className="grid gap-3 md:grid-cols-2">
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Competência (AAAA-MM)</label>
-              <input value={competencia} onChange={e => setCompetencia(e.target.value)} placeholder="2026-07" className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`} />
+              <label htmlFor="fmm-competencia" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Competência (AAAA-MM)</label>
+              <input id="fmm-competencia" value={competencia} onChange={e => setCompetencia(e.target.value)} placeholder="2026-07" className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`} />
             </div>
             <div>
-              <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Votação aberta até</label>
-              <input type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`} />
+              <label htmlFor="fmm-dataFim" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Votação aberta até</label>
+              <input id="fmm-dataFim" type="date" value={dataFim} onChange={e => setDataFim(e.target.value)} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`} />
             </div>
           </div>
           <div className="flex gap-2">

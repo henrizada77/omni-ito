@@ -225,10 +225,10 @@ export default function PulseSemanal({ theme, setTheme }: PulseSemanalProps) {
 
             {/* Setor (opcional) */}
             <div className="space-y-2">
-              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#9AA4B6]">
+              <label htmlFor="pulse-setor" className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#9AA4B6]">
                 Seu setor <span className="opacity-60 normal-case font-normal">(opcional)</span>
               </label>
-              <select
+              <select id="pulse-setor"
                 value={setor}
                 onChange={e => setSetor(e.target.value)}
                 className={`w-full text-xs px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all cursor-pointer ${inputCls}`}

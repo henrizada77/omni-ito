@@ -976,10 +976,10 @@ function OuvidoriaView({
 
                       {/* Nota interna */}
                       <div>
-                        <label className="text-[10px] font-bold uppercase tracking-wider opacity-60">
+                        <label htmlFor={`fb-resposta-${m.id}`} className="text-[10px] font-bold uppercase tracking-wider opacity-60">
                           Nota interna (visível só para o RH)
                         </label>
-                        <textarea
+                        <textarea id={`fb-resposta-${m.id}`}
                           value={respostaAtual}
                           onChange={e => setRespostaDrafts(prev => ({ ...prev, [m.id]: e.target.value }))}
                           rows={3}

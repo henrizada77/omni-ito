@@ -214,10 +214,10 @@ export default function PesquisaSatisfacao({ theme, setTheme }: PesquisaSatisfac
 
             {/* Comentário */}
             <div className="space-y-2">
-              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#9AA4B6]">
+              <label htmlFor="pesq-comentario" className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#9AA4B6]">
                 Comentário (opcional)
               </label>
-              <textarea
+              <textarea id="pesq-comentario"
                 value={comentario}
                 onChange={e => setComentario(e.target.value)}
                 rows={4}

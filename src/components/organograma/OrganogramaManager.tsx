@@ -237,8 +237,8 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
             </div>
 
             <div className="space-y-1">
-              <label className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Cargo / Título</label>
-              <input
+              <label htmlFor="org-titulo" className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Cargo / Título</label>
+              <input id="org-titulo"
                 autoFocus
                 value={form.titulo}
                 onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
@@ -248,8 +248,8 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
             </div>
 
             <div className="space-y-1">
-              <label className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Subtítulo (opcional)</label>
-              <input
+              <label htmlFor="org-subtitulo" className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Subtítulo (opcional)</label>
+              <input id="org-subtitulo"
                 value={form.subtitulo}
                 onChange={e => setForm(f => ({ ...f, subtitulo: e.target.value }))}
                 placeholder="Ex.: Analista Financeiro"
@@ -258,8 +258,8 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
             </div>
 
             <div className="space-y-1">
-              <label className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Superior imediato</label>
-              <select
+              <label htmlFor="org-superior-imediato" className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Superior imediato</label>
+              <select id="org-superior-imediato"
                 value={form.parent_id || ''}
                 onChange={e => setForm(f => ({ ...f, parent_id: e.target.value || null }))}
                 className="w-full text-sm p-2.5 rounded-lg border border-line bg-surface-2 text-fg focus:outline-none focus:border-brand/50"
@@ -272,8 +272,8 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
             </div>
 
             <div className="space-y-1">
-              <label className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Vincular colaborador (opcional)</label>
-              <select
+              <label htmlFor="org-colaborador-id" className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Vincular colaborador (opcional)</label>
+              <select id="org-colaborador-id"
                 value={form.colaborador_id}
                 onChange={e => setForm(f => ({ ...f, colaborador_id: e.target.value }))}
                 className="w-full text-sm p-2.5 rounded-lg border border-line bg-surface-2 text-fg focus:outline-none focus:border-brand/50"

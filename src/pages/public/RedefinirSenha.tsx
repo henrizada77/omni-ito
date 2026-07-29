@@ -210,8 +210,8 @@ export default function RedefinirSenha({ theme, setTheme, onConcluido }: Redefin
       )}
 
       <div>
-        <label className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">Nova senha</label>
-        <input
+        <label htmlFor="senha-senha" className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">Nova senha</label>
+        <input id="senha-senha"
           type="password"
           required
           autoComplete="new-password"
@@ -222,8 +222,8 @@ export default function RedefinirSenha({ theme, setTheme, onConcluido }: Redefin
       </div>
 
       <div>
-        <label className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">Repita a nova senha</label>
-        <input
+        <label htmlFor="senha-confirmacao" className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">Repita a nova senha</label>
+        <input id="senha-confirmacao"
           type="password"
           required
           autoComplete="new-password"

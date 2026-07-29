@@ -202,10 +202,10 @@ export default function Ouvidoria({ theme, setTheme }: OuvidoriaProps) {
 
             {/* Setor */}
             <div className="space-y-2">
-              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#9AA4B6]">
+              <label htmlFor="ouv-setor" className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#9AA4B6]">
                 Setor envolvido (opcional)
               </label>
-              <select
+              <select id="ouv-setor"
                 value={setor}
                 onChange={e => setSetor(e.target.value)}
                 className={`w-full text-xs px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-xl border transition-all cursor-pointer ${inputCls}`}
@@ -217,10 +217,10 @@ export default function Ouvidoria({ theme, setTheme }: OuvidoriaProps) {
 
             {/* Mensagem */}
             <div className="space-y-2">
-              <label className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#9AA4B6]">
+              <label htmlFor="ouv-mensagem" className="block text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-[#9AA4B6]">
                 Mensagem *
               </label>
-              <textarea
+              <textarea id="ouv-mensagem"
                 value={mensagem}
                 onChange={e => setMensagem(e.target.value)}
                 rows={4}
