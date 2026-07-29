@@ -1,0 +1,48 @@
+# Verificação mínima a cada push e pull request.
+#
+# Existe porque até agora nada impedia código quebrado de entrar em main: não
+# havia CI e não há testes. Enquanto a suíte de testes não existe, o compilador
+# é a única prova objetiva de que a branch está sã — então ele roda aqui, e não
+# só na máquina de quem escreveu.
+#
+# O lint roda sem --deny-warnings de propósito. O código tem ~213 avisos de
+# acessibilidade conhecidos e catalogados em docs/AUDITORIA.md; falhar por eles
+# hoje só ensinaria a ignorar o CI. As regras que já estão limpas estão como
+# 'error' no .oxlintrc.json e essas, sim, quebram o build.
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verificar:
+    name: Tipos, lint e build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Checagem de tipos
+        run: npx tsc -b
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npx vite build
+        env:
+          # Valores de fachada: o build não fala com o Supabase, mas o cliente
+          # agora falha alto se as variáveis faltarem (ver src/supabaseClient.ts).
+          VITE_SUPABASE_URL: https://exemplo.supabase.co
+          VITE_SUPABASE_ANON_KEY: chave-de-build

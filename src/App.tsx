@@ -16,6 +16,7 @@ import EntrevistaDesligamento from './pages/public/EntrevistaDesligamento';
 import RedefinirSenha from './pages/public/RedefinirSenha';
 import ProtectedRoute from './components/ProtectedRoute';
 import CommandPalette from './components/common/CommandPalette';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import AccessDenied403 from './pages/errors/AccessDenied403';
 import NotFound404 from './pages/errors/NotFound404';
 
@@ -171,6 +172,10 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      {/* Envolve as rotas, não o BrowserRouter: assim a tela de falha continua
+          dentro do contexto de roteamento e o "Recarregar" volta para a rota
+          atual, não para a raiz. */}
+      <ErrorBoundary area="app" theme={theme}>
       <Routes>
         {/* Public Routes */}
         <Route 
@@ -274,6 +279,7 @@ export default function App() {
         <Route path="/403" element={<AccessDenied403 theme={theme} />} />
         <Route path="*" element={<NotFound404 theme={theme} />} />
       </Routes>
+      </ErrorBoundary>
 
       {/* Global Command Palette (Ctrl+K) */}
       <CommandPalette
