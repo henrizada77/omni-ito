@@ -13,7 +13,8 @@
 |---|---|---|
 | 2026-07-28 | **3,7** | Auditoria original, sob a premissa de produto SaaS B2B |
 | 2026-07-28 | **4,1** | Decisão de produto: sistema interno do Instituto. ARQ-01 (multi-tenancy) sai do escopo; escalabilidade reavaliada contra o requisito real |
-| 2026-07-29 | **4,5** | Primeira rodada de correções — ver abaixo |
+| 2026-07-29 | **4,5** | Rodada 1: CI, lint de verdade, Error Boundary, cabeçalhos HTTP, e mais 6 itens |
+| 2026-07-29 | **4,9** | `sprint36` aplicado em produção: 3 das 4 falhas críticas fechadas, índices de FK criados. Rodada 2: SEC-03 no código, BD-03 desarmado |
 
 ### Rodada 1 — 2026-07-29
 
@@ -31,9 +32,20 @@ Critério de escolha: gravidade Alta ou Crítica **com** esforço Pequeno. Nada 
 | **ARQ-04** código morto | ✅ resolvido | `ColaboradorProntuarioModal.tsx` removido (289 linhas, zero importadores) |
 | **COD-06** `name: temp-app` | ✅ resolvido | Renomeado para `omni-ito` |
 | **DEP-01** dependências não usadas | 🟡 parcial | `framer-motion` removido. `clsx` e `tailwind-merge` **mantidos de propósito** — são a ferramenta de UI-02 |
-| **SEC-01 · SEC-02 · SEC-04 · BD-01** | ⏳ **não aplicado** | `supabase/sprint36_correcoes_p0_auditoria.sql` escrito e revisado, mas **precisa ser rodado no SQL Editor**. Até lá as brechas seguem abertas |
+| **SEC-01 · SEC-02 · SEC-04 · BD-01** | ✅ **aplicado em 2026-07-29** | `sprint36_correcoes_p0_auditoria.sql` rodado no SQL Editor. Três das quatro falhas críticas fechadas em produção; índices de FK criados |
 
-> ⚠️ **Sobre a nota de Segurança.** Ela subiu de 2,5 para 3,5 apenas pelos cabeçalhos HTTP. **Escrever o script SQL não fecha brecha nenhuma** — as quatro falhas críticas continuam exploráveis enquanto o `sprint36` não rodar. A nota vai a ~6,0 depois disso.
+### Rodada 2 — 2026-07-29
+
+| Item | Estado | O que foi feito |
+|---|---|---|
+| **SEC-03** autorização por domínio de e-mail | 🟡 código pronto, **falta rodar e deployar** | Regra centralizada em `supabase/functions/_shared/autorizacao.ts` e aplicada nas três Edge Functions. Só `perfis.cargo` decide; a checagem de domínio e o Gmail fixo saíram. Depende do `sprint37` |
+| **BD-03** migration que reabria as brechas | ✅ resolvido | Os três blocos `create policy ... to anon` foram removidos de `run_pending_migrations.sql`. Rodar aquele arquivo não traz mais as brechas de volta. O arquivo ficou (ainda cria tabelas), com histórico no cabeçalho |
+| **BD-05** `SECURITY DEFINER` sem `search_path` | 🟡 script pronto, **falta rodar** | Bloco `DO` no `sprint37` que corrige **todas** as pendentes de uma vez, sem depender de listar nome por nome |
+| Backdoor de e-mail dentro de policies RLS | 🟡 script pronto, **falta rodar** | Achado durante esta rodada, não estava no relatório original: o mesmo Gmail aparecia em 5 policies (`beneficios`, `colaborador_beneficios`, `planos_carreira`, `avaliacoes_desempenho`, `storage.objects`). Substituído pela função `tem_papel_administrativo()` |
+
+> ⚠️ **A ordem importa e não é negociável.** As Edge Functions novas só aceitam os cargos `coordenadora_rh` e `superadmin`. O papel `superadmin` **ainda não existe** — a constraint `check_cargo` só admite `coordenadora_rh` e `ti`. Se você deployar as funções antes de rodar o `sprint37`, quem hoje entra pelo e-mail fixo fica trancado para fora.
+>
+> **Rode o `sprint37` primeiro** (editando a linha do e-mail na seção 2), confirme as três queries da seção 5, e só então deploye as três funções.
 
 ### Sobre a CSP
 
@@ -1334,9 +1346,9 @@ Segurança explorável hoje e a rede de segurança mínima. **Nada mais deve ser
 |---|---|---|
 | **Arquitetura** | **5,0** | Padrão token→RPC é exemplar e code splitting existe. Mas sem camada de serviço e com God Component de 6.906 linhas. *(4,0 → 4,5 com a decisão de produto; → 5,0 com ARQ-04/05/06/07)* |
 | **Performance** | **5,0** | Code splitting real e `Promise.all` nas buscas. Mas zero paginação, zero memoização, 44 `select('*')`. *(Era 4,5; subiu porque o teto real do cenário interno dá anos de folga)* |
-| **Segurança** | **3,5** | Cabeçalhos HTTP agora existem (SEC-08 resolvido). Edge Functions e CORS bem feitos, buckets privados, sem XSS/SQLi. **Não sobe mais do que isso porque as 4 falhas críticas têm script pronto e NÃO APLICADO** — escrever o SQL não fecha brecha nenhuma. Vai a ~6,0 quando o sprint36 rodar; a 7,0 quando SEC-03 for corrigido |
+| **Segurança** | **6,0** | `sprint36` aplicado: organograma, tokens de admissão e trilha de auditoria fechados ao `anon`. Cabeçalhos HTTP no lugar. Edge Functions e CORS bem feitos, buckets privados, sem XSS/SQLi. **Trava em 6,0 porque SEC-03 está no código mas não em produção** — falta rodar o `sprint37` e deployar as funções. Vai a ~7,0 depois disso; a ~8,0 com rate limit e validação de upload |
 | **Escalabilidade** | **6,0** | **Reavaliada contra o requisito real, não contra SaaS.** Ponto bem indexado, folga de anos no volume esperado. Perde por `logs_auditoria` sem retenção nem particionamento, FKs sem índice e ausência total de paginação. *(Era 2,0 sob a premissa SaaS)* |
-| **Banco** | **4,0** | RLS em 36/36 tabelas, buckets privados, RPCs novas bem escritas. Mas FKs sem índice, migrations manuais e dois arquivos que se desfazem |
+| **Banco** | **5,5** | RLS em 36/36 tabelas, buckets privados, RPCs novas bem escritas. Índices de FK criados e o arquivo que desfazia as correções foi desarmado. Perde por migrations ainda manuais (BD-02) e dado sensível na mesma tabela sob a mesma policy (BD-04) |
 | **Frontend** | **5,5** | React 19, TS estrito e agora explícito, Error Boundary na raiz, componentização razoável fora do Dashboard. Mas sem design system e com 298 `any` |
 | **Backend** | **6,5** | **Melhor nota do sistema.** Edge Functions com segredos corretos, CORS restrito, autorização em camadas, comentários que explicam bypasses fechados. Perde por SEC-03 e ausência de rate limit |
 | **UX** | **5,5** | Fluxos completos e coerentes, 57 toasts, textos em português claro. Erro de render agora tem tela de recuperação em vez de tela branca. Perde por `confirm()` nativo e formulário longo sem retomada |
@@ -1347,7 +1359,7 @@ Segurança explorável hoje e a rede de segurança mínima. **Nada mais deve ser
 | **DevOps** | **4,5** | **CI existe:** tipos, lint e build a cada push e PR. Deploy do Vercel automático. Perde por zero teste, migrations manuais, três alvos dessincronizados e sem rollback |
 | **Observabilidade** | **2,0** | Todo erro de render agora passa por um ponto único (`ErrorBoundary`), que é onde o Sentry entra quando existir. Mas ainda não existe: sem telemetria, sem alerta. **Um erro em produção segue sendo descoberto quando alguém liga.** |
 | | | |
-| **QUALIDADE GERAL** | **4,5 / 10** | 3,7 → 4,1 (decisão de produto) → **4,5** (correções desta rodada) |
+| **QUALIDADE GERAL** | **4,9 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 (rodada 1) → **4,9** (sprint36 em produção + rodada 2) |
 
 ### Como ler o 4,1
 

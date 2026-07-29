@@ -16,6 +16,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { autorizarRH } from "../_shared/autorizacao.ts"
 
 // ---------------------------------------------------------------------------
 // CORS (mesmo padrão de gerar-contrato-pdf)
@@ -201,21 +202,11 @@ serve(async (req) => {
     const serviceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const supabase = createClient(supabaseUrl, serviceKey);
 
-    // --- Auth: só coordenadora_rh (ou superadmin) ---
-    const authHeader = req.headers.get('Authorization') || '';
-    const jwt = authHeader.replace(/^Bearer /, '').trim();
-    let authorizedEmail: string | null = null;
-    if (jwt) {
-      const { data: { user } } = await supabase.auth.getUser(jwt);
-      if (user) {
-        const { data: profile } = await supabase.from('perfis').select('cargo').eq('id', user.id).single();
-        const domain = user.email?.split('@')[1];
-        if (profile?.cargo === 'coordenadora_rh' || user.email === 'ito.thiagosilva@gmail.com' || domain === 'itoinstituto.com.br') {
-          authorizedEmail = user.email ?? null;
-        }
-      }
-    }
-    if (!authorizedEmail) return json({ success: false, error: 'Acesso restrito ao RH.' }, 401);
+    // --- Auth: só quem tem cargo autorizado em `perfis` ---
+    // Regra em _shared/autorizacao.ts. O e-mail continua sendo capturado
+    // porque vai para ponto_sync_log e logs_auditoria como autor da sincronia.
+    const { autorizado, email: authorizedEmail } = await autorizarRH(supabase, req);
+    if (!autorizado) return json({ success: false, error: 'Acesso restrito ao RH.' }, 401);
 
     const { action, competencia } = await req.json().catch(() => ({ action: '' }));
     const firstDay = competenciaToFirstDay(competencia);

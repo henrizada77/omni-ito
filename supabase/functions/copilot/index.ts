@@ -13,6 +13,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { autorizarRH } from "../_shared/autorizacao.ts"
 
 const explicitAllowedOrigins = (Deno.env.get('ALLOWED_ORIGINS') ?? '')
   .split(',').map((o) => o.trim()).filter(Boolean);
@@ -261,20 +262,11 @@ serve(async (req) => {
   try {
     const supabase = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '');
 
-    // Auth: só coordenadora_rh (ou superadmin / domínio institucional)
-    const jwt = (req.headers.get('Authorization') || '').replace(/^Bearer /, '').trim();
-    let authorized = false;
-    if (jwt) {
-      const { data: { user } } = await supabase.auth.getUser(jwt);
-      if (user) {
-        const { data: profile } = await supabase.from('perfis').select('cargo').eq('id', user.id).single();
-        const domain = user.email?.split('@')[1];
-        if (profile?.cargo === 'coordenadora_rh' || user.email === 'ito.thiagosilva@gmail.com' || domain === 'itoinstituto.com.br') {
-          authorized = true;
-        }
-      }
-    }
-    if (!authorized) return errJson({ error: 'Acesso restrito ao RH.' }, 401);
+    // Auth: só quem tem cargo autorizado em `perfis`. A regra mora em
+    // _shared/autorizacao.ts — antes estava copiada aqui e nas outras duas
+    // funções, e aceitava qualquer e-mail do domínio institucional.
+    const { autorizado } = await autorizarRH(supabase, req);
+    if (!autorizado) return errJson({ error: 'Acesso restrito ao RH.' }, 401);
 
     const apiKey = Deno.env.get('OPENROUTER_API_KEY');
     if (!apiKey) return errJson({ error: 'Copiloto não configurado: falta OPENROUTER_API_KEY.' }, 503);

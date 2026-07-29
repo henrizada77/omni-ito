@@ -4,6 +4,25 @@
 -- Este script é IDEMPOTENTE: pode ser rodado múltiplas vezes
 -- sem duplicar dados ou causar erros.
 -- =============================================================
+--
+-- ⚠️  HISTÓRICO — LEIA ANTES DE RODAR
+--
+-- Até 2026-07-29 este arquivo era uma armadilha. Ele RECRIAVA três policies
+-- abertas ao papel `anon` que o sprint9_security_hardening.sql removia:
+--
+--   • "Update publico de tokens"           em admission_tokens
+--   • "Insercao anonima de documentos..."  em documentos_assinados
+--   • "Insercao anonima de logs..."        em logs_auditoria
+--
+-- Ou seja: rodar este arquivo reabria as brechas. O sprint10 registrou isso
+-- como pendência C-4 e ela ficou aberta. Os três blocos foram REMOVIDOS deste
+-- arquivo (seções 11, 12 e 13 abaixo). Estão no histórico do git se alguém
+-- precisar consultar o que existia.
+--
+-- Este arquivo ainda contém criação de tabelas e colunas, por isso não foi
+-- apagado. Mas ele NÃO é uma migration versionada — ver docs/AUDITORIA.md,
+-- item BD-02. O caminho certo é migrar para supabase/migrations/.
+-- =============================================================
 
 -- ✅ 1. Colunas de Admissão na tabela colaboradores
 alter table public.colaboradores add column if not exists ficha_admissao jsonb;
@@ -171,28 +190,30 @@ $$;
 -- Permite que usuários anônimos chamem esta função
 grant execute on function public.inserir_colaborador_via_admissao(jsonb, text) to anon;
 
--- ✅ 11. Policy para candidatos anônimos — UPDATE em admission_tokens
--- Já existe no setup original (Update publico de tokens - to anon/public)
--- Mantida para garantir compatibilidade.
-drop policy if exists "Update publico de tokens" on public.admission_tokens;
-create policy "Update publico de tokens"
-  on public.admission_tokens for update
-  using (true)
-  with check (true);
-
--- ✅ 12. Policy para candidatos anônimos — INSERT em documentos_assinados
-drop policy if exists "Insercao anonima de documentos assinados" on public.documentos_assinados;
-create policy "Insercao anonima de documentos assinados"
-  on public.documentos_assinados for insert
-  to anon
-  with check (true);
-
--- ✅ 13. Policy para candidatos anônimos — INSERT em logs_auditoria
-drop policy if exists "Insercao anonima de logs de auditoria" on public.logs_auditoria;
-create policy "Insercao anonima de logs de auditoria"
-  on public.logs_auditoria for insert
-  to anon
-  with check (true);
+-- ❌ 11, 12 e 13 — REMOVIDAS EM 2026-07-29 (auditoria: SEC-02, SEC-04)
+--
+-- Aqui existiam três policies abertas ao papel `anon`, todas com predicado
+-- `true`. Elas foram removidas do banco pelo sprint36 e tiradas daqui para
+-- que rodar este arquivo não as trouxesse de volta.
+--
+-- 11. "Update publico de tokens" em admission_tokens — `using (true)` SEM
+--     cláusula `to`, o que no Postgres é TO PUBLIC e inclui `anon`. A Edge
+--     Function gerar-contrato-pdf autoriza sem JWT olhando `status`,
+--     `candidato_cpf` e `expira_em` — os três campos que esta policy deixava
+--     o anônimo reescrever. Bypass de autenticação completo.
+--
+-- 12. "Insercao anonima de documentos assinados" — INSERT arbitrário no
+--     registro de documentos assinados.
+--
+-- 13. "Insercao anonima de logs de auditoria" — qualquer um inseria entradas
+--     na trilha que serve de prova em reclamação trabalhista, inclusive
+--     atribuindo ações a e-mails de funcionários reais.
+--
+-- Verificado antes de remover: nenhuma página de src/pages/public/ escreve
+-- nessas tabelas. A Edge Function usa SERVICE_ROLE e ignora RLS. O fluxo de
+-- admissão do candidato não depende delas.
+--
+-- O conteúdo original está no histórico do git.
 
 -- ✅ 14. Atualização do Vale Transporte para Desconto de 6%
 UPDATE public.beneficios 
