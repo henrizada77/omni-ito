@@ -814,7 +814,7 @@ function CatalogoView({
                                 </button>
                               </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 mt-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                               <div>
                                 <label htmlFor={`cargo-tempo-${d.id}`} className="text-[9px] uppercase tracking-wider opacity-60">Tempo mín. (meses)</label>
                                 <input id={`cargo-tempo-${d.id}`}

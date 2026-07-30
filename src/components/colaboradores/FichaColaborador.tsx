@@ -346,7 +346,7 @@ export default function FichaColaborador({
                   <div className={`p-4 rounded-xl border space-y-3 ${theme === 'dark' ? 'bg-white/5 border-white/5' : 'bg-black/5 border-black/5'
                     }`}>
                     <span className="text-[10px] font-bold uppercase tracking-wider opacity-50 block">Folha Salarial & Benefícios Ativos</span>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <span className="opacity-50 block text-[9px] uppercase">Salário Base</span>
                         <span className="font-semibold block font-mono">{getSalarioLiquido(activeColaboradorForDrawer).base}</span>
@@ -541,7 +541,7 @@ export default function FichaColaborador({
                         <div className="flex items-center gap-1.5 text-rose-500 font-bold uppercase tracking-wider text-[10px]">
                           <AlertTriangle size={12} /> Colaborador Desligado
                         </div>
-                        <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-[10px]">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 font-mono text-[10px]">
                           <div>
                             <span className="opacity-50 block uppercase text-[9px] font-sans">Data Desligamento</span>
                             <span className="font-semibold">{activeColaboradorForDrawer.data_desligamento ? new Date(activeColaboradorForDrawer.data_desligamento).toLocaleDateString('pt-BR') : '—'}</span>
@@ -815,7 +815,7 @@ export default function FichaColaborador({
                       {/* Section 1 */}
                       <div className="space-y-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider opacity-40 block">Dados Pessoais</span>
-                        <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border border-white/5 bg-white/5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-white/5 bg-white/5">
                           <div className="col-span-2">
                             <span className="opacity-50 block text-[9px] uppercase">Nome Social</span>
                             <span className="font-semibold block">{activeColaboradorForDrawer.ficha_admissao.nome_social || '—'}</span>
@@ -858,7 +858,7 @@ export default function FichaColaborador({
                       {/* Section 2 */}
                       <div className="space-y-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider opacity-40 block">Registro, Escolaridade & Pagamento</span>
-                        <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border border-white/5 bg-white/5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-white/5 bg-white/5">
                           <div>
                             <span className="opacity-50 block text-[9px] uppercase">Vínculo & Regime</span>
                             <span className="font-semibold block">
@@ -887,7 +887,7 @@ export default function FichaColaborador({
                       {/* Section 3 */}
                       <div className="space-y-2">
                         <span className="text-[10px] font-bold uppercase tracking-wider opacity-40 block">Saúde & Emergência</span>
-                        <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border border-white/5 bg-white/5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-white/5 bg-white/5">
                           <div>
                             <span className="opacity-50 block text-[9px] uppercase">Medicação Contínua</span>
                             <span className="font-semibold block">
@@ -1038,7 +1038,7 @@ export default function FichaColaborador({
                         </select>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label htmlFor="ficha-ocData" className="block text-[9px] font-bold uppercase opacity-65 mb-1">Data da Ocorrência</label>
                           <input id="ficha-ocData"

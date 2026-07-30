@@ -5200,7 +5200,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
                                 ) : (
                                   <div className="space-y-2">
                                     <label htmlFor="dash-quickFeriasInicio" className="block text-[9px] font-bold uppercase opacity-65">Colocar em férias</label>
-                                    <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                       <input id="dash-quickFeriasInicio"
                                         type="date"
                                         value={quickFeriasInicio}

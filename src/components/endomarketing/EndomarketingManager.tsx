@@ -429,7 +429,7 @@ export default function EndomarketingManager({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label htmlFor="endo-categoria" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
                       Categoria

@@ -159,7 +159,7 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="vaga-setor" className={labelCls}>Setor *</label>
                 <select id="vaga-setor" value={setor} onChange={e => setSetor(e.target.value)} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>
@@ -225,7 +225,7 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="vaga-tipoContratacao" className={labelCls}>Tipo de contratação</label>
                 <select id="vaga-tipoContratacao" value={tipoContratacao} onChange={e => setTipoContratacao(e.target.value)} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>

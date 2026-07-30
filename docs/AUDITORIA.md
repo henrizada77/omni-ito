@@ -19,6 +19,7 @@
 | 2026-07-29 | **5,0** | Rodada 4: 162 rótulos de formulário ligados aos seus campos |
 | 2026-07-29 | **5,1** | Rodada 5: camada de telemetria com depuração de dado pessoal testada |
 | 2026-07-29 | **5,5** | Sprints 36 a 39 aplicados em produção. Rodada 6: regressões corrigidas. Rodada 7: modais acessíveis, e duas correções ao próprio relatório |
+| 2026-07-29 | **5,7** | Edge Functions deployadas — **as 4 falhas críticas fechadas**. Rodada 8: grids empilham no celular |
 
 ### Rodada 6 — 2026-07-29 · correção de regressões que eu causei
 
@@ -72,6 +73,36 @@ O que sobrou depois de medir direito é menor do que o relatório sugeria — e 
 
 **Faltam 6 modais:** os 4 do `Dashboard.tsx`, o da ficha do colaborador e o `CommandPalette`. A aplicação é mecânica — três linhas por modal —, ficou de fora por volume, não por dificuldade.
 
+### Rodada 8 — 2026-07-29 · celular, e a terceira correção ao relatório
+
+**SEC-03 fechado.** As três Edge Functions foram deployadas. A autorização por domínio de e-mail e o Gmail fixo saíram de produção; só `perfis.cargo` decide.
+
+**Terceira vez que um número meu estava inflado.** O relatório dizia "25 grids sem prefixo responsivo". Medindo a `className` inteira em vez de casar o texto solto:
+
+| | |
+|---|---|
+| Grids sem nenhuma variante responsiva | **23** |
+| Destes, **legítimos** | **11** |
+| Genuinamente problemáticos | **12** |
+
+Os 11 legítimos são: barras de cabeçalho `grid-cols-3` (logo · título · botão), calendários `grid-cols-7` — uma semana tem sete dias, e colapsar destruiria o significado em vez de melhorar a leitura — e o bloco de assinatura que só existe na impressão.
+
+**Padrão do erro, agora claro.** Três vezes seguidas um número da auditoria original se mostrou inflado, sempre pela mesma causa: `grep` casando texto solto, sem olhar o contexto. Os achados eram reais; a **magnitude** não era. Vale desconfiar de qualquer número deste relatório que não tenha sido remedido.
+
+| Item | Estado | O que foi feito |
+|---|---|---|
+| **RESP-01** grids fixos no celular | ✅ 12 de 12 | `grid-cols-1 sm:grid-cols-2` nos grids de dado e formulário. Acima de 640px nada muda |
+| **SEC-03** autorização por domínio | ✅ em produção | Deploy das 3 Edge Functions confirmado |
+
+**Verificado em 375px** (iPhone SE / 13 mini), na página pública de solicitação de vaga:
+
+| | |
+|---|---|
+| Rolagem horizontal | ✅ nenhuma — `scrollWidth` 375 = viewport |
+| Grids corrigidos | ✅ 1 coluna de 277px, em vez de 2 de ~130px |
+
+Duas colunas de `text-[10px]` em 375px davam ~130px por coluna: `R$ 1.234,56` com rótulo não cabia.
+
 ### Pendências que dependem de você
 
 | Script | Estado | Observação |
@@ -80,7 +111,7 @@ O que sobrou depois de medir direito é menor do que o relatório sugeria — e 
 | `sprint37_papel_superadmin_e_search_path.sql` | ✅ aplicado | Papel `superadmin`, `search_path` nas `SECURITY DEFINER`, backdoor de e-mail fora das policies |
 | `sprint38_log_erros_cliente.sql` | ✅ aplicado | Telemetria passa a persistir |
 | `sprint39_correcao_regressoes.sql` | ✅ aplicado | Organograma e auditoria do candidato restaurados |
-| **Deploy das 3 Edge Functions** | ⏳ **confirmar** | Sem ele, SEC-03 segue aberto: as funções em produção ainda autorizam por domínio de e-mail |
+| **Deploy das 3 Edge Functions** | ✅ feito | SEC-03 fechado em produção |
 
 ```
 npx supabase functions deploy copilot            --project-ref jyvxhyaeagqljvqqeuwi
@@ -1487,20 +1518,20 @@ Segurança explorável hoje e a rede de segurança mínima. **Nada mais deve ser
 |---|---|---|
 | **Arquitetura** | **5,0** | Padrão token→RPC é exemplar e code splitting existe. Mas sem camada de serviço e com God Component de 6.906 linhas. *(4,0 → 4,5 com a decisão de produto; → 5,0 com ARQ-04/05/06/07)* |
 | **Performance** | **5,0** | Code splitting real e `Promise.all` nas buscas. Mas zero paginação, zero memoização, 44 `select('*')`. *(Era 4,5; subiu porque o teto real do cenário interno dá anos de folga)* |
-| **Segurança** | **6,5** | Sprints 36 a 39 em produção: `anon` fora do organograma, dos tokens e da trilha de auditoria; backdoor de e-mail removido das policies; `search_path` fixado nas `SECURITY DEFINER`. Cabeçalhos HTTP no lugar. **Trava em 6,5 porque SEC-03 depende do deploy das Edge Functions** — em produção elas ainda autorizam por domínio de e-mail. Vai a ~7,5 com o deploy; a ~8,5 com rate limit (SEC-07) e validação de upload (SEC-06) |
+| **Segurança** | **7,5** | As **4 falhas críticas estão fechadas em produção**. `anon` fora do organograma, dos tokens e da trilha de auditoria; autorização só por `perfis.cargo`, sem domínio de e-mail nem Gmail fixo; `search_path` nas `SECURITY DEFINER`; cabeçalhos HTTP. Perde por não haver rate limit no servidor (SEC-07), upload sem validação de tipo e tamanho (SEC-06) e leitura ampla para todo autenticado (SEC-05) |
 | **Escalabilidade** | **6,0** | **Reavaliada contra o requisito real, não contra SaaS.** Ponto bem indexado, folga de anos no volume esperado. Perde por `logs_auditoria` sem retenção nem particionamento, FKs sem índice e ausência total de paginação. *(Era 2,0 sob a premissa SaaS)* |
 | **Banco** | **6,5** | RLS em 36/36 tabelas, buckets privados, índices de FK criados, `search_path` fixado em todas as `SECURITY DEFINER` (BD-05), e o arquivo que desfazia as correções foi desarmado (BD-03). Perde por migrations ainda manuais (BD-02) e dado sensível na mesma tabela sob a mesma policy (BD-04) |
 | **Frontend** | **5,5** | React 19, TS estrito e agora explícito, Error Boundary na raiz, componentização razoável fora do Dashboard. Mas sem design system e com 298 `any` |
 | **Backend** | **6,5** | **Melhor nota do sistema.** Edge Functions com segredos corretos, CORS restrito, autorização em camadas, comentários que explicam bypasses fechados. Perde por SEC-03 e ausência de rate limit |
 | **UX** | **5,5** | Fluxos completos e coerentes, 57 toasts, textos em português claro. Erro de render agora tem tela de recuperação em vez de tela branca. Perde por `confirm()` nativo e formulário longo sem retomada |
 | **UI** | **4,5** | Identidade visual consistente, tema claro/escuro, glassmorphism bem executado. Perde por 687 ocorrências de texto abaixo de 12px e ausência de componentes base |
-| **Responsividade** | **4,0** | 220 usos de `sm:` mostram cuidado real. Perde por 25 grids fixos, 75 larguras fixas e nenhuma adaptação acima de 1280px |
+| **Responsividade** | **5,5** | 220 usos de `sm:` mostram cuidado real, e os 12 grids que espremiam dado no celular agora empilham — verificado em 375px, sem rolagem horizontal. Perde por 75 larguras fixas, nenhuma adaptação acima de 1280px (`xl:` aparece 1 vez) e tabelas que ainda rolam em vez de virar cartão |
 | **Acessibilidade** | **5,5** | 162 dos 178 rótulos ligados ao seu campo, e 4 dos 10 modais agora operáveis por teclado (`role=dialog`, Esc, foco preso e devolvido) — verificado em execução. Lint mede o resto e trava regressão. Ainda pesa: 6 modais sem tratamento, ~24 botões só de ícone sem nome, e landmarks ausentes nas páginas públicas |
 | **Código** | **5,5** | Comentários acima da média, lint com 30 regras em vez de 2, `strict` explícito, código morto removido. Perde por arquivo de 6.906 linhas e 298 `any` |
 | **DevOps** | **5,5** | **CI existe:** tipos, lint, **testes** e build a cada push e PR. 32 testes cobrindo o cálculo trabalhista, verificados por mutação. Deploy do Vercel automático. Perde por cobertura ainda estreita, migrations manuais, três alvos dessincronizados e sem rollback |
 | **Observabilidade** | **5,5** | Captura e **persistência** no ar: render, `window.onerror` e promessa sem catch, com depuração de dado pessoal testada, teto no servidor e retenção de 90 dias. Erro em produção agora é consultável em `logs_erros`. Perde por não haver **alerta ativo** — ninguém é avisado, alguém precisa ir olhar — e por não haver tracing nem métrica de desempenho |
 | | | |
-| **QUALIDADE GERAL** | **5,5 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 → 4,9 → 5,0 → 5,1 → **5,5** |
+| **QUALIDADE GERAL** | **5,7 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 → 4,9 → 5,0 → 5,1 → 5,5 → **5,7** |
 
 ### Como ler o 4,1
 

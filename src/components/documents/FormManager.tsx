@@ -149,7 +149,7 @@ export default function FormManager({ theme }: FormManagerProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label htmlFor="form-cargo" className="block font-bold opacity-60 mb-1">Cargo *</label>
                 <select id="form-cargo"
