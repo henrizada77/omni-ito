@@ -18,6 +18,7 @@
 | 2026-07-29 | **4,9** | Rodada 3: primeira suíte de testes — 32 casos sobre o cálculo trabalhista, verificados por mutação, rodando no CI. *(Anotei 5,1 no commit da rodada 3; a média correta era 4,9 — arredondamento meu para cima.)* |
 | 2026-07-29 | **5,0** | Rodada 4: 162 rótulos de formulário ligados aos seus campos |
 | 2026-07-29 | **5,1** | Rodada 5: camada de telemetria com depuração de dado pessoal testada |
+| 2026-07-29 | **5,5** | Sprints 36 a 39 aplicados em produção. Rodada 6: regressões corrigidas. Rodada 7: modais acessíveis, e duas correções ao próprio relatório |
 
 ### Rodada 6 — 2026-07-29 · correção de regressões que eu causei
 
@@ -39,14 +40,53 @@ O `sprint36` no repositório foi corrigido para não reintroduzir o problema se 
 
 > **Rode `sprint39_correcao_regressoes.sql` agora.** É o que destrava o organograma.
 
+### Rodada 7 — 2026-07-29 · modais acessíveis, e duas correções ao relatório
+
+**Antes do trabalho, duas coisas que eu errei ao medir.**
+
+| Achado original | O que a medição mostrou |
+|---|---|
+| "245 botões com 12 rótulos acessíveis" | Enganoso. **A maioria tem texto visível.** Só **24** são ícone puro sem nome — 20 sem nada e 4 apenas com `title` |
+| "zero `aria-live`" | O toast usa `role="status"`, que **é** região viva por definição. Ele já era anunciado. Contei o atributo e concluí errado sobre o efeito |
+| "sem landmarks" | O painel tem `<nav>`, `<aside>`, `<header>` e `<main>`. Faltam nas páginas públicas |
+
+O que sobrou depois de medir direito é menor do que o relatório sugeria — e continua sendo real.
+
+| Item | Estado | O que foi feito |
+|---|---|---|
+| **A11Y-03** modais inoperáveis por teclado | 🟢 4 de 10 | Hook `useDialogoAcessivel`: `role="dialog"`, `aria-modal`, Esc fecha, Tab circula, foco devolvido a quem abriu |
+| **A11Y-02** botões só de ícone | 🟡 parcial | `aria-label` nos botões do organograma, citando o cargo — senão a pessoa ouve "Excluir" cinco vezes sem saber excluir o quê |
+
+**Por que os modais importam para todo mundo, não só para leitor de tela.** Sem retenção de foco, o Tab escapa para o conteúdo **atrás** do modal e a pessoa passa a preencher um formulário que não está vendo. E Esc não fechava — o que todo mundo espera de um modal.
+
+**Verificado em execução**, montando o hook no navegador e disparando as teclas de verdade:
+
+| Comportamento | Resultado |
+|---|---|
+| `role="dialog"` / `aria-modal="true"` | ✅ |
+| Foca o primeiro campo ao abrir | ✅ |
+| Tab no último volta ao primeiro | ✅ |
+| Shift+Tab no primeiro vai ao último | ✅ |
+| Esc chama o fechamento | ✅ |
+| Foco devolvido ao botão que abriu | ✅ |
+
+**Faltam 6 modais:** os 4 do `Dashboard.tsx`, o da ficha do colaborador e o `CommandPalette`. A aplicação é mecânica — três linhas por modal —, ficou de fora por volume, não por dificuldade.
+
 ### Pendências que dependem de você
 
-| Script | O que destrava | Nota que sobe |
+| Script | Estado | Observação |
 |---|---|---|
-| `sprint37_papel_superadmin_e_search_path.sql` **+ deploy das 3 funções** | SEC-03 e BD-05 | Segurança 6,0 → ~7,0 |
-| `sprint38_log_erros_cliente.sql` | Persistência da telemetria | Observabilidade 3,0 → ~5,5 |
+| `sprint36_correcoes_p0_auditoria.sql` | ✅ aplicado | 3 das 4 falhas críticas fechadas, índices de FK criados |
+| `sprint37_papel_superadmin_e_search_path.sql` | ✅ aplicado | Papel `superadmin`, `search_path` nas `SECURITY DEFINER`, backdoor de e-mail fora das policies |
+| `sprint38_log_erros_cliente.sql` | ✅ aplicado | Telemetria passa a persistir |
+| `sprint39_correcao_regressoes.sql` | ✅ aplicado | Organograma e auditoria do candidato restaurados |
+| **Deploy das 3 Edge Functions** | ⏳ **confirmar** | Sem ele, SEC-03 segue aberto: as funções em produção ainda autorizam por domínio de e-mail |
 
-O `sprint38` é independente e pode rodar a qualquer momento. O `sprint37` tem ordem obrigatória — ver o aviso adiante.
+```
+npx supabase functions deploy copilot            --project-ref jyvxhyaeagqljvqqeuwi
+npx supabase functions deploy gerar-contrato-pdf --project-ref jyvxhyaeagqljvqqeuwi
+npx supabase functions deploy pontofopag-sync    --project-ref jyvxhyaeagqljvqqeuwi
+```
 
 ### Rodada 1 — 2026-07-29
 
@@ -1447,20 +1487,20 @@ Segurança explorável hoje e a rede de segurança mínima. **Nada mais deve ser
 |---|---|---|
 | **Arquitetura** | **5,0** | Padrão token→RPC é exemplar e code splitting existe. Mas sem camada de serviço e com God Component de 6.906 linhas. *(4,0 → 4,5 com a decisão de produto; → 5,0 com ARQ-04/05/06/07)* |
 | **Performance** | **5,0** | Code splitting real e `Promise.all` nas buscas. Mas zero paginação, zero memoização, 44 `select('*')`. *(Era 4,5; subiu porque o teto real do cenário interno dá anos de folga)* |
-| **Segurança** | **6,0** | `sprint36` aplicado: organograma, tokens de admissão e trilha de auditoria fechados ao `anon`. Cabeçalhos HTTP no lugar. Edge Functions e CORS bem feitos, buckets privados, sem XSS/SQLi. **Trava em 6,0 porque SEC-03 está no código mas não em produção** — falta rodar o `sprint37` e deployar as funções. Vai a ~7,0 depois disso; a ~8,0 com rate limit e validação de upload |
+| **Segurança** | **6,5** | Sprints 36 a 39 em produção: `anon` fora do organograma, dos tokens e da trilha de auditoria; backdoor de e-mail removido das policies; `search_path` fixado nas `SECURITY DEFINER`. Cabeçalhos HTTP no lugar. **Trava em 6,5 porque SEC-03 depende do deploy das Edge Functions** — em produção elas ainda autorizam por domínio de e-mail. Vai a ~7,5 com o deploy; a ~8,5 com rate limit (SEC-07) e validação de upload (SEC-06) |
 | **Escalabilidade** | **6,0** | **Reavaliada contra o requisito real, não contra SaaS.** Ponto bem indexado, folga de anos no volume esperado. Perde por `logs_auditoria` sem retenção nem particionamento, FKs sem índice e ausência total de paginação. *(Era 2,0 sob a premissa SaaS)* |
-| **Banco** | **5,5** | RLS em 36/36 tabelas, buckets privados, RPCs novas bem escritas. Índices de FK criados e o arquivo que desfazia as correções foi desarmado. Perde por migrations ainda manuais (BD-02) e dado sensível na mesma tabela sob a mesma policy (BD-04) |
+| **Banco** | **6,5** | RLS em 36/36 tabelas, buckets privados, índices de FK criados, `search_path` fixado em todas as `SECURITY DEFINER` (BD-05), e o arquivo que desfazia as correções foi desarmado (BD-03). Perde por migrations ainda manuais (BD-02) e dado sensível na mesma tabela sob a mesma policy (BD-04) |
 | **Frontend** | **5,5** | React 19, TS estrito e agora explícito, Error Boundary na raiz, componentização razoável fora do Dashboard. Mas sem design system e com 298 `any` |
 | **Backend** | **6,5** | **Melhor nota do sistema.** Edge Functions com segredos corretos, CORS restrito, autorização em camadas, comentários que explicam bypasses fechados. Perde por SEC-03 e ausência de rate limit |
 | **UX** | **5,5** | Fluxos completos e coerentes, 57 toasts, textos em português claro. Erro de render agora tem tela de recuperação em vez de tela branca. Perde por `confirm()` nativo e formulário longo sem retomada |
 | **UI** | **4,5** | Identidade visual consistente, tema claro/escuro, glassmorphism bem executado. Perde por 687 ocorrências de texto abaixo de 12px e ausência de componentes base |
 | **Responsividade** | **4,0** | 220 usos de `sm:` mostram cuidado real. Perde por 25 grids fixos, 75 larguras fixas e nenhuma adaptação acima de 1280px |
-| **Acessibilidade** | **4,0** | 162 dos 178 rótulos de formulário agora estão ligados ao seu campo — o maior obstáculo isolado do sistema saiu. Lint mede o resto e trava regressão. Ainda pesa: 245 botões com 12 rótulos acessíveis (A11Y-02), zero `aria-live`, sem landmarks e sem focus trap (A11Y-03) |
+| **Acessibilidade** | **5,5** | 162 dos 178 rótulos ligados ao seu campo, e 4 dos 10 modais agora operáveis por teclado (`role=dialog`, Esc, foco preso e devolvido) — verificado em execução. Lint mede o resto e trava regressão. Ainda pesa: 6 modais sem tratamento, ~24 botões só de ícone sem nome, e landmarks ausentes nas páginas públicas |
 | **Código** | **5,5** | Comentários acima da média, lint com 30 regras em vez de 2, `strict` explícito, código morto removido. Perde por arquivo de 6.906 linhas e 298 `any` |
 | **DevOps** | **5,5** | **CI existe:** tipos, lint, **testes** e build a cada push e PR. 32 testes cobrindo o cálculo trabalhista, verificados por mutação. Deploy do Vercel automático. Perde por cobertura ainda estreita, migrations manuais, três alvos dessincronizados e sem rollback |
-| **Observabilidade** | **3,0** | Camada de captura no ar: render, `window.onerror` e promessa sem catch, com depuração de dado pessoal testada. **Trava em 3,0 porque a persistência depende do `sprint38`** — sem ele nada é gravado e o erro segue sendo descoberto quando alguém liga. Vai a ~5,5 quando rodar. Continua sem alerta ativo e sem tracing |
+| **Observabilidade** | **5,5** | Captura e **persistência** no ar: render, `window.onerror` e promessa sem catch, com depuração de dado pessoal testada, teto no servidor e retenção de 90 dias. Erro em produção agora é consultável em `logs_erros`. Perde por não haver **alerta ativo** — ninguém é avisado, alguém precisa ir olhar — e por não haver tracing nem métrica de desempenho |
 | | | |
-| **QUALIDADE GERAL** | **5,1 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 → 4,9 → 5,0 → **5,1** |
+| **QUALIDADE GERAL** | **5,5 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 → 4,9 → 5,0 → 5,1 → **5,5** |
 
 ### Como ler o 4,1
 

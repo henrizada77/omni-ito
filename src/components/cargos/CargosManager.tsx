@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { useDialogoAcessivel } from '../../hooks/useDialogoAcessivel';
 import {
   Briefcase,
   GitBranch,
@@ -945,6 +946,8 @@ function PromocoesView({
   btnSecondary
 }: PromocoesViewProps) {
   const [showModal, setShowModal] = useState(false);
+  // Esc fecha, Tab circula dentro do modal, foco volta para quem abriu.
+  const { ref: refModal, propsDialogo } = useDialogoAcessivel(showModal, () => setShowModal(false));
   const [statusFilter, setStatusFilter] = useState<'todos' | PromocaoStatus>('todos');
   const [saving, setSaving] = useState(false);
 
@@ -1203,11 +1206,16 @@ function PromocoesView({
       {showModal && (
         <>
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40" onClick={() => setShowModal(false)} />
-          <div className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vw] max-w-lg z-50 rounded-2xl border p-6 ${cardBg}`}>
+          <div
+            ref={refModal}
+            {...propsDialogo}
+            aria-labelledby="cargos-modal-titulo"
+            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92vw] max-w-lg z-50 rounded-2xl border p-6 outline-none ${cardBg}`}
+          >
             <div className="flex items-center justify-between mb-4">
-              <h4 className="text-sm font-bold uppercase tracking-wider">Propor promoção</h4>
-              <button onClick={() => setShowModal(false)} className="opacity-60 hover:opacity-100">
-                <X size={16} />
+              <h4 id="cargos-modal-titulo" className="text-sm font-bold uppercase tracking-wider">Propor promoção</h4>
+              <button onClick={() => setShowModal(false)} aria-label="Fechar" className="opacity-60 hover:opacity-100">
+                <X size={16} aria-hidden />
               </button>
             </div>
 

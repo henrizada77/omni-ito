@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { useDialogoAcessivel } from '../../hooks/useDialogoAcessivel';
 import {
   Megaphone,
   Plus,
@@ -145,6 +146,8 @@ export default function EndomarketingManager({
   onChange
 }: EndomarketingManagerProps) {
   const [modalAberto, setModalAberto] = useState(false);
+  // Esc fecha, Tab circula dentro do modal, foco volta para quem abriu.
+  const { ref: refModal, propsDialogo } = useDialogoAcessivel(modalAberto, () => setModalAberto(false));
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -378,9 +381,14 @@ export default function EndomarketingManager({
       {/* Modal criar/editar */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border p-6 ${cardBase}`}>
+          <div
+            ref={refModal}
+            {...propsDialogo}
+            aria-labelledby="endo-modal-titulo"
+            className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border p-6 outline-none ${cardBase}`}
+          >
             <div className="flex items-center justify-between mb-5">
-              <h4 className="font-display text-lg font-semibold">
+              <h4 id="endo-modal-titulo" className="font-display text-lg font-semibold">
                 {editandoId ? 'Editar ação' : 'Nova ação de endomarketing'}
               </h4>
               <button

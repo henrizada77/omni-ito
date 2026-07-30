@@ -8,6 +8,7 @@ import {
   imprimirSvg,
   type NoOrganograma
 } from '../../utils/organogramaSvg';
+import { useDialogoAcessivel } from '../../hooks/useDialogoAcessivel';
 
 type Theme = 'dark' | 'light';
 
@@ -44,6 +45,9 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
   const [form, setForm] = useState(emptyForm);
 
   const aviso = useCallback((m: string) => { notify ? notify(m) : window.alert(m); }, [notify]);
+
+  // Esc fecha, Tab circula dentro do modal, e o foco volta para quem abriu.
+  const { ref: refModal, propsDialogo } = useDialogoAcessivel(modalOpen, () => setModalOpen(false));
 
   const fetchNodes = useCallback(async () => {
     setLoading(true);
@@ -171,11 +175,15 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
           )}
           {hasFullAccess && (
             <div className="flex items-center justify-center gap-1 mt-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-              <button onClick={() => abrirNovo(n.id)} title="Adicionar subordinado" className="p-1 rounded bg-white/10 hover:bg-white/20"><Plus size={11} /></button>
-              <button onClick={() => abrirEdicao(n)} title="Editar" className="p-1 rounded bg-white/10 hover:bg-white/20"><Pencil size={10} /></button>
-              <button onClick={() => mover(n, -1)} title="Mover para a esquerda" className="p-1 rounded bg-white/10 hover:bg-white/20"><ChevronUp size={11} /></button>
-              <button onClick={() => mover(n, 1)} title="Mover para a direita" className="p-1 rounded bg-white/10 hover:bg-white/20"><ChevronDown size={11} /></button>
-              <button onClick={() => excluir(n)} title="Excluir" className="p-1 rounded bg-rose-500/25 hover:bg-rose-500/40"><Trash2 size={10} /></button>
+              {/* aria-label além do title: title não é lido de forma confiável
+                  por leitor de tela e não aparece no toque. E o rótulo cita o
+                  cargo, senão a pessoa ouve "Excluir" cinco vezes seguidas sem
+                  saber excluir o quê. */}
+              <button onClick={() => abrirNovo(n.id)} title="Adicionar subordinado" aria-label={`Adicionar subordinado a ${n.titulo}`} className="p-1 rounded bg-white/10 hover:bg-white/20"><Plus size={11} aria-hidden /></button>
+              <button onClick={() => abrirEdicao(n)} title="Editar" aria-label={`Editar ${n.titulo}`} className="p-1 rounded bg-white/10 hover:bg-white/20"><Pencil size={10} aria-hidden /></button>
+              <button onClick={() => mover(n, -1)} title="Mover para a esquerda" aria-label={`Mover ${n.titulo} para a esquerda`} className="p-1 rounded bg-white/10 hover:bg-white/20"><ChevronUp size={11} aria-hidden /></button>
+              <button onClick={() => mover(n, 1)} title="Mover para a direita" aria-label={`Mover ${n.titulo} para a direita`} className="p-1 rounded bg-white/10 hover:bg-white/20"><ChevronDown size={11} aria-hidden /></button>
+              <button onClick={() => excluir(n)} title="Excluir" aria-label={`Excluir ${n.titulo}`} className="p-1 rounded bg-rose-500/25 hover:bg-rose-500/40"><Trash2 size={10} aria-hidden /></button>
             </div>
           )}
         </div>
@@ -307,10 +315,15 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
       {modalOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]" onClick={() => setModalOpen(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92vw] max-w-md rounded-2xl border border-line glass-fill glass-sheen p-5 space-y-4">
+          <div
+            ref={refModal}
+            {...propsDialogo}
+            aria-labelledby="org-modal-titulo"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92vw] max-w-md rounded-2xl border border-line glass-fill glass-sheen p-5 space-y-4 outline-none"
+          >
             <div className="flex items-center justify-between">
-              <h4 className="font-display text-lg font-semibold">{editingId ? 'Editar cargo' : 'Novo cargo'}</h4>
-              <button onClick={() => setModalOpen(false)} className="p-1.5 rounded-lg border border-line hover:bg-surface-2"><X size={16} /></button>
+              <h4 id="org-modal-titulo" className="font-display text-lg font-semibold">{editingId ? 'Editar cargo' : 'Novo cargo'}</h4>
+              <button onClick={() => setModalOpen(false)} aria-label="Fechar" className="p-1.5 rounded-lg border border-line hover:bg-surface-2"><X size={16} aria-hidden /></button>
             </div>
 
             <div className="space-y-1">
