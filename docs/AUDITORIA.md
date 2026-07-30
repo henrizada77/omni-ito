@@ -20,6 +20,7 @@
 | 2026-07-29 | **5,1** | Rodada 5: camada de telemetria com depuração de dado pessoal testada |
 | 2026-07-29 | **5,5** | Sprints 36 a 39 aplicados em produção. Rodada 6: regressões corrigidas. Rodada 7: modais acessíveis, e duas correções ao próprio relatório |
 | 2026-07-29 | **5,7** | Edge Functions deployadas — **as 4 falhas críticas fechadas**. Rodada 8: grids empilham no celular |
+| 2026-07-29 | **5,9** | Rodada 9: teto de upload e de taxa (sobe para ~6,0 quando o `sprint40` rodar) |
 
 ### Rodada 6 — 2026-07-29 · correção de regressões que eu causei
 
@@ -103,6 +104,27 @@ Os 11 legítimos são: barras de cabeçalho `grid-cols-3` (logo · título · bo
 
 Duas colunas de `text-[10px]` em 375px davam ~130px por coluna: `R$ 1.234,56` com rótulo não cabia.
 
+### Rodada 9 — 2026-07-29 · limites de upload e de taxa
+
+Escolhidos por relação ganho/esforço: duas falhas **Altas** que se fecham quase todas em SQL, sem tocar em arquitetura.
+
+| Item | Estado | O que foi feito |
+|---|---|---|
+| **SEC-06** upload sem limite | 🟢 teto e tipos no servidor | `file_size_limit` de 10 MB e `allowed_mime_types` nos dois buckets, aplicados pelo Storage antes de o arquivo tocar o disco |
+| **SEC-07** sem rate limit no servidor | 🟢 infra + copiloto | Tabela `limites_taxa`, função `consumir_limite`, e cota diária de 100 mensagens por pessoa no copiloto |
+
+**Por que o `accept` não valia nada.** Era a única validação de upload que existia, e é dica de interface: qualquer cliente HTTP ignora. Um anônimo com token de admissão subia arquivo de qualquer tipo e tamanho, em qualquer quantidade.
+
+**Por que o copiloto era o mais urgente do SEC-07.** Ele chama a OpenRouter, ou seja, gasta dinheiro real a cada mensagem, e não tinha teto — um laço no navegador consumia a conta. O limite ficou no servidor de propósito; o cliente pode ser alterado por quem usa.
+
+**A degradação é segura.** Se a RPC `consumir_limite` ainda não existir no banco, `data` volta `null`, a comparação com `false` falha, e o copiloto segue funcionando. Um limite que derruba a função quando o banco não acompanhou é pior que limite nenhum.
+
+**O que isto NÃO cobre, e fica registrado.** O `Content-Type` é declarado pelo cliente, então um `.exe` anunciado como `application/pdf` ainda passa. Fechar exige ler os primeiros bytes e conferir a assinatura do arquivo (`%PDF-`, `\xFF\xD8\xFF`), o que precisa de uma Edge Function no caminho do upload. O teto de tamanho e a lista de tipos já eliminam a maior parte do risco prático.
+
+**As RPCs públicas ainda não estão plugadas.** `registrar_pulse`, `registrar_voto_funcionario_mes`, `submit_teste_comportamental`, `get_teste_by_token` e `inserir_colaborador_via_admissao` seguem sem teto. A infraestrutura está pronta e o `sprint40` traz a linha exata para cada uma — não apliquei automaticamente porque cada função tem regra de negócio própria, e reescrever às cegas é como se introduz regressão. (Foi assim que quebrei o organograma na rodada 6.)
+
+Isso importa além do custo: o pulse de clima e o voto de funcionário do mês são **fraudáveis por script** hoje, e o pulse alimenta `pulse_alertas`, que dispara ação de RH. Pesquisa de clima fraudável é pior que nenhuma — produz decisão errada com aparência de dado.
+
 ### Pendências que dependem de você
 
 | Script | Estado | Observação |
@@ -112,6 +134,8 @@ Duas colunas de `text-[10px]` em 375px davam ~130px por coluna: `R$ 1.234,56` co
 | `sprint38_log_erros_cliente.sql` | ✅ aplicado | Telemetria passa a persistir |
 | `sprint39_correcao_regressoes.sql` | ✅ aplicado | Organograma e auditoria do candidato restaurados |
 | **Deploy das 3 Edge Functions** | ✅ feito | SEC-03 fechado em produção |
+| `sprint40_limites_upload_e_taxa.sql` | ⏳ **rodar** | Teto de upload e infraestrutura de rate limit |
+| **Redeploy do copiloto** | ⏳ **depois do sprint40** | Cota diária de 100 mensagens por pessoa |
 
 ```
 npx supabase functions deploy copilot            --project-ref jyvxhyaeagqljvqqeuwi
@@ -1518,7 +1542,7 @@ Segurança explorável hoje e a rede de segurança mínima. **Nada mais deve ser
 |---|---|---|
 | **Arquitetura** | **5,0** | Padrão token→RPC é exemplar e code splitting existe. Mas sem camada de serviço e com God Component de 6.906 linhas. *(4,0 → 4,5 com a decisão de produto; → 5,0 com ARQ-04/05/06/07)* |
 | **Performance** | **5,0** | Code splitting real e `Promise.all` nas buscas. Mas zero paginação, zero memoização, 44 `select('*')`. *(Era 4,5; subiu porque o teto real do cenário interno dá anos de folga)* |
-| **Segurança** | **7,5** | As **4 falhas críticas estão fechadas em produção**. `anon` fora do organograma, dos tokens e da trilha de auditoria; autorização só por `perfis.cargo`, sem domínio de e-mail nem Gmail fixo; `search_path` nas `SECURITY DEFINER`; cabeçalhos HTTP. Perde por não haver rate limit no servidor (SEC-07), upload sem validação de tipo e tamanho (SEC-06) e leitura ampla para todo autenticado (SEC-05) |
+| **Segurança** | **7,5** | As **4 falhas críticas estão fechadas em produção**. `anon` fora do organograma, dos tokens e da trilha de auditoria; autorização só por `perfis.cargo`, sem domínio de e-mail nem Gmail fixo; `search_path` nas `SECURITY DEFINER`; cabeçalhos HTTP. Upload com teto de tamanho e lista de tipos, e cota diária no copiloto. Perde porque as RPCs públicas ainda não têm teto (pulse e voto são fraudáveis por script), o tipo de arquivo não é conferido pelos bytes, e todo autenticado lê a base inteira (SEC-05) |
 | **Escalabilidade** | **6,0** | **Reavaliada contra o requisito real, não contra SaaS.** Ponto bem indexado, folga de anos no volume esperado. Perde por `logs_auditoria` sem retenção nem particionamento, FKs sem índice e ausência total de paginação. *(Era 2,0 sob a premissa SaaS)* |
 | **Banco** | **6,5** | RLS em 36/36 tabelas, buckets privados, índices de FK criados, `search_path` fixado em todas as `SECURITY DEFINER` (BD-05), e o arquivo que desfazia as correções foi desarmado (BD-03). Perde por migrations ainda manuais (BD-02) e dado sensível na mesma tabela sob a mesma policy (BD-04) |
 | **Frontend** | **5,5** | React 19, TS estrito e agora explícito, Error Boundary na raiz, componentização razoável fora do Dashboard. Mas sem design system e com 298 `any` |
@@ -1531,7 +1555,7 @@ Segurança explorável hoje e a rede de segurança mínima. **Nada mais deve ser
 | **DevOps** | **5,5** | **CI existe:** tipos, lint, **testes** e build a cada push e PR. 32 testes cobrindo o cálculo trabalhista, verificados por mutação. Deploy do Vercel automático. Perde por cobertura ainda estreita, migrations manuais, três alvos dessincronizados e sem rollback |
 | **Observabilidade** | **5,5** | Captura e **persistência** no ar: render, `window.onerror` e promessa sem catch, com depuração de dado pessoal testada, teto no servidor e retenção de 90 dias. Erro em produção agora é consultável em `logs_erros`. Perde por não haver **alerta ativo** — ninguém é avisado, alguém precisa ir olhar — e por não haver tracing nem métrica de desempenho |
 | | | |
-| **QUALIDADE GERAL** | **5,7 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 → 4,9 → 5,0 → 5,1 → 5,5 → **5,7** |
+| **QUALIDADE GERAL** | **5,9 / 10** | 3,7 → 4,1 (decisão de produto) → 4,5 → 4,9 → 5,0 → 5,1 → 5,5 → 5,7 → **5,9** |
 
 ### Como ler o 4,1
 

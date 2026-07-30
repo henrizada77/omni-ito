@@ -265,8 +265,26 @@ serve(async (req) => {
     // Auth: só quem tem cargo autorizado em `perfis`. A regra mora em
     // _shared/autorizacao.ts — antes estava copiada aqui e nas outras duas
     // funções, e aceitava qualquer e-mail do domínio institucional.
-    const { autorizado } = await autorizarRH(supabase, req);
+    const { autorizado, email } = await autorizarRH(supabase, req);
     if (!autorizado) return errJson({ error: 'Acesso restrito ao RH.' }, 401);
+
+    // Cota diária por pessoa. Esta função chama a OpenRouter, ou seja, gasta
+    // dinheiro de verdade a cada mensagem — e antes disso não havia teto
+    // nenhum: um laço no navegador consumia a conta inteira. O limite fica no
+    // servidor de propósito; o cliente pode ser modificado por quem usa.
+    // Ver docs/AUDITORIA.md, SEC-07.
+    const { data: dentroDaCota } = await supabase.rpc('consumir_limite', {
+      p_chave: `copilot:${email ?? 'sem-email'}`,
+      p_max: 100,
+      p_janela_seg: 86400
+    });
+    // `false` explícito: se a RPC ainda não existe no banco, `data` vem null e
+    // a função segue funcionando em vez de travar o copiloto inteiro.
+    if (dentroDaCota === false) {
+      return errJson({
+        error: 'Você atingiu o limite de mensagens do copiloto por hoje. O contador zera amanhã.'
+      }, 429);
+    }
 
     const apiKey = Deno.env.get('OPENROUTER_API_KEY');
     if (!apiKey) return errJson({ error: 'Copiloto não configurado: falta OPENROUTER_API_KEY.' }, 503);

@@ -133,7 +133,23 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  /** Espelha o teto do bucket (sprint40). Manter os dois em sincronia. */
+  const TAMANHO_MAX_MB = 10;
+
   const handleFileChange = (field: string, file: File | null) => {
+    // O bucket rejeita acima de 10 MB, e essa recusa chegaria só no envio —
+    // depois de a pessoa preencher o formulário inteiro. Avisar aqui, na
+    // escolha do arquivo, economiza o retrabalho.
+    if (file && file.size > TAMANHO_MAX_MB * 1024 * 1024) {
+      const mb = (file.size / 1024 / 1024).toFixed(1);
+      setErrorMsg(
+        `"${file.name}" tem ${mb} MB e o limite é ${TAMANHO_MAX_MB} MB. ` +
+        `Se for foto de documento, tire de novo em resolução menor ou envie o PDF.`
+      );
+      setSelectedFiles(prev => ({ ...prev, [field]: null }));
+      return;
+    }
+    setErrorMsg('');
     setSelectedFiles(prev => ({ ...prev, [field]: file }));
   };
 
