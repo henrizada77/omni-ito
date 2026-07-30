@@ -1,6 +1,13 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Plus, Pencil, Trash2, X, ChevronUp, ChevronDown, User } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, ChevronUp, ChevronDown, User, ImageDown, Printer } from 'lucide-react';
+import {
+  gerarSvgOrganograma,
+  svgParaPngBlob,
+  baixarArquivo,
+  imprimirSvg,
+  type NoOrganograma
+} from '../../utils/organogramaSvg';
 
 type Theme = 'dark' | 'light';
 
@@ -31,6 +38,7 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
   const [salvando, setSalvando] = useState(false);
 
   // modal de edição/criação
+  const [exportando, setExportando] = useState<'png' | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null); // null = criando
   const [form, setForm] = useState(emptyForm);
@@ -176,6 +184,49 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
     );
   };
 
+  // ---- exportação ----
+  // O SVG é desenhado a partir dos dados, não capturado da tela. A árvore
+  // visível usa vidro e blur, que nenhum capturador de HTML reproduz bem — e
+  // desenhar do zero ainda sai mais nítido e sem dependência nova.
+  const montarSvg = useCallback(() => {
+    const paraExportar: NoOrganograma[] = nodes.map(n => ({
+      id: n.id,
+      parent_id: n.parent_id,
+      titulo: n.titulo,
+      subtitulo: n.subtitulo,
+      colaborador: nomeColab(n.colaborador_id),
+      ordem: n.ordem
+    }));
+    return gerarSvgOrganograma(paraExportar, {
+      titulo: 'Organograma',
+      rodape: `Gerado em ${new Date().toLocaleDateString('pt-BR')} · Omni ITO`
+    });
+  }, [nodes, nomeColab]);
+
+  const nomeBase = () => `organograma-${new Date().toISOString().slice(0, 10)}`;
+
+  const exportarPng = async () => {
+    setExportando('png');
+    try {
+      const blob = await svgParaPngBlob(montarSvg(), 2);
+      baixarArquivo(blob, `${nomeBase()}.png`, 'image/png');
+    } catch (e) {
+      aviso(e instanceof Error ? e.message : 'Não foi possível gerar o PNG.');
+    } finally {
+      setExportando(null);
+    }
+  };
+
+  const exportarPdf = () => {
+    // Sem biblioteca de PDF: o diálogo do navegador já gera PDF vetorial, e
+    // quem imprime escolhe margem e orientação. jsPDF custaria ~350 kB.
+    try {
+      imprimirSvg(montarSvg(), 'Organograma — Omni ITO');
+    } catch (e) {
+      aviso(e instanceof Error ? e.message : 'Não foi possível abrir a impressão.');
+    }
+  };
+
   // superiores válidos no dropdown (não pode ser o próprio nó nem descendente)
   const opcoesSuperior = useMemo(() => {
     const bloqueados = editingId ? (() => { const s = descendentesDe(editingId); s.add(editingId); return s; })() : new Set<string>();
@@ -206,11 +257,37 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
           <h3 className="font-display text-xl font-semibold">Organograma</h3>
           <p className="text-xs text-fg-secondary mt-1">Estrutura hierárquica da clínica. Passe o mouse num cargo para editar, adicionar subordinado ou reordenar.</p>
         </div>
-        {hasFullAccess && (
-          <button onClick={() => abrirNovo(null)} className="shrink-0 inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-brand text-white hover:bg-brand-strong transition-colors">
-            <Plus size={14} /> Novo cargo (topo)
-          </button>
-        )}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {/* Exportar não depende de hasFullAccess: quem enxerga o organograma
+              pode levá-lo para uma reunião. Não há dado a mais no arquivo do
+              que já está na tela. */}
+          {roots.length > 0 && (
+            <>
+              <button
+                onClick={exportarPng}
+                disabled={exportando === 'png'}
+                title="Baixar como imagem PNG"
+                className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl border border-line hover:bg-surface-2 transition-colors disabled:opacity-50"
+              >
+                <ImageDown size={14} aria-hidden />
+                {exportando === 'png' ? 'Gerando…' : 'PNG'}
+              </button>
+              <button
+                onClick={exportarPdf}
+                title="Abrir a impressão para salvar em PDF"
+                className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl border border-line hover:bg-surface-2 transition-colors"
+              >
+                <Printer size={14} aria-hidden />
+                PDF
+              </button>
+            </>
+          )}
+          {hasFullAccess && (
+            <button onClick={() => abrirNovo(null)} className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-brand text-white hover:bg-brand-strong transition-colors">
+              <Plus size={14} aria-hidden /> Novo cargo (topo)
+            </button>
+          )}
+        </div>
       </div>
 
       {roots.length === 0 ? (
