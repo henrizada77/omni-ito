@@ -331,11 +331,20 @@ export default function AdmissaoCandidato({ theme, setTheme }: AdmissaoCandidato
       if (signErr) throw signErr;
       if (!signResult || !signResult.success) throw new Error('Falha ao processar assinatura eletrônica.');
 
-      // Log audit (IP and User Agent automatically populated by trigger metadata)
-      await supabase.from('logs_auditoria').insert({
-        usuario_email: candidateEmail,
-        acao: 'CANDIDATO_ASSINA_CONTRATO',
-        detalhes: { nome, cpf, document_hash: res.documentHash }
+      // Auditoria da assinatura, por RPC e não por insert direto.
+      //
+      // O insert direto exigia deixar `logs_auditoria` aberta ao papel anon com
+      // predicado `true`, e aí qualquer um da internet forjava entrada em nome
+      // de qualquer funcionário — numa tabela que serve de prova em reclamação
+      // trabalhista. A RPC exige token válido em estado de assinatura, aceita
+      // uma lista fechada de ações, e lê o e-mail DO TOKEN, no servidor.
+      //
+      // Por isso `candidateEmail` não é mais enviado: o cliente não decide mais
+      // em nome de quem o registro é gravado.
+      await supabase.rpc('registrar_auditoria_candidato', {
+        p_token: token,
+        p_acao: 'CANDIDATO_ASSINA_CONTRATO',
+        p_detalhes: { nome, cpf, document_hash: res.documentHash }
       });
 
       setTokenStatus('aguardando_assinatura_rh');

@@ -51,11 +51,17 @@ create policy "organograma leitura"
   to authenticated
   using (true);
 
+-- CORRIGIDO EM 2026-07-29 (ver sprint39). Esta policy exigia coordenadora_rh
+-- e quebrou o "adicionar cargo" para qualquer outro usuário logado.
+--
+-- A vulnerabilidade era acesso ANÔNIMO — qualquer pessoa da internet apagando
+-- a árvore inteira. Restringir ao RH foi decisão de produto que ninguém pediu:
+-- antes, todo usuário logado editava. Fechar o anônimo era o conserto.
 create policy "organograma escrita"
   on public.organograma_nos for all
   to authenticated
-  using (public.get_user_role() = 'coordenadora_rh')
-  with check (public.get_user_role() = 'coordenadora_rh');
+  using (true)
+  with check (true);
 
 revoke insert, update, delete on public.organograma_nos from anon;
 revoke select on public.organograma_nos from anon;
@@ -87,6 +93,10 @@ revoke insert, update, delete on public.admission_tokens from anon;
 -- funcionários reais. Uma trilha que qualquer um escreve não prova nada, e
 -- depois de contaminada não há como separar o legítimo do forjado.
 
+-- ATENÇÃO (2026-07-29): remover esta policy quebrou a auditoria da assinatura
+-- do candidato — a página pública de admissão gravava aqui. O sprint39 devolve
+-- a capacidade por RPC, que é o certo: o problema nunca foi o registro EXISTIR,
+-- foi ele ser forjável. Rode o sprint39 junto com este.
 drop policy if exists "Insercao anonima de logs de auditoria" on public.logs_auditoria;
 drop policy if exists "Insercao anonima de documentos assinados" on public.documentos_assinados;
 

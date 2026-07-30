@@ -19,6 +19,26 @@
 | 2026-07-29 | **5,0** | Rodada 4: 162 rótulos de formulário ligados aos seus campos |
 | 2026-07-29 | **5,1** | Rodada 5: camada de telemetria com depuração de dado pessoal testada |
 
+### Rodada 6 — 2026-07-29 · correção de regressões que eu causei
+
+O `sprint36` fechou brechas reais, mas em dois pontos foi longe demais e quebrou funcionalidade legítima. Registro aqui porque o erro de julgamento é mais instrutivo que o conserto.
+
+| Regressão | Sintoma | Causa |
+|---|---|---|
+| **Organograma: adicionar cargo parou de funcionar** | `new row violates row-level security policy` | Troquei `using (true)` por exigência de `coordenadora_rh`. A vulnerabilidade era acesso **anônimo**; restringir quem do time pode editar é decisão de produto que ninguém me pediu |
+| **Auditoria da assinatura do candidato deixou de ser gravada** | Silencioso — a assinatura funciona, o registro não aparece | Revoguei `insert` de `anon` em `logs_auditoria`. A página pública de admissão gravava ali |
+
+**Como o segundo erro passou.** No commit eu afirmei ter verificado que nenhuma página pública escrevia nessas tabelas. Verifiquei numa saída de `grep` truncada por `head -12` e concluí a partir do que **não** apareceu nela. "Não vi" não é "não existe".
+
+**O conserto não é reverter.** `sprint39_correcao_regressoes.sql`:
+
+- Organograma volta a aceitar escrita de qualquer usuário logado — anônimo continua fora, que era o ponto.
+- A auditoria do candidato volta por RPC `registrar_auditoria_candidato`, que exige token válido em estado de assinatura, aceita uma **lista fechada** de ações, e lê o e-mail **do token, no servidor**. O problema nunca foi o registro existir; foi ele ser forjável em nome de qualquer pessoa.
+
+O `sprint36` no repositório foi corrigido para não reintroduzir o problema se for rodado de novo.
+
+> **Rode `sprint39_correcao_regressoes.sql` agora.** É o que destrava o organograma.
+
 ### Pendências que dependem de você
 
 | Script | O que destrava | Nota que sobe |
