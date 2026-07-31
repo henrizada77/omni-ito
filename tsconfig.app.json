@@ -17,6 +17,12 @@
     "jsx": "react-jsx",
 
     /* Linting */
+    /* Explícito de propósito. O TypeScript 6 já liga strict por padrão, então
+       hoje isto não muda nada — mas a garantia passaria a depender do default
+       de uma versão. Um downgrade para 5.x desligaria strictNullChecks e
+       noImplicitAny sem um único erro, e centenas de bugs de null passariam a
+       compilar em silêncio. Ver docs/AUDITORIA.md, item ARQ-07. */
+    "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,

@@ -331,10 +331,10 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
             <form onSubmit={authMode === 'login' ? handleLogin : handleSignUp} className="space-y-4">
 
               <div>
-                <label className="block font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-1.5">E-mail corporativo / pessoal</label>
+                <label htmlFor="login-authEmail" className="block font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-1.5">E-mail corporativo / pessoal</label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 text-fg-muted" size={14} />
-                  <input
+                  <input id="login-authEmail"
                     type="email"
                     required
                     placeholder="nome@itoinstituto.com.br"
@@ -346,10 +346,10 @@ export default function LandingPage({ theme, setTheme }: LandingPageProps) {
               </div>
 
               <div>
-                <label className="block font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-1.5">Senha</label>
+                <label htmlFor="login-authPassword" className="block font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted mb-1.5">Senha</label>
                 <div className="relative">
                   <KeyRound className="absolute left-3 top-3 text-fg-muted" size={14} />
-                  <input
+                  <input id="login-authPassword"
                     type="password"
                     required
                     placeholder="••••••••"

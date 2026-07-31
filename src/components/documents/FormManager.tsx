@@ -138,8 +138,8 @@ export default function FormManager({ theme }: FormManagerProps) {
 
           <form onSubmit={handleGenerateLink} className="space-y-4 text-xs">
             <div>
-              <label className="block font-bold opacity-60 mb-1">Nome Completo *</label>
-              <input 
+              <label htmlFor="form-nome" className="block font-bold opacity-60 mb-1">Nome Completo *</label>
+              <input id="form-nome" 
                 type="text" 
                 required 
                 placeholder="Ex: Maria Silva"
@@ -149,10 +149,10 @@ export default function FormManager({ theme }: FormManagerProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-bold opacity-60 mb-1">Cargo *</label>
-                <select
+                <label htmlFor="form-cargo" className="block font-bold opacity-60 mb-1">Cargo *</label>
+                <select id="form-cargo"
                   value={newLinkData.cargo} 
                   onChange={e => {
                     const cargo = e.target.value;

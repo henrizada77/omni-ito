@@ -150,8 +150,8 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
             )}
 
             <div>
-              <label className={labelCls}>Seu nome *</label>
-              <input
+              <label htmlFor="vaga-coordenadorNome" className={labelCls}>Seu nome *</label>
+              <input id="vaga-coordenadorNome"
                 value={coordenadorNome}
                 onChange={e => setCoordenadorNome(e.target.value)}
                 maxLength={120}
@@ -159,17 +159,17 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Setor *</label>
-                <select value={setor} onChange={e => setSetor(e.target.value)} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>
+                <label htmlFor="vaga-setor" className={labelCls}>Setor *</label>
+                <select id="vaga-setor" value={setor} onChange={e => setSetor(e.target.value)} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>
                   <option value="">— Selecione —</option>
                   {SETORES.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Quantidade</label>
-                <input
+                <label htmlFor="vaga-quantidade" className={labelCls}>Quantidade</label>
+                <input id="vaga-quantidade"
                   type="number"
                   min={1}
                   value={quantidade}
@@ -180,8 +180,8 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
             </div>
 
             <div>
-              <label className={labelCls}>Cargo / título da vaga *</label>
-              <input
+              <label htmlFor="vaga-tituloCargo" className={labelCls}>Cargo / título da vaga *</label>
+              <input id="vaga-tituloCargo"
                 value={tituloCargo}
                 onChange={e => setTituloCargo(e.target.value)}
                 maxLength={160}
@@ -190,8 +190,8 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
             </div>
 
             <div>
-              <label className={labelCls}>Funções / atividades *</label>
-              <textarea
+              <label htmlFor="vaga-funcoes" className={labelCls}>Funções / atividades *</label>
+              <textarea id="vaga-funcoes"
                 value={funcoes}
                 onChange={e => setFuncoes(e.target.value)}
                 rows={4}
@@ -202,8 +202,8 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
             </div>
 
             <div>
-              <label className={labelCls}>Requisitos / necessidades</label>
-              <textarea
+              <label htmlFor="vaga-requisitos" className={labelCls}>Requisitos / necessidades</label>
+              <textarea id="vaga-requisitos"
                 value={requisitos}
                 onChange={e => setRequisitos(e.target.value)}
                 rows={3}
@@ -214,8 +214,8 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
             </div>
 
             <div>
-              <label className={labelCls}>Justificativa</label>
-              <textarea
+              <label htmlFor="vaga-justificativa" className={labelCls}>Justificativa</label>
+              <textarea id="vaga-justificativa"
                 value={justificativa}
                 onChange={e => setJustificativa(e.target.value)}
                 rows={2}
@@ -225,16 +225,16 @@ export default function SolicitarVaga({ theme, setTheme }: SolicitarVagaProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Tipo de contratação</label>
-                <select value={tipoContratacao} onChange={e => setTipoContratacao(e.target.value)} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>
+                <label htmlFor="vaga-tipoContratacao" className={labelCls}>Tipo de contratação</label>
+                <select id="vaga-tipoContratacao" value={tipoContratacao} onChange={e => setTipoContratacao(e.target.value)} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>
                   {TIPOS_CONTRATACAO.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
               <div>
-                <label className={labelCls}>Urgência</label>
-                <select value={urgencia} onChange={e => setUrgencia(e.target.value as typeof URGENCIAS[number])} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>
+                <label htmlFor="vaga-urgencia" className={labelCls}>Urgência</label>
+                <select id="vaga-urgencia" value={urgencia} onChange={e => setUrgencia(e.target.value as typeof URGENCIAS[number])} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>
                   {URGENCIAS.map(u => <option key={u} value={u}>{u}</option>)}
                 </select>
               </div>

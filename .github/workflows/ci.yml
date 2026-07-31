@@ -1,0 +1,53 @@
+# Verificação a cada push e pull request.
+#
+# Existe porque até 2026-07-29 nada impedia código quebrado de entrar em main.
+#
+# Os testes cobrem as funções puras de cálculo — aviso prévio, prazo de
+# quitação e turnover. É pouca superfície de propósito: é onde um erro custa
+# passivo trabalhista, não tela feia. A suíte foi verificada por mutação (três
+# regras quebradas de propósito, três pegas), então ela tem dentes.
+#
+# O lint roda sem --deny-warnings de propósito. O código tem ~213 avisos de
+# acessibilidade conhecidos e catalogados em docs/AUDITORIA.md; falhar por eles
+# hoje só ensinaria a ignorar o CI. As regras que já estão limpas estão como
+# 'error' no .oxlintrc.json e essas, sim, quebram o build.
+
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  verificar:
+    name: Tipos, lint e build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Checagem de tipos
+        run: npx tsc -b
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Testes
+        run: npm test
+
+      - name: Build
+        run: npx vite build
+        env:
+          # Valores de fachada: o build não fala com o Supabase, mas o cliente
+          # agora falha alto se as variáveis faltarem (ver src/supabaseClient.ts).
+          VITE_SUPABASE_URL: https://exemplo.supabase.co
+          VITE_SUPABASE_ANON_KEY: chave-de-build

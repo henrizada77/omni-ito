@@ -133,7 +133,23 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  /** Espelha o teto do bucket (sprint40). Manter os dois em sincronia. */
+  const TAMANHO_MAX_MB = 10;
+
   const handleFileChange = (field: string, file: File | null) => {
+    // O bucket rejeita acima de 10 MB, e essa recusa chegaria só no envio —
+    // depois de a pessoa preencher o formulário inteiro. Avisar aqui, na
+    // escolha do arquivo, economiza o retrabalho.
+    if (file && file.size > TAMANHO_MAX_MB * 1024 * 1024) {
+      const mb = (file.size / 1024 / 1024).toFixed(1);
+      setErrorMsg(
+        `"${file.name}" tem ${mb} MB e o limite é ${TAMANHO_MAX_MB} MB. ` +
+        `Se for foto de documento, tire de novo em resolução menor ou envie o PDF.`
+      );
+      setSelectedFiles(prev => ({ ...prev, [field]: null }));
+      return;
+    }
+    setErrorMsg('');
     setSelectedFiles(prev => ({ ...prev, [field]: file }));
   };
 
@@ -322,86 +338,86 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block font-bold opacity-60 mb-1">Nome Completo *</label>
-                <input type="text" required value={formData.nome} onChange={e => handleInputChange('nome', e.target.value)}
+                <label htmlFor="adm-nome" className="block font-bold opacity-60 mb-1">Nome Completo *</label>
+                <input id="adm-nome" type="text" required value={formData.nome} onChange={e => handleInputChange('nome', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 focus:border-white/35':'border-black/15 focus:border-black/35'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Nome Social / Apelido</label>
-                <input type="text" value={formData.nome_social} onChange={e => handleInputChange('nome_social', e.target.value)}
+                <label htmlFor="adm-nome-social" className="block font-bold opacity-60 mb-1">Nome Social / Apelido</label>
+                <input id="adm-nome-social" type="text" value={formData.nome_social} onChange={e => handleInputChange('nome_social', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Data de Nascimento *</label>
-                <input type="date" required value={formData.data_nascimento} onChange={e => handleInputChange('data_nascimento', e.target.value)}
+                <label htmlFor="adm-data-nascimento" className="block font-bold opacity-60 mb-1">Data de Nascimento *</label>
+                <input id="adm-data-nascimento" type="date" required value={formData.data_nascimento} onChange={e => handleInputChange('data_nascimento', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">CPF *</label>
-                <input type="text" placeholder="000.000.000-00" required value={formData.cpf} onChange={e => handleInputChange('cpf', e.target.value)}
+                <label htmlFor="adm-cpf" className="block font-bold opacity-60 mb-1">CPF *</label>
+                <input id="adm-cpf" type="text" placeholder="000.000.000-00" required value={formData.cpf} onChange={e => handleInputChange('cpf', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">RG *</label>
-                <input type="text" placeholder="Ex: 1234567-8 / SSP-AL" required value={formData.rg} onChange={e => handleInputChange('rg', e.target.value)}
+                <label htmlFor="adm-rg" className="block font-bold opacity-60 mb-1">RG *</label>
+                <input id="adm-rg" type="text" placeholder="Ex: 1234567-8 / SSP-AL" required value={formData.rg} onChange={e => handleInputChange('rg', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">PIS/PASEP</label>
-                <input type="text" value={formData.pis_pasep} onChange={e => handleInputChange('pis_pasep', e.target.value)}
+                <label htmlFor="adm-pis-pasep" className="block font-bold opacity-60 mb-1">PIS/PASEP</label>
+                <input id="adm-pis-pasep" type="text" value={formData.pis_pasep} onChange={e => handleInputChange('pis_pasep', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Município/UF de Nascimento *</label>
-                <input type="text" required value={formData.municipio_uf_nascimento} onChange={e => handleInputChange('municipio_uf_nascimento', e.target.value)}
+                <label htmlFor="adm-municipio-uf-nascimento" className="block font-bold opacity-60 mb-1">Município/UF de Nascimento *</label>
+                <input id="adm-municipio-uf-nascimento" type="text" required value={formData.municipio_uf_nascimento} onChange={e => handleInputChange('municipio_uf_nascimento', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Raça/Cor</label>
-                <select value={formData.raca_cor} onChange={e => handleInputChange('raca_cor', e.target.value)}
+                <label htmlFor="adm-raca-cor" className="block font-bold opacity-60 mb-1">Raça/Cor</label>
+                <select id="adm-raca-cor" value={formData.raca_cor} onChange={e => handleInputChange('raca_cor', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Branca','Parda','Preta','Amarela','Indígena','Prefiro não declarar'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Sexo</label>
-                <select value={formData.genero} onChange={e => handleInputChange('genero', e.target.value)}
+                <label htmlFor="adm-genero" className="block font-bold opacity-60 mb-1">Sexo</label>
+                <select id="adm-genero" value={formData.genero} onChange={e => handleInputChange('genero', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Feminino','Masculino','Outro','Prefiro não declarar'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Estado Civil</label>
-                <select value={formData.estado_civil} onChange={e => handleInputChange('estado_civil', e.target.value)}
+                <label htmlFor="adm-estado-civil" className="block font-bold opacity-60 mb-1">Estado Civil</label>
+                <select id="adm-estado-civil" value={formData.estado_civil} onChange={e => handleInputChange('estado_civil', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Solteiro(a)','Casado(a)','União estável','Divorciado(a)','Viúvo(a)'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Nome da Mãe *</label>
-                <input type="text" required value={formData.nome_mae} onChange={e => handleInputChange('nome_mae', e.target.value)}
+                <label htmlFor="adm-nome-mae" className="block font-bold opacity-60 mb-1">Nome da Mãe *</label>
+                <input id="adm-nome-mae" type="text" required value={formData.nome_mae} onChange={e => handleInputChange('nome_mae', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Nome do Pai</label>
-                <input type="text" value={formData.nome_pai} onChange={e => handleInputChange('nome_pai', e.target.value)}
+                <label htmlFor="adm-nome-pai" className="block font-bold opacity-60 mb-1">Nome do Pai</label>
+                <input id="adm-nome-pai" type="text" value={formData.nome_pai} onChange={e => handleInputChange('nome_pai', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Possui alguma deficiência?</label>
-                <select value={formData.possui_deficiencia} onChange={e => handleInputChange('possui_deficiencia', e.target.value)}
+                <label htmlFor="adm-possui-deficiencia" className="block font-bold opacity-60 mb-1">Possui alguma deficiência?</label>
+                <select id="adm-possui-deficiencia" value={formData.possui_deficiencia} onChange={e => handleInputChange('possui_deficiencia', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
@@ -410,15 +426,15 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
 
               {formData.possui_deficiencia === 'Sim' && (
                 <div className="md:col-span-2">
-                  <label className="block font-bold opacity-60 mb-1">Especifique a deficiência / Adaptações necessárias</label>
-                  <input type="text" value={formData.deficiencia_qual} onChange={e => handleInputChange('deficiencia_qual', e.target.value)}
+                  <label htmlFor="adm-deficiencia-qual" className="block font-bold opacity-60 mb-1">Especifique a deficiência / Adaptações necessárias</label>
+                  <input id="adm-deficiencia-qual" type="text" value={formData.deficiencia_qual} onChange={e => handleInputChange('deficiencia_qual', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
               )}
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Possui dependentes?</label>
-                <select value={formData.possui_dependentes} onChange={e => handleInputChange('possui_dependentes', e.target.value)}
+                <label htmlFor="adm-possui-dependentes" className="block font-bold opacity-60 mb-1">Possui dependentes?</label>
+                <select id="adm-possui-dependentes" value={formData.possui_dependentes} onChange={e => handleInputChange('possui_dependentes', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
@@ -427,8 +443,8 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
 
               {formData.possui_dependentes === 'Sim' && (
                 <div className="md:col-span-2">
-                  <label className="block font-bold opacity-60 mb-1">Nomes, parentesco e idade dos dependentes</label>
-                  <textarea value={formData.dependentes_detalhes} onChange={e => handleInputChange('dependentes_detalhes', e.target.value)}
+                  <label htmlFor="adm-dependentes-detalhes" className="block font-bold opacity-60 mb-1">Nomes, parentesco e idade dos dependentes</label>
+                  <textarea id="adm-dependentes-detalhes" value={formData.dependentes_detalhes} onChange={e => handleInputChange('dependentes_detalhes', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'} h-16`} />
                 </div>
               )}
@@ -443,33 +459,33 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
             
             <div className="space-y-4">
               <div>
-                <label className="block font-bold opacity-60 mb-1">Endereço Residencial Completo (com CEP) *</label>
-                <input type="text" required value={formData.endereco_completo} onChange={e => handleInputChange('endereco_completo', e.target.value)}
+                <label htmlFor="adm-endereco-completo" className="block font-bold opacity-60 mb-1">Endereço Residencial Completo (com CEP) *</label>
+                <input id="adm-endereco-completo" type="text" required value={formData.endereco_completo} onChange={e => handleInputChange('endereco_completo', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold opacity-60 mb-1">Tempo no endereço atual</label>
-                  <input type="text" placeholder="Ex: 3 anos" value={formData.tempo_endereco_atual} onChange={e => handleInputChange('tempo_endereco_atual', e.target.value)}
+                  <label htmlFor="adm-tempo-endereco-atual" className="block font-bold opacity-60 mb-1">Tempo no endereço atual</label>
+                  <input id="adm-tempo-endereco-atual" type="text" placeholder="Ex: 3 anos" value={formData.tempo_endereco_atual} onChange={e => handleInputChange('tempo_endereco_atual', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
 
                 <div>
-                  <label className="block font-bold opacity-60 mb-1">Telefone Residencial</label>
-                  <input type="text" value={formData.telefone_residencial} onChange={e => handleInputChange('telefone_residencial', e.target.value)}
+                  <label htmlFor="adm-telefone-residencial" className="block font-bold opacity-60 mb-1">Telefone Residencial</label>
+                  <input id="adm-telefone-residencial" type="text" value={formData.telefone_residencial} onChange={e => handleInputChange('telefone_residencial', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
 
                 <div>
-                  <label className="block font-bold opacity-60 mb-1">WhatsApp / Celular *</label>
-                  <input type="text" required value={formData.telefone_whatsapp} onChange={e => handleInputChange('telefone_whatsapp', e.target.value)}
+                  <label htmlFor="adm-telefone-whatsapp" className="block font-bold opacity-60 mb-1">WhatsApp / Celular *</label>
+                  <input id="adm-telefone-whatsapp" type="text" required value={formData.telefone_whatsapp} onChange={e => handleInputChange('telefone_whatsapp', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
 
                 <div>
-                  <label className="block font-bold opacity-60 mb-1">E-mail Pessoal *</label>
-                  <input type="email" required value={formData.email_pessoal} onChange={e => handleInputChange('email_pessoal', e.target.value)}
+                  <label htmlFor="adm-email-pessoal" className="block font-bold opacity-60 mb-1">E-mail Pessoal *</label>
+                  <input id="adm-email-pessoal" type="email" required value={formData.email_pessoal} onChange={e => handleInputChange('email_pessoal', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
               </div>
@@ -484,75 +500,75 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold opacity-60 mb-1">Cargo a ser ocupado *</label>
-                <input type="text" required value={formData.cargo} onChange={e => handleInputChange('cargo', e.target.value)}
+                <label htmlFor="adm-cargo" className="block font-bold opacity-60 mb-1">Cargo a ser ocupado *</label>
+                <input id="adm-cargo" type="text" required value={formData.cargo} onChange={e => handleInputChange('cargo', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Departamento/Setor *</label>
-                <select value={formData.setor} onChange={e => handleInputChange('setor', e.target.value)}
+                <label htmlFor="adm-setor" className="block font-bold opacity-60 mb-1">Departamento/Setor *</label>
+                <select id="adm-setor" value={formData.setor} onChange={e => handleInputChange('setor', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Biomedicina', 'Recepção', 'Financeiro', 'Call Center', 'Smartshape', 'Enfermagem', 'Farmácia', 'Serviços Gerais', 'Nutrição', 'Administrativo'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Tipo de Vínculo</label>
-                <select value={formData.tipo_vinculo} onChange={e => handleInputChange('tipo_vinculo', e.target.value)}
+                <label htmlFor="adm-tipo-vinculo" className="block font-bold opacity-60 mb-1">Tipo de Vínculo</label>
+                <select id="adm-tipo-vinculo" value={formData.tipo_vinculo} onChange={e => handleInputChange('tipo_vinculo', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['CLT', 'PJ', 'Temporário', 'Estágio', 'Outro'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Jornada/Regime de Trabalho</label>
-                <select value={formData.jornada_regime} onChange={e => handleInputChange('jornada_regime', e.target.value)}
+                <label htmlFor="adm-jornada-regime" className="block font-bold opacity-60 mb-1">Jornada/Regime de Trabalho</label>
+                <select id="adm-jornada-regime" value={formData.jornada_regime} onChange={e => handleInputChange('jornada_regime', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['44h semanal', '40h', '30h', 'Horista', 'Plantão', 'Outro'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Data de Admissão Prevista *</label>
-                <input type="date" required value={formData.data_admissao} onChange={e => handleInputChange('data_admissao', e.target.value)}
+                <label htmlFor="adm-data-admissao" className="block font-bold opacity-60 mb-1">Data de Admissão Prevista *</label>
+                <input id="adm-data-admissao" type="date" required value={formData.data_admissao} onChange={e => handleInputChange('data_admissao', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Horário de Trabalho (Entrada/Pausa/Saída)</label>
-                <input type="text" placeholder="Ex: 08:00 - 12:00 / 13:00 - 17:00" value={formData.horario_trabalho} onChange={e => handleInputChange('horario_trabalho', e.target.value)}
+                <label htmlFor="adm-horario-trabalho" className="block font-bold opacity-60 mb-1">Horário de Trabalho (Entrada/Pausa/Saída)</label>
+                <input id="adm-horario-trabalho" type="text" placeholder="Ex: 08:00 - 12:00 / 13:00 - 17:00" value={formData.horario_trabalho} onChange={e => handleInputChange('horario_trabalho', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Salário Inicial (R$) *</label>
-                <input type="text" placeholder="Ex: 4500,00" required value={formData.salario} onChange={e => handleInputChange('salario', e.target.value)}
+                <label htmlFor="adm-salario" className="block font-bold opacity-60 mb-1">Salário Inicial (R$) *</label>
+                <input id="adm-salario" type="text" placeholder="Ex: 4500,00" required value={formData.salario} onChange={e => handleInputChange('salario', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Nº Carteira de Trabalho / Série / UF</label>
-                <input type="text" value={formData.ctps_numero} onChange={e => handleInputChange('ctps_numero', e.target.value)}
+                <label htmlFor="adm-ctps-numero" className="block font-bold opacity-60 mb-1">Nº Carteira de Trabalho / Série / UF</label>
+                <input id="adm-ctps-numero" type="text" value={formData.ctps_numero} onChange={e => handleInputChange('ctps_numero', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div className="md:col-span-2 border-t border-white/10 pt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block font-bold opacity-60 mb-1">Nome do Banco & Tipo de Conta</label>
-                  <input type="text" placeholder="Ex: Itaú - Conta Corrente" value={formData.banco_nome} onChange={e => handleInputChange('banco_nome', e.target.value)}
+                  <label htmlFor="adm-banco-nome" className="block font-bold opacity-60 mb-1">Nome do Banco & Tipo de Conta</label>
+                  <input id="adm-banco-nome" type="text" placeholder="Ex: Itaú - Conta Corrente" value={formData.banco_nome} onChange={e => handleInputChange('banco_nome', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
 
                 <div>
-                  <label className="block font-bold opacity-60 mb-1">Agência / Conta com Dígito</label>
-                  <input type="text" placeholder="Ex: Ag: 1234 / Cc: 56789-0" value={formData.banco_agencia} onChange={e => handleInputChange('banco_agencia', e.target.value)}
+                  <label htmlFor="adm-banco-agencia" className="block font-bold opacity-60 mb-1">Agência / Conta com Dígito</label>
+                  <input id="adm-banco-agencia" type="text" placeholder="Ex: Ag: 1234 / Cc: 56789-0" value={formData.banco_agencia} onChange={e => handleInputChange('banco_agencia', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block font-bold opacity-60 mb-1">Chave PIX para pagamentos emergentes</label>
-                  <input type="text" placeholder="Celular, E-mail ou CPF" value={formData.banco_pix} onChange={e => handleInputChange('banco_pix', e.target.value)}
+                  <label htmlFor="adm-banco-pix" className="block font-bold opacity-60 mb-1">Chave PIX para pagamentos emergentes</label>
+                  <input id="adm-banco-pix" type="text" placeholder="Celular, E-mail ou CPF" value={formData.banco_pix} onChange={e => handleInputChange('banco_pix', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
               </div>
@@ -567,40 +583,40 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
             
             <div className="space-y-4">
               <div>
-                <label className="block font-bold opacity-60 mb-1">Escolaridade</label>
-                <select value={formData.escolaridade} onChange={e => handleInputChange('escolaridade', e.target.value)}
+                <label htmlFor="adm-escolaridade" className="block font-bold opacity-60 mb-1">Escolaridade</label>
+                <select id="adm-escolaridade" value={formData.escolaridade} onChange={e => handleInputChange('escolaridade', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   {['Fundamental','Médio','Técnico','Superior incompleto','Superior completo','Pós-graduação'].map(o => <option key={o}>{o}</option>)}
                 </select>
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Curso(s) e Instituições de Ensino</label>
-                <input type="text" placeholder="Ex: Fisioterapia - Universidade Federal de Alagoas" value={formData.cursos_instituicao} onChange={e => handleInputChange('cursos_instituicao', e.target.value)}
+                <label htmlFor="adm-cursos-instituicao" className="block font-bold opacity-60 mb-1">Curso(s) e Instituições de Ensino</label>
+                <input id="adm-cursos-instituicao" type="text" placeholder="Ex: Fisioterapia - Universidade Federal de Alagoas" value={formData.cursos_instituicao} onChange={e => handleInputChange('cursos_instituicao', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Idiomas e nível de fluência</label>
-                <input type="text" placeholder="Ex: Inglês Intermediário, Espanhol Básico" value={formData.idiomas_nivel} onChange={e => handleInputChange('idiomas_nivel', e.target.value)}
+                <label htmlFor="adm-idiomas-nivel" className="block font-bold opacity-60 mb-1">Idiomas e nível de fluência</label>
+                <input id="adm-idiomas-nivel" type="text" placeholder="Ex: Inglês Intermediário, Espanhol Básico" value={formData.idiomas_nivel} onChange={e => handleInputChange('idiomas_nivel', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Cursos Complementares / Treinamentos Relevantes</label>
-                <textarea value={formData.cursos_complementares} onChange={e => handleInputChange('cursos_complementares', e.target.value)}
+                <label htmlFor="adm-cursos-complementares" className="block font-bold opacity-60 mb-1">Cursos Complementares / Treinamentos Relevantes</label>
+                <textarea id="adm-cursos-complementares" value={formData.cursos_complementares} onChange={e => handleInputChange('cursos_complementares', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'} h-16`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Último Emprego (Empresa, Cargo, Período, Motivo Saída)</label>
-                <textarea value={formData.emprego_anterior} onChange={e => handleInputChange('emprego_anterior', e.target.value)}
+                <label htmlFor="adm-emprego-anterior" className="block font-bold opacity-60 mb-1">Último Emprego (Empresa, Cargo, Período, Motivo Saída)</label>
+                <textarea id="adm-emprego-anterior" value={formData.emprego_anterior} onChange={e => handleInputChange('emprego_anterior', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'} h-16`} />
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Referências Profissionais (Nome, Cargo, Telefone/Contato)</label>
-                <input type="text" value={formData.referencias_profissionais} onChange={e => handleInputChange('referencias_profissionais', e.target.value)}
+                <label htmlFor="adm-referencias-profissionais" className="block font-bold opacity-60 mb-1">Referências Profissionais (Nome, Cargo, Telefone/Contato)</label>
+                <input id="adm-referencias-profissionais" type="text" value={formData.referencias_profissionais} onChange={e => handleInputChange('referencias_profissionais', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
               </div>
             </div>
@@ -614,8 +630,8 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block font-bold opacity-60 mb-1">Condição de saúde compatível com as funções?</label>
-                <select value={formData.saude_compativel} onChange={e => handleInputChange('saude_compativel', e.target.value)}
+                <label htmlFor="adm-saude-compativel" className="block font-bold opacity-60 mb-1">Condição de saúde compatível com as funções?</label>
+                <select id="adm-saude-compativel" value={formData.saude_compativel} onChange={e => handleInputChange('saude_compativel', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Sim</option>
                   <option>Não</option>
@@ -623,8 +639,8 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               </div>
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Uso de Medicação Contínua?</label>
-                <select value={formData.medicacao_continua} onChange={e => handleInputChange('medicacao_continua', e.target.value)}
+                <label htmlFor="adm-medicacao-continua" className="block font-bold opacity-60 mb-1">Uso de Medicação Contínua?</label>
+                <select id="adm-medicacao-continua" value={formData.medicacao_continua} onChange={e => handleInputChange('medicacao_continua', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
@@ -633,15 +649,15 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
 
               {formData.medicacao_continua === 'Sim' && (
                 <div className="md:col-span-2">
-                  <label className="block font-bold opacity-60 mb-1">Quais medicações?</label>
-                  <input type="text" value={formData.medicacao_continua_qual} onChange={e => handleInputChange('medicacao_continua_qual', e.target.value)}
+                  <label htmlFor="adm-medicacao-continua-qual" className="block font-bold opacity-60 mb-1">Quais medicações?</label>
+                  <input id="adm-medicacao-continua-qual" type="text" value={formData.medicacao_continua_qual} onChange={e => handleInputChange('medicacao_continua_qual', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
               )}
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Possui Alergias Relevantes?</label>
-                <select value={formData.alergias_relevantes} onChange={e => handleInputChange('alergias_relevantes', e.target.value)}
+                <label htmlFor="adm-alergias-relevantes" className="block font-bold opacity-60 mb-1">Possui Alergias Relevantes?</label>
+                <select id="adm-alergias-relevantes" value={formData.alergias_relevantes} onChange={e => handleInputChange('alergias_relevantes', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
@@ -650,15 +666,15 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
 
               {formData.alergias_relevantes === 'Sim' && (
                 <div className="md:col-span-2">
-                  <label className="block font-bold opacity-60 mb-1">Especificação da Alergia</label>
-                  <input type="text" value={formData.alergias_relevantes_qual} onChange={e => handleInputChange('alergias_relevantes_qual', e.target.value)}
+                  <label htmlFor="adm-alergias-relevantes-qual" className="block font-bold opacity-60 mb-1">Especificação da Alergia</label>
+                  <input id="adm-alergias-relevantes-qual" type="text" value={formData.alergias_relevantes_qual} onChange={e => handleInputChange('alergias_relevantes_qual', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                 </div>
               )}
 
               <div>
-                <label className="block font-bold opacity-60 mb-1">Já sofreu Acidente de Trabalho?</label>
-                <select value={formData.sofreu_acidente_trabalho} onChange={e => handleInputChange('sofreu_acidente_trabalho', e.target.value)}
+                <label htmlFor="adm-sofreu-acidente-trabalho" className="block font-bold opacity-60 mb-1">Já sofreu Acidente de Trabalho?</label>
+                <select id="adm-sofreu-acidente-trabalho" value={formData.sofreu_acidente_trabalho} onChange={e => handleInputChange('sofreu_acidente_trabalho', e.target.value)}
                   className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                   <option>Não</option>
                   <option>Sim</option>
@@ -667,8 +683,8 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
 
               {formData.sofreu_acidente_trabalho === 'Sim' && (
                 <div className="md:col-span-2">
-                  <label className="block font-bold opacity-60 mb-1">Descreva o ocorrido</label>
-                  <textarea value={formData.acidente_trabalho_descr} onChange={e => handleInputChange('acidente_trabalho_descr', e.target.value)}
+                  <label htmlFor="adm-acidente-trabalho-descr" className="block font-bold opacity-60 mb-1">Descreva o ocorrido</label>
+                  <textarea id="adm-acidente-trabalho-descr" value={formData.acidente_trabalho_descr} onChange={e => handleInputChange('acidente_trabalho_descr', e.target.value)}
                     className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'} h-16`} />
                 </div>
               )}
@@ -677,23 +693,23 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
                 <span className="font-bold opacity-60 block mb-2">Contatos de Emergência (RH Obligatory)</span>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="block font-bold opacity-60 mb-1">Nome Completo *</label>
-                    <input type="text" required value={formData.emergencia_nome} onChange={e => handleInputChange('emergencia_nome', e.target.value)}
+                    <label htmlFor="adm-emergencia-nome" className="block font-bold opacity-60 mb-1">Nome Completo *</label>
+                    <input id="adm-emergencia-nome" type="text" required value={formData.emergencia_nome} onChange={e => handleInputChange('emergencia_nome', e.target.value)}
                       className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                   </div>
                   <div>
-                    <label className="block font-bold opacity-60 mb-1">Parentesco *</label>
-                    <input type="text" required value={formData.emergencia_parentesco} onChange={e => handleInputChange('emergencia_parentesco', e.target.value)}
+                    <label htmlFor="adm-emergencia-parentesco" className="block font-bold opacity-60 mb-1">Parentesco *</label>
+                    <input id="adm-emergencia-parentesco" type="text" required value={formData.emergencia_parentesco} onChange={e => handleInputChange('emergencia_parentesco', e.target.value)}
                       className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                   </div>
                   <div>
-                    <label className="block font-bold opacity-60 mb-1">Telefone *</label>
-                    <input type="text" required value={formData.emergencia_telefone} onChange={e => handleInputChange('emergencia_telefone', e.target.value)}
+                    <label htmlFor="adm-emergencia-telefone" className="block font-bold opacity-60 mb-1">Telefone *</label>
+                    <input id="adm-emergencia-telefone" type="text" required value={formData.emergencia_telefone} onChange={e => handleInputChange('emergencia_telefone', e.target.value)}
                       className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                   </div>
                   <div className="md:col-span-3">
-                    <label className="block font-bold opacity-60 mb-1">Endereço do Contato de Emergência</label>
-                    <input type="text" value={formData.emergencia_endereco} onChange={e => handleInputChange('emergencia_endereco', e.target.value)}
+                    <label htmlFor="adm-emergencia-endereco" className="block font-bold opacity-60 mb-1">Endereço do Contato de Emergência</label>
+                    <input id="adm-emergencia-endereco" type="text" value={formData.emergencia_endereco} onChange={e => handleInputChange('emergencia_endereco', e.target.value)}
                       className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15':'border-black/15'}`} />
                   </div>
                 </div>
@@ -732,9 +748,9 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
                     <span className="opacity-50 text-[10px] block mb-3">Contas de água, luz ou telefone (últimos 90 dias).</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <label className={`cursor-pointer px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 bg-[#10b981]/20 border border-[#10b981]/25 text-[#10b981] ${selectedFiles.residencia ? 'opacity-100':'opacity-70 hover:opacity-100'}`}>
+                    <label htmlFor="adm-residencia" className={`cursor-pointer px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 bg-[#10b981]/20 border border-[#10b981]/25 text-[#10b981] ${selectedFiles.residencia ? 'opacity-100':'opacity-70 hover:opacity-100'}`}>
                       <Upload size={12} /> {selectedFiles.residencia ? 'Alterar' : 'Anexar'}
-                      <input type="file" className="hidden" accept="image/*,application/pdf" onChange={e => handleFileChange('residencia', e.target.files ? e.target.files[0] : null)} />
+                      <input id="adm-residencia" type="file" className="hidden" accept="image/*,application/pdf" onChange={e => handleFileChange('residencia', e.target.files ? e.target.files[0] : null)} />
                     </label>
                     {selectedFiles.residencia && <span className="truncate max-w-[120px] opacity-75">{selectedFiles.residencia.name}</span>}
                   </div>
@@ -746,9 +762,9 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
                     <span className="opacity-50 text-[10px] block mb-3">Atestado de Saúde Ocupacional.</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <label className={`cursor-pointer px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 bg-[#10b981]/20 border border-[#10b981]/25 text-[#10b981] ${selectedFiles.aso ? 'opacity-100':'opacity-70 hover:opacity-100'}`}>
+                    <label htmlFor="adm-aso" className={`cursor-pointer px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 bg-[#10b981]/20 border border-[#10b981]/25 text-[#10b981] ${selectedFiles.aso ? 'opacity-100':'opacity-70 hover:opacity-100'}`}>
                       <Upload size={12} /> {selectedFiles.aso ? 'Alterar' : 'Anexar'}
-                      <input type="file" className="hidden" accept="image/*,application/pdf" onChange={e => handleFileChange('aso', e.target.files ? e.target.files[0] : null)} />
+                      <input id="adm-aso" type="file" className="hidden" accept="image/*,application/pdf" onChange={e => handleFileChange('aso', e.target.files ? e.target.files[0] : null)} />
                     </label>
                     {selectedFiles.aso && <span className="truncate max-w-[120px] opacity-75">{selectedFiles.aso.name}</span>}
                   </div>
@@ -760,9 +776,9 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
                     <span className="opacity-50 text-[10px] block mb-3">Fundo neutro, boa iluminação, para cadastro no ponto.</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <label className={`cursor-pointer px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 bg-[#10b981]/20 border border-[#10b981]/25 text-[#10b981] ${selectedFiles.foto ? 'opacity-100':'opacity-70 hover:opacity-100'}`}>
+                    <label htmlFor="adm-foto" className={`cursor-pointer px-3 py-1.5 rounded font-bold transition-all flex items-center gap-1 bg-[#10b981]/20 border border-[#10b981]/25 text-[#10b981] ${selectedFiles.foto ? 'opacity-100':'opacity-70 hover:opacity-100'}`}>
                       <Upload size={12} /> {selectedFiles.foto ? 'Alterar' : 'Anexar'}
-                      <input type="file" className="hidden" accept="image/*" onChange={e => handleFileChange('foto', e.target.files ? e.target.files[0] : null)} />
+                      <input id="adm-foto" type="file" className="hidden" accept="image/*" onChange={e => handleFileChange('foto', e.target.files ? e.target.files[0] : null)} />
                     </label>
                     {selectedFiles.foto && <span className="truncate max-w-[120px] opacity-75">{selectedFiles.foto.name}</span>}
                   </div>
@@ -770,8 +786,8 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
               </div>
 
               <div className="space-y-3 border-t border-white/10 pt-4">
-                <label className="flex items-start gap-2 cursor-pointer">
-                  <input type="checkbox" checked={formData.declaracao_veracidade} onChange={e => handleInputChange('declaracao_veracidade', e.target.checked)}
+                <label htmlFor="adm-declaracao-veracidade" className="flex items-start gap-2 cursor-pointer">
+                  <input id="adm-declaracao-veracidade" type="checkbox" checked={formData.declaracao_veracidade} onChange={e => handleInputChange('declaracao_veracidade', e.target.checked)}
                     className="mt-0.5" />
                   <span className="leading-relaxed opacity-75">
                     <strong>Declaração de Veracidade:</strong> Declaro que todas as informações prestadas são verdadeiras e assumo responsabilidade total pela autenticidade dos documentos apresentados funcionalmente.
@@ -780,16 +796,16 @@ export default function AdmissionForm({ theme, onClose, onSuccess, token, initia
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label className="block font-bold opacity-60 mb-1">Consulta de Antecedentes e Contatos</label>
-                    <select value={formData.autorizacao_antecedentes} onChange={e => handleInputChange('autorizacao_antecedentes', e.target.value)}
+                    <label htmlFor="adm-autorizacao-antecedentes" className="block font-bold opacity-60 mb-1">Consulta de Antecedentes e Contatos</label>
+                    <select id="adm-autorizacao-antecedentes" value={formData.autorizacao_antecedentes} onChange={e => handleInputChange('autorizacao_antecedentes', e.target.value)}
                       className={`w-full p-2 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                       <option>Concordo</option>
                       <option>Não concordo</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block font-bold opacity-60 mb-1">Autoriza uso de imagem interna (Crachá/Ponto)</label>
-                    <select value={formData.autorizacao_imagem} onChange={e => handleInputChange('autorizacao_imagem', e.target.value)}
+                    <label htmlFor="adm-autorizacao-imagem" className="block font-bold opacity-60 mb-1">Autoriza uso de imagem interna (Crachá/Ponto)</label>
+                    <select id="adm-autorizacao-imagem" value={formData.autorizacao_imagem} onChange={e => handleInputChange('autorizacao_imagem', e.target.value)}
                       className={`w-full p-2 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}>
                       <option>Sim</option>
                       <option>Não</option>

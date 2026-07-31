@@ -305,19 +305,19 @@ export default function VagasManager({ theme, userId, userEmail }: VagasManagerP
                     {/* Edição RH */}
                     <div className="grid gap-3 md:grid-cols-2">
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Status</label>
-                        <select value={editStatus} onChange={e => setEditStatus(e.target.value as SolicitacaoVaga['status'])} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>
+                        <label htmlFor="vagas-editStatus" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Status</label>
+                        <select id="vagas-editStatus" value={editStatus} onChange={e => setEditStatus(e.target.value as SolicitacaoVaga['status'])} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}>
                           {STATUSES.map(st => <option key={st} value={st}>{STATUS_LABEL[st]}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Link da vaga (site externo)</label>
-                        <input value={editLink} onChange={e => setEditLink(e.target.value)} placeholder="https://..." className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`} />
+                        <label htmlFor="vagas-editLink" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Link da vaga (site externo)</label>
+                        <input id="vagas-editLink" value={editLink} onChange={e => setEditLink(e.target.value)} placeholder="https://..." className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`} />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Anotação interna</label>
-                      <textarea value={editResposta} onChange={e => setEditResposta(e.target.value)} rows={2} maxLength={2000} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`} />
+                      <label htmlFor="vagas-editResposta" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Anotação interna</label>
+                      <textarea id="vagas-editResposta" value={editResposta} onChange={e => setEditResposta(e.target.value)} rows={2} maxLength={2000} className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`} />
                     </div>
                     <div className="flex justify-end">
                       <button

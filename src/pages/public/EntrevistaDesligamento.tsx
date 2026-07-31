@@ -189,10 +189,10 @@ export default function EntrevistaDesligamento({ theme, setTheme }: EntrevistaDe
 
       <div className="space-y-4">
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
+          <label htmlFor="entrev-motivoReal" className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
             Qual foi o motivo real da sua saída?
           </label>
-          <select value={motivoReal} onChange={e => setMotivoReal(e.target.value)} className={inputCls}>
+          <select id="entrev-motivoReal" value={motivoReal} onChange={e => setMotivoReal(e.target.value)} className={inputCls}>
             {MOTIVOS.map(m => <option key={m} value={m}>{m}</option>)}
           </select>
           <input
@@ -204,10 +204,10 @@ export default function EntrevistaDesligamento({ theme, setTheme }: EntrevistaDe
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
+          <label htmlFor="entrev-pontosPositivos" className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
             O que funcionou bem?
           </label>
-          <textarea
+          <textarea id="entrev-pontosPositivos"
             rows={3}
             placeholder="O que você levaria daqui para o próximo lugar"
             value={pontosPositivos}
@@ -217,10 +217,10 @@ export default function EntrevistaDesligamento({ theme, setTheme }: EntrevistaDe
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
+          <label htmlFor="entrev-pontosMelhorar" className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
             O que a gente pode melhorar?
           </label>
-          <textarea
+          <textarea id="entrev-pontosMelhorar"
             rows={3}
             placeholder="Seja direto — é para isso que serve esta pergunta"
             value={pontosMelhorar}
@@ -230,11 +230,11 @@ export default function EntrevistaDesligamento({ theme, setTheme }: EntrevistaDe
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
+          <label htmlFor="entrev-recomendaria" className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
             Recomendaria trabalhar aqui? (0 a 10)
           </label>
           <div className="flex items-center gap-3">
-            <input
+            <input id="entrev-recomendaria"
               type="range"
               min={0}
               max={10}
@@ -247,10 +247,10 @@ export default function EntrevistaDesligamento({ theme, setTheme }: EntrevistaDe
         </div>
 
         <div>
-          <label className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
+          <label htmlFor="entrev-comentarios" className="block text-[10px] font-bold uppercase tracking-wider opacity-65 mb-1.5">
             Comentários finais <span className="font-normal opacity-60">(opcional)</span>
           </label>
-          <textarea
+          <textarea id="entrev-comentarios"
             rows={3}
             placeholder="Qualquer coisa que ficou faltando dizer"
             value={comentarios}

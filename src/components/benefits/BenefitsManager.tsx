@@ -356,8 +356,8 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
           <h5 className="font-bold uppercase tracking-wider opacity-60">Novo Benefício Corporativo</h5>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="block font-bold opacity-60 mb-1">Nome do Benefício *</label>
-              <input 
+              <label htmlFor="benef-nome" className="block font-bold opacity-60 mb-1">Nome do Benefício *</label>
+              <input id="benef-nome" 
                 type="text" 
                 required 
                 placeholder="Ex: Auxílio Combustível" 
@@ -367,8 +367,8 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
               />
             </div>
             <div>
-              <label className="block font-bold opacity-60 mb-1">Tipo de Impacto *</label>
-              <select
+              <label htmlFor="benef-tipo" className="block font-bold opacity-60 mb-1">Tipo de Impacto *</label>
+              <select id="benef-tipo"
                 value={newBenefit.tipo}
                 onChange={e => setNewBenefit(prev => ({ ...prev, tipo: e.target.value as any }))}
                 className={`w-full p-2.5 rounded border bg-transparent ${theme==='dark'?'border-white/15 glass-fill':'border-black/15 bg-white'}`}
@@ -378,8 +378,8 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
               </select>
             </div>
             <div>
-              <label className="block font-bold opacity-60 mb-1">Valor Padrão (R$) *</label>
-              <input 
+              <label htmlFor="benef-valor-padrao" className="block font-bold opacity-60 mb-1">Valor Padrão (R$) *</label>
+              <input id="benef-valor-padrao" 
                 type="number" 
                 step="0.01"
                 required 
@@ -390,8 +390,8 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
               />
             </div>
             <div className="md:col-span-3">
-              <label className="block font-bold opacity-60 mb-1">Descrição / Regras de Concessão</label>
-              <input 
+              <label htmlFor="benef-descricao" className="block font-bold opacity-60 mb-1">Descrição / Regras de Concessão</label>
+              <input id="benef-descricao" 
                 type="text" 
                 placeholder="Ex: Fornecido a funcionários alocados externamente..." 
                 value={newBenefit.descricao}

@@ -1,6 +1,14 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { supabase } from '../../supabaseClient';
-import { Plus, Pencil, Trash2, X, ChevronUp, ChevronDown, User } from 'lucide-react';
+import { Plus, Pencil, Trash2, X, ChevronUp, ChevronDown, User, ImageDown, Printer } from 'lucide-react';
+import {
+  gerarSvgOrganograma,
+  svgParaPngBlob,
+  baixarArquivo,
+  imprimirSvg,
+  type NoOrganograma
+} from '../../utils/organogramaSvg';
+import { useDialogoAcessivel } from '../../hooks/useDialogoAcessivel';
 
 type Theme = 'dark' | 'light';
 
@@ -31,11 +39,15 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
   const [salvando, setSalvando] = useState(false);
 
   // modal de edição/criação
+  const [exportando, setExportando] = useState<'png' | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null); // null = criando
   const [form, setForm] = useState(emptyForm);
 
   const aviso = useCallback((m: string) => { notify ? notify(m) : window.alert(m); }, [notify]);
+
+  // Esc fecha, Tab circula dentro do modal, e o foco volta para quem abriu.
+  const { ref: refModal, propsDialogo } = useDialogoAcessivel(modalOpen, () => setModalOpen(false));
 
   const fetchNodes = useCallback(async () => {
     setLoading(true);
@@ -163,17 +175,64 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
           )}
           {hasFullAccess && (
             <div className="flex items-center justify-center gap-1 mt-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
-              <button onClick={() => abrirNovo(n.id)} title="Adicionar subordinado" className="p-1 rounded bg-white/10 hover:bg-white/20"><Plus size={11} /></button>
-              <button onClick={() => abrirEdicao(n)} title="Editar" className="p-1 rounded bg-white/10 hover:bg-white/20"><Pencil size={10} /></button>
-              <button onClick={() => mover(n, -1)} title="Mover para a esquerda" className="p-1 rounded bg-white/10 hover:bg-white/20"><ChevronUp size={11} /></button>
-              <button onClick={() => mover(n, 1)} title="Mover para a direita" className="p-1 rounded bg-white/10 hover:bg-white/20"><ChevronDown size={11} /></button>
-              <button onClick={() => excluir(n)} title="Excluir" className="p-1 rounded bg-rose-500/25 hover:bg-rose-500/40"><Trash2 size={10} /></button>
+              {/* aria-label além do title: title não é lido de forma confiável
+                  por leitor de tela e não aparece no toque. E o rótulo cita o
+                  cargo, senão a pessoa ouve "Excluir" cinco vezes seguidas sem
+                  saber excluir o quê. */}
+              <button onClick={() => abrirNovo(n.id)} title="Adicionar subordinado" aria-label={`Adicionar subordinado a ${n.titulo}`} className="p-1 rounded bg-white/10 hover:bg-white/20"><Plus size={11} aria-hidden /></button>
+              <button onClick={() => abrirEdicao(n)} title="Editar" aria-label={`Editar ${n.titulo}`} className="p-1 rounded bg-white/10 hover:bg-white/20"><Pencil size={10} aria-hidden /></button>
+              <button onClick={() => mover(n, -1)} title="Mover para a esquerda" aria-label={`Mover ${n.titulo} para a esquerda`} className="p-1 rounded bg-white/10 hover:bg-white/20"><ChevronUp size={11} aria-hidden /></button>
+              <button onClick={() => mover(n, 1)} title="Mover para a direita" aria-label={`Mover ${n.titulo} para a direita`} className="p-1 rounded bg-white/10 hover:bg-white/20"><ChevronDown size={11} aria-hidden /></button>
+              <button onClick={() => excluir(n)} title="Excluir" aria-label={`Excluir ${n.titulo}`} className="p-1 rounded bg-rose-500/25 hover:bg-rose-500/40"><Trash2 size={10} aria-hidden /></button>
             </div>
           )}
         </div>
         {filhos.length > 0 && <ul>{filhos.map(renderNode)}</ul>}
       </li>
     );
+  };
+
+  // ---- exportação ----
+  // O SVG é desenhado a partir dos dados, não capturado da tela. A árvore
+  // visível usa vidro e blur, que nenhum capturador de HTML reproduz bem — e
+  // desenhar do zero ainda sai mais nítido e sem dependência nova.
+  const montarSvg = useCallback(() => {
+    const paraExportar: NoOrganograma[] = nodes.map(n => ({
+      id: n.id,
+      parent_id: n.parent_id,
+      titulo: n.titulo,
+      subtitulo: n.subtitulo,
+      colaborador: nomeColab(n.colaborador_id),
+      ordem: n.ordem
+    }));
+    return gerarSvgOrganograma(paraExportar, {
+      titulo: 'Organograma',
+      rodape: `Gerado em ${new Date().toLocaleDateString('pt-BR')} · Omni ITO`
+    });
+  }, [nodes, nomeColab]);
+
+  const nomeBase = () => `organograma-${new Date().toISOString().slice(0, 10)}`;
+
+  const exportarPng = async () => {
+    setExportando('png');
+    try {
+      const blob = await svgParaPngBlob(montarSvg(), 2);
+      baixarArquivo(blob, `${nomeBase()}.png`, 'image/png');
+    } catch (e) {
+      aviso(e instanceof Error ? e.message : 'Não foi possível gerar o PNG.');
+    } finally {
+      setExportando(null);
+    }
+  };
+
+  const exportarPdf = () => {
+    // Sem biblioteca de PDF: o diálogo do navegador já gera PDF vetorial, e
+    // quem imprime escolhe margem e orientação. jsPDF custaria ~350 kB.
+    try {
+      imprimirSvg(montarSvg(), 'Organograma — Omni ITO');
+    } catch (e) {
+      aviso(e instanceof Error ? e.message : 'Não foi possível abrir a impressão.');
+    }
   };
 
   // superiores válidos no dropdown (não pode ser o próprio nó nem descendente)
@@ -206,11 +265,37 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
           <h3 className="font-display text-xl font-semibold">Organograma</h3>
           <p className="text-xs text-fg-secondary mt-1">Estrutura hierárquica da clínica. Passe o mouse num cargo para editar, adicionar subordinado ou reordenar.</p>
         </div>
-        {hasFullAccess && (
-          <button onClick={() => abrirNovo(null)} className="shrink-0 inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-brand text-white hover:bg-brand-strong transition-colors">
-            <Plus size={14} /> Novo cargo (topo)
-          </button>
-        )}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
+          {/* Exportar não depende de hasFullAccess: quem enxerga o organograma
+              pode levá-lo para uma reunião. Não há dado a mais no arquivo do
+              que já está na tela. */}
+          {roots.length > 0 && (
+            <>
+              <button
+                onClick={exportarPng}
+                disabled={exportando === 'png'}
+                title="Baixar como imagem PNG"
+                className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl border border-line hover:bg-surface-2 transition-colors disabled:opacity-50"
+              >
+                <ImageDown size={14} aria-hidden />
+                {exportando === 'png' ? 'Gerando…' : 'PNG'}
+              </button>
+              <button
+                onClick={exportarPdf}
+                title="Abrir a impressão para salvar em PDF"
+                className="inline-flex items-center gap-2 text-xs font-bold px-3.5 py-2 rounded-xl border border-line hover:bg-surface-2 transition-colors"
+              >
+                <Printer size={14} aria-hidden />
+                PDF
+              </button>
+            </>
+          )}
+          {hasFullAccess && (
+            <button onClick={() => abrirNovo(null)} className="inline-flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-xl bg-brand text-white hover:bg-brand-strong transition-colors">
+              <Plus size={14} aria-hidden /> Novo cargo (topo)
+            </button>
+          )}
+        </div>
       </div>
 
       {roots.length === 0 ? (
@@ -230,15 +315,20 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
       {modalOpen && (
         <>
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60]" onClick={() => setModalOpen(false)} />
-          <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92vw] max-w-md rounded-2xl border border-line glass-fill glass-sheen p-5 space-y-4">
+          <div
+            ref={refModal}
+            {...propsDialogo}
+            aria-labelledby="org-modal-titulo"
+            className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-[60] w-[92vw] max-w-md rounded-2xl border border-line glass-fill glass-sheen p-5 space-y-4 outline-none"
+          >
             <div className="flex items-center justify-between">
-              <h4 className="font-display text-lg font-semibold">{editingId ? 'Editar cargo' : 'Novo cargo'}</h4>
-              <button onClick={() => setModalOpen(false)} className="p-1.5 rounded-lg border border-line hover:bg-surface-2"><X size={16} /></button>
+              <h4 id="org-modal-titulo" className="font-display text-lg font-semibold">{editingId ? 'Editar cargo' : 'Novo cargo'}</h4>
+              <button onClick={() => setModalOpen(false)} aria-label="Fechar" className="p-1.5 rounded-lg border border-line hover:bg-surface-2"><X size={16} aria-hidden /></button>
             </div>
 
             <div className="space-y-1">
-              <label className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Cargo / Título</label>
-              <input
+              <label htmlFor="org-titulo" className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Cargo / Título</label>
+              <input id="org-titulo"
                 autoFocus
                 value={form.titulo}
                 onChange={e => setForm(f => ({ ...f, titulo: e.target.value }))}
@@ -248,8 +338,8 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
             </div>
 
             <div className="space-y-1">
-              <label className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Subtítulo (opcional)</label>
-              <input
+              <label htmlFor="org-subtitulo" className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Subtítulo (opcional)</label>
+              <input id="org-subtitulo"
                 value={form.subtitulo}
                 onChange={e => setForm(f => ({ ...f, subtitulo: e.target.value }))}
                 placeholder="Ex.: Analista Financeiro"
@@ -258,8 +348,8 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
             </div>
 
             <div className="space-y-1">
-              <label className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Superior imediato</label>
-              <select
+              <label htmlFor="org-superior-imediato" className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Superior imediato</label>
+              <select id="org-superior-imediato"
                 value={form.parent_id || ''}
                 onChange={e => setForm(f => ({ ...f, parent_id: e.target.value || null }))}
                 className="w-full text-sm p-2.5 rounded-lg border border-line bg-surface-2 text-fg focus:outline-none focus:border-brand/50"
@@ -272,8 +362,8 @@ export default function OrganogramaManager({ colaboradoresList, hasFullAccess, n
             </div>
 
             <div className="space-y-1">
-              <label className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Vincular colaborador (opcional)</label>
-              <select
+              <label htmlFor="org-colaborador-id" className="font-rounded text-[10px] font-bold uppercase tracking-wider text-fg-muted">Vincular colaborador (opcional)</label>
+              <select id="org-colaborador-id"
                 value={form.colaborador_id}
                 onChange={e => setForm(f => ({ ...f, colaborador_id: e.target.value }))}
                 className="w-full text-sm p-2.5 rounded-lg border border-line bg-surface-2 text-fg focus:outline-none focus:border-brand/50"

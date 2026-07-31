@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { useDialogoAcessivel } from '../../hooks/useDialogoAcessivel';
 import {
   Megaphone,
   Plus,
@@ -145,6 +146,8 @@ export default function EndomarketingManager({
   onChange
 }: EndomarketingManagerProps) {
   const [modalAberto, setModalAberto] = useState(false);
+  // Esc fecha, Tab circula dentro do modal, foco volta para quem abriu.
+  const { ref: refModal, propsDialogo } = useDialogoAcessivel(modalAberto, () => setModalAberto(false));
   const [editandoId, setEditandoId] = useState<string | null>(null);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState('');
@@ -378,9 +381,14 @@ export default function EndomarketingManager({
       {/* Modal criar/editar */}
       {modalAberto && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border p-6 ${cardBase}`}>
+          <div
+            ref={refModal}
+            {...propsDialogo}
+            aria-labelledby="endo-modal-titulo"
+            className={`w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border p-6 outline-none ${cardBase}`}
+          >
             <div className="flex items-center justify-between mb-5">
-              <h4 className="font-display text-lg font-semibold">
+              <h4 id="endo-modal-titulo" className="font-display text-lg font-semibold">
                 {editandoId ? 'Editar ação' : 'Nova ação de endomarketing'}
               </h4>
               <button
@@ -397,10 +405,10 @@ export default function EndomarketingManager({
               {/* Coluna de campos */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
+                  <label htmlFor="endo-titulo" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
                     Título *
                   </label>
-                  <input
+                  <input id="endo-titulo"
                     value={titulo}
                     onChange={(e) => setTitulo(e.target.value)}
                     placeholder="Ex: Semana da Saúde"
@@ -409,10 +417,10 @@ export default function EndomarketingManager({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
+                  <label htmlFor="endo-descricao" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
                     Descrição
                   </label>
-                  <textarea
+                  <textarea id="endo-descricao"
                     value={descricao}
                     onChange={(e) => setDescricao(e.target.value)}
                     rows={3}
@@ -421,12 +429,12 @@ export default function EndomarketingManager({
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
+                    <label htmlFor="endo-categoria" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
                       Categoria
                     </label>
-                    <select
+                    <select id="endo-categoria"
                       value={categoria}
                       onChange={(e) => setCategoria(e.target.value as CategoriaEndomarketing)}
                       className={inputBase}
@@ -438,10 +446,10 @@ export default function EndomarketingManager({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
+                    <label htmlFor="endo-status" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
                       Status
                     </label>
-                    <select
+                    <select id="endo-status"
                       value={status}
                       onChange={(e) => setStatus(e.target.value as StatusEndomarketing)}
                       className={inputBase}
@@ -454,10 +462,10 @@ export default function EndomarketingManager({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
+                  <label htmlFor="endo-responsavel" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1.5">
                     Responsável
                   </label>
-                  <input
+                  <input id="endo-responsavel"
                     value={responsavel}
                     onChange={(e) => setResponsavel(e.target.value)}
                     placeholder="Quem conduz a ação"

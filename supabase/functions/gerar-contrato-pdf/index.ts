@@ -4,6 +4,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { PDFDocument, rgb } from 'https://esm.sh/pdf-lib@1.17.1'
+import { autorizarRH } from "../_shared/autorizacao.ts"
 
 // Domínios extras liberados, além do localhost e dos deploys da Vercel (que
 // são reconhecidos por padrão abaixo). Use isto para um domínio PRÓPRIO de
@@ -240,21 +241,13 @@ serve(async (req) => {
     const jwtToken = authHeader.replace(/^Bearer /, '').trim();
     let isAuthorized = false;
 
-    // Mode A: Request via Authenticated JWT Coordinator (RH or TI)
+    // Modo A: chamada autenticada do RH. A regra mora em
+    // _shared/autorizacao.ts e olha só `perfis.cargo` — antes aceitava
+    // qualquer e-mail do domínio institucional, o que dava a um perfil 'ti'
+    // o poder de emitir contrato em nome do Instituto.
     if (jwtToken) {
-      const { data: { user }, error: authError } = await supabase.auth.getUser(jwtToken);
-      if (!authError && user) {
-        const { data: profile } = await supabase
-          .from('perfis')
-          .select('cargo')
-          .eq('id', user.id)
-          .single();
-
-        const emailDomain = user.email?.split('@')[1];
-        if (profile?.cargo === 'coordenadora_rh' || user.email === 'ito.thiagosilva@gmail.com' || emailDomain === 'itoinstituto.com.br') {
-          isAuthorized = true;
-        }
-      }
+      const { autorizado } = await autorizarRH(supabase, req);
+      if (autorizado) isAuthorized = true;
     }
 
     // Mode B: Request via Candidate Token Validation (Bypasses JWT)
