@@ -8,7 +8,7 @@
 //
 // Secrets:
 //   OPENROUTER_API_KEY   (obrigatório)
-//   OPENROUTER_MODEL     (opcional; default 'poolside/laguna-m.1:free')
+//   OPENROUTER_MODEL     (opcional; default 'nvidia/llama-3.1-nemotron-70b-instruct:free')
 //   ALLOWED_ORIGINS      (opcional; domínio próprio de produção)
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
@@ -288,54 +288,91 @@ serve(async (req) => {
 
     const apiKey = Deno.env.get('OPENROUTER_API_KEY');
     if (!apiKey) return errJson({ error: 'Copiloto não configurado: falta OPENROUTER_API_KEY.' }, 503);
-    const model = Deno.env.get('OPENROUTER_MODEL') || 'poolside/laguna-m.1:free';
+    
+    const primaryModel = Deno.env.get('OPENROUTER_MODEL') || 'nvidia/llama-3.1-nemotron-70b-instruct:free';
+    
+    // Lista ordenada de modelos gratuitos de alta capacidade para fallback automático
+    const fallbackList = [
+      primaryModel,
+      'nvidia/llama-3.1-nemotron-70b-instruct:free',
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'qwen/qwen-2.5-72b-instruct:free',
+      'google/gemma-2-9b-it:free',
+      'poolside/laguna-m.1:free'
+    ];
+    const candidateModels = Array.from(new Set(fallbackList));
 
     const body = await req.json().catch(() => ({}));
     const incoming = Array.isArray(body?.messages) ? body.messages : [];
+    const contextInfo = typeof body?.contextInfo === 'string' ? body.contextInfo : '';
+
     // Mantém só role/content válidos e limita o contexto às últimas 24 mensagens.
     const history = incoming
       .filter((m: any) => (m?.role === 'user' || m?.role === 'assistant') && typeof m?.content === 'string')
       .slice(-24)
       .map((m: any) => ({ role: m.role, content: m.content }));
 
-    const messages = [{ role: 'system', content: SYSTEM_PROMPT }, ...history];
+    const fullSystemPrompt = contextInfo
+      ? `${SYSTEM_PROMPT}\n\nDADOS EM TEMPO REAL DO SISTEMA OMNI ITO:\n${contextInfo}`
+      : SYSTEM_PROMPT;
 
-    const callUpstream = () => fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://omni-ito.vercel.app',
-        'X-Title': 'Omni ITO Copiloto RH'
-      },
-      body: JSON.stringify({ model, messages, stream: true, temperature: 0.6 })
-    });
+    const messages = [{ role: 'system', content: fullSystemPrompt }, ...history];
 
-    // Modelos :free do OpenRouter dão 429 por limite COMPARTILHADO/cota diária,
-    // não por volume do usuário. Um retry curto absorve os picos momentâneos.
-    let upstream = await callUpstream();
-    for (let tent = 0; tent < 2 && upstream.status === 429; tent++) {
-      await new Promise((r) => setTimeout(r, 1500));
-      upstream = await callUpstream();
+    let upstream: Response | null = null;
+    let selectedModel = primaryModel;
+    let lastErrorStatus = 502;
+    let lastErrorText = '';
+
+    // Tenta o modelo primário (Nemotron) e faz fallback automático se houver cota excedida (429) ou erro no provedor
+    for (const model of candidateModels) {
+      selectedModel = model;
+      try {
+        const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://omni-ito.vercel.app',
+            'X-Title': 'Omni ITO Copiloto RH'
+          },
+          body: JSON.stringify({ model, messages, stream: true, temperature: 0.6 })
+        });
+
+        if (res.ok && res.body) {
+          upstream = res;
+          break;
+        }
+
+        lastErrorStatus = res.status;
+        lastErrorText = await res.text().catch(() => '');
+        console.warn(`Provedor OpenRouter retornou status ${res.status} para o modelo ${model}. Detalhes:`, lastErrorText);
+
+        // Se for erro de rate-limit (429) ou indisponibilidade (503/404/400), tenta o próximo modelo da lista
+        if (res.status === 429 || res.status === 503 || res.status === 404 || res.status === 400) {
+          await new Promise((r) => setTimeout(r, 800));
+          continue;
+        } else {
+          // Erros de autenticação (401/403) não adiantam tentar outro modelo
+          break;
+        }
+      } catch (err: any) {
+        console.error(`Erro de conexão com OpenRouter para o modelo ${model}:`, err);
+      }
     }
 
-    if (!upstream.ok || !upstream.body) {
-      const detail = await upstream.text().catch(() => '');
-      const s = upstream.status;
-      console.error('OpenRouter erro:', s, detail);
-      // Mensagem específica por causa, para o RH saber o que fazer sem depender
-      // dos logs da função.
+    if (!upstream || !upstream.ok || !upstream.body) {
+      console.error('Falha geral no OpenRouter pós-fallbacks:', lastErrorStatus, lastErrorText);
       let msg = 'O copiloto não conseguiu responder agora. Tente novamente em instantes.';
-      if (s === 429) {
-        msg = 'O modelo gratuito de IA atingiu o limite de uso do OpenRouter (limite compartilhado entre usuários / cota diária da conta) — não é pelo seu volume. Aguarde alguns minutos, ou adicione crédito no OpenRouter e configure um modelo pago no secret OPENROUTER_MODEL para acabar com isso.';
-      } else if (s === 402) {
+      if (lastErrorStatus === 429) {
+        msg = 'Os modelos gratuitos de IA atingiram temporariamente o limite compartilhado do OpenRouter. Aguarde 1 a 2 minutos para enviar nova pergunta ou configure um modelo pago no secret OPENROUTER_MODEL.';
+      } else if (lastErrorStatus === 402) {
         msg = 'A conta do provedor de IA (OpenRouter) está sem créditos. Adicione créditos ou use um modelo gratuito no secret OPENROUTER_MODEL.';
-      } else if (s === 401 || s === 403) {
+      } else if (lastErrorStatus === 401 || lastErrorStatus === 403) {
         msg = 'A chave do provedor de IA (OPENROUTER_API_KEY) é inválida ou expirou. Gere uma nova em openrouter.ai e atualize o secret.';
-      } else if (s === 404 || s === 400) {
-        msg = `O modelo de IA configurado não está disponível (${model}). Ajuste o secret OPENROUTER_MODEL para um modelo válido do OpenRouter.`;
+      } else if (lastErrorStatus === 404 || lastErrorStatus === 400) {
+        msg = `Nenhum dos modelos de IA configurados está disponível no momento (${selectedModel}). Ajuste o secret OPENROUTER_MODEL.`;
       }
-      return errJson({ error: msg, upstreamStatus: s }, 502);
+      return errJson({ error: msg, upstreamStatus: lastErrorStatus }, 502);
     }
 
     // Repassa o SSE do OpenRouter direto para o navegador.
