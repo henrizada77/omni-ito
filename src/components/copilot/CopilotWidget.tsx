@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../supabaseClient';
 import {
   Sparkles,
@@ -11,7 +12,9 @@ import {
   Trash2,
   Bot,
   User,
-  Activity
+  Activity,
+  ExternalLink,
+  PieChart
 } from 'lucide-react';
 
 interface CopilotWidgetProps {
@@ -22,6 +25,7 @@ interface Msg { role: 'user' | 'assistant' | 'system'; content: string }
 interface Conversa { id: string; titulo: string | null; atualizado_em: string }
 
 export default function CopilotWidget({ theme }: CopilotWidgetProps) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [conversas, setConversas] = useState<Conversa[]>([]);
   const [currentId, setCurrentId] = useState<string | null>(null);
@@ -51,7 +55,6 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
 
   useEffect(() => { if (open) loadConversas(); }, [open, loadConversas]);
 
-  // Auto-scroll para o fim ao chegar mensagem / stream
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, streamText]);
@@ -96,13 +99,13 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
       context += `Colaboradores em Férias Atualmente: ${emFerias.length} (${emFerias.map(f => `${f.nome} - ${f.setor}`).join('; ') || 'Nenhum'})\n`;
       
       if (rodada) {
-        context += `\nMÓDULO DE FUNCIONÁRIO DO MÊS (ATIVO E EM USO NO SISTEMA):\n`;
+        context += `\nMÓDULO DE FUNCIONÁRIO DO MÊS (ATIVO E EM USO NO SISTEMA - ROTA: /app/funcionario-mes):\n`;
         context += `- Rodada Atual: Competência ${rodada.competencia}${rodada.titulo ? ` (${rodada.titulo})` : ''}\n`;
         context += `- Status da Rodada: ${rodada.status === 'aberta' ? 'ABERTA (Eleição em andamento para todos os colaboradores ativos)' : 'Fechada (Pódio gerado)'}\n`;
         context += `- Prazo Limite de Votação: ${rodada.data_fim}\n`;
-        context += `- Votos Já Registrados Nesta Rodada: ${votosCount} voto(s) computado(s) até agora\n`;
+        context += `- Votos Já Registrados Nesta Rodada: ${votosCount} voto(s) computado(s) de ${colabs.length} elegíveis\n`;
       } else {
-        context += `\nMÓDULO DE FUNCIONÁRIO DO MÊS: Módulo ativo no Omni ITO, porém nenhuma rodada aberta no momento.\n`;
+        context += `\nMÓDULO DE FUNCIONÁRIO DO MÊS: Módulo ativo no Omni ITO (ROTA: /app/funcionario-mes), porém nenhuma rodada aberta no momento.\n`;
       }
 
       return context;
@@ -168,7 +171,6 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
       
-      // Injeta os dados ao vivo do sistema como mensagem de contexto para o provedor de IA
       const contextSystemMsg: Msg = {
         role: 'system',
         content: `DADOS EM TEMPO REAL DO SISTEMA OMNI ITO (COLETADOS AGORA EM ${new Date().toLocaleDateString('pt-BR')}):\n${liveContextInfo}\nUse estes dados acima como verdade absoluta para responder sobre a empresa ITO.`
@@ -232,6 +234,47 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  };
+
+  // Renderiza botões de ação interativos quando o texto menciona rotas do sistema
+  const renderMessageContent = (content: string) => {
+    const hasFuncMes = content.includes('/app/funcionario-mes') || content.toLowerCase().includes('funcionário do mês');
+    const hasColabs = content.includes('/app/colaboradores') || content.toLowerCase().includes('colaboradores');
+    const hasFolha = content.includes('/app/folha') || content.toLowerCase().includes('folha de pagamento');
+
+    return (
+      <div className="space-y-2">
+        <p className="whitespace-pre-wrap leading-relaxed">{content}</p>
+        {(hasFuncMes || hasColabs || hasFolha) && (
+          <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/10">
+            {hasFuncMes && (
+              <button
+                onClick={() => { setOpen(false); navigate('/app/funcionario-mes'); }}
+                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-brand/20 text-brand border border-brand/40 hover:bg-brand/30 flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <ExternalLink size={11} /> Ir para Funcionário do Mês
+              </button>
+            )}
+            {hasColabs && (
+              <button
+                onClick={() => { setOpen(false); navigate('/app/colaboradores'); }}
+                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-brand/20 text-brand border border-brand/40 hover:bg-brand/30 flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <ExternalLink size={11} /> Ir para Colaboradores
+              </button>
+            )}
+            {hasFolha && (
+              <button
+                onClick={() => { setOpen(false); navigate('/app/folha'); }}
+                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-brand/20 text-brand border border-brand/40 hover:bg-brand/30 flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <ExternalLink size={11} /> Ir para Folha de Pagamento
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -304,9 +347,17 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
                   </p>
                 </div>
 
-                {/* Sugestões Rápidas */}
+                {/* Sugestões Rápidas & Briefing Proativo */}
                 <div className="w-full space-y-2 pt-2">
-                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 text-left px-1">Perguntas Rápidas ao Vivo:</div>
+                  {/* Botão de Briefing Executivo Proativo (Item 1) */}
+                  <button
+                    onClick={() => sendPrompt("Elabore um briefing executivo de RH com base nas métricas reais da empresa hoje (colaboradores ativos, férias, funcionário do mês e pontos de atenção para a gestão).")}
+                    className="w-full text-xs font-bold px-4 py-3 rounded-2xl bg-gradient-to-r from-brand/20 to-brand/10 border border-brand/40 text-brand hover:bg-brand/20 flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                  >
+                    <PieChart size={16} /> 📊 Gerar Briefing Executivo de RH (1 Clique)
+                  </button>
+
+                  <div className="text-[10px] font-bold uppercase tracking-wider opacity-50 text-left px-1 pt-1">Perguntas Frequentes &amp; Ações:</div>
                   <div className="grid gap-2 text-left">
                     {[
                       { label: "🏆 Como está a rodada do Funcionário do Mês?", query: "Como está a rodada do Funcionário do Mês?" },
@@ -334,12 +385,12 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
                     <Sparkles size={14} />
                   </div>
                 )}
-                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${m.role === 'user' ? bubbleUser : bubbleBot}`}>
-                  {m.content}
+                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-xs leading-relaxed ${m.role === 'user' ? bubbleUser : bubbleBot}`}>
+                  {m.role === 'assistant' ? renderMessageContent(m.content) : m.content}
                 </div>
                 {m.role === 'user' && (
-                  <div className="w-7 h-7 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0 mt-0.5">
-                    <User size={14} />
+                  <div className="w-6 h-6 rounded-lg bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0 mt-0.5">
+                    <User size={12} />
                   </div>
                 )}
               </div>
@@ -350,8 +401,8 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
                 <div className="w-7 h-7 rounded-xl bg-brand/20 border border-brand/30 flex items-center justify-center text-brand shrink-0 mt-0.5">
                   <Sparkles size={14} />
                 </div>
-                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-xs leading-relaxed whitespace-pre-wrap ${bubbleBot}`}>
-                  {streamText || <span className="inline-flex items-center gap-1.5 opacity-70 font-medium"><Loader2 size={14} className="animate-spin text-brand" /> Analisando métricas ao vivo do sistema...</span>}
+                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-xs leading-relaxed ${bubbleBot}`}>
+                  {streamText ? renderMessageContent(streamText) : <span className="inline-flex items-center gap-1.5 opacity-70 font-medium"><Loader2 size={14} className="animate-spin text-brand" /> Analisando métricas ao vivo do sistema...</span>}
                 </div>
               </div>
             )}
