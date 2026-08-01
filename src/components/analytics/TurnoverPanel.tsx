@@ -1,4 +1,4 @@
-
+import { memo } from 'react';
 import { 
   ArrowRightLeft, 
   UserMinus, 
@@ -23,7 +23,7 @@ interface TurnoverPanelProps {
   movimentacoesList?: any[];
 }
 
-export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesList = [] }: TurnoverPanelProps) {
+function TurnoverPanel({ theme, colaboradoresList, movimentacoesList = [] }: TurnoverPanelProps) {
   const activeColabs = colaboradoresList.filter(c => c.status === 'ativo' || c.status === 'em_ferias');
   const desligados = colaboradoresList.filter(c => c.status === 'desligado');
   const desligadosCount = desligados.length;
@@ -234,3 +234,5 @@ export default function TurnoverPanel({ theme, colaboradoresList, movimentacoesL
     </div>
   );
 }
+
+export default memo(TurnoverPanel);

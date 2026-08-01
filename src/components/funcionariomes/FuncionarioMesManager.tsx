@@ -19,6 +19,8 @@ import {
   Save
 } from 'lucide-react';
 import PodioArte, { type TopItem } from './PodioArte';
+import { buscarUltimaRodada, listarVotosRodada, atualizarPrazoRodada } from '../../services/funcionarioMesService';
+import { listarColaboradoresElegiveis } from '../../services/colaboradoresService';
 
 interface FuncionarioMesManagerProps {
   theme: 'dark' | 'light';
@@ -87,13 +89,9 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
     }
     setAcao(true);
     setErro('');
-    const { error } = await supabase
-      .from('funcionario_mes_rodadas')
-      .update({ data_fim: editDataFim, titulo: editTitulo.trim() || null })
-      .eq('id', rodada.id);
+    const ok = await atualizarPrazoRodada(rodada.id, editDataFim, editTitulo);
 
-    if (error) {
-      console.error('Falha ao atualizar rodada:', error);
+    if (!ok) {
       setErro('Não foi possível atualizar o prazo da rodada.');
       setAcao(false);
       return;
@@ -118,26 +116,26 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
   const fetchTudo = async () => {
     setLoading(true);
     setErro('');
-    const [rd, cols] = await Promise.all([
-      supabase.from('funcionario_mes_rodadas').select('*').order('criado_em', { ascending: false }).limit(1),
-      supabase.from('colaboradores').select('id, nome, setor, cargo, documentos_anexos').neq('status', 'desligado').order('nome')
-    ]);
-    if (rd.error || cols.error) {
-      console.error('Falha ao carregar funcionário do mês:', rd.error || cols.error);
+    try {
+      const [r, cols] = await Promise.all([
+        buscarUltimaRodada(),
+        listarColaboradoresElegiveis()
+      ]);
+
+      setRodada(r);
+      setColaboradores((cols as Colab[]) || []);
+      if (r) {
+        const vs = await listarVotosRodada(r.id);
+        setVotos(vs as Voto[]);
+      } else {
+        setVotos([]);
+      }
+    } catch (err) {
+      console.error('Falha ao carregar funcionário do mês:', err);
       setErro('Não foi possível carregar os dados.');
+    } finally {
       setLoading(false);
-      return;
     }
-    const r = (rd.data?.[0] as Rodada) || null;
-    setRodada(r);
-    setColaboradores((cols.data as Colab[]) || []);
-    if (r) {
-      const { data: vs } = await supabase.from('funcionario_mes_votos').select('id, votante_id, votado_id').eq('rodada_id', r.id);
-      setVotos((vs as Voto[]) || []);
-    } else {
-      setVotos([]);
-    }
-    setLoading(false);
   };
 
   useEffect(() => { fetchTudo(); }, []);

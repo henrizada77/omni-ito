@@ -1,4 +1,5 @@
 
+import { memo } from 'react';
 import { 
   TrendingUp, 
   HeartPulse, 
@@ -38,7 +39,7 @@ interface OverviewPanelProps {
   associationsList: Association[];
 }
 
-export default function OverviewPanel({ theme, colaboradoresList, ocorrenciasList, indicadoresList, benefitsList, associationsList }: OverviewPanelProps) {
+function OverviewPanel({ theme, colaboradoresList, ocorrenciasList, indicadoresList, benefitsList, associationsList }: OverviewPanelProps) {
   // Calculations
   const activeColabs = colaboradoresList.filter(c => c.status === 'ativo' || c.status === 'em_ferias');
   const activeCount = activeColabs.length;
@@ -254,3 +255,5 @@ export default function OverviewPanel({ theme, colaboradoresList, ocorrenciasLis
     </div>
   );
 }
+
+export default memo(OverviewPanel);
