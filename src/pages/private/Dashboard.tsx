@@ -60,6 +60,9 @@ import type { DashboardProps } from '../../types';
 import { MESES_PT_BR, DEFAULT_MODELS, buildContractText, getEmpregadora } from '../../data/contractTemplates';
 import { calcularPrazosDesligamento } from '../../utils/desligamento';
 import { filtrarColaboradoresElegiveis } from '../../utils/colaboradoresFiltro';
+import { listarColaboradoresElegiveis } from '../../services/colaboradoresService';
+import { carregarDadosAnalytics } from '../../services/analyticsService';
+
 
 
 // Carregados sob demanda (code-splitting): os painéis de Analytics puxam o
@@ -1563,8 +1566,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   const fetchColaboradoresList = async () => {
     setLoadingColabs(true);
     try {
-      const [colabsRes, benefitsRes, assocRes, planosRes, avaliacoesRes, desligRes, movRes] = await Promise.all([
-        supabase.from('colaboradores').select('*').order('nome', { ascending: true }),
+      const [colabsElegiveis, benefitsRes, assocRes, planosRes, avaliacoesRes, desligRes, movRes] = await Promise.all([
+        listarColaboradoresElegiveis(),
         supabase.from('beneficios').select('*'),
         supabase.from('colaborador_beneficios').select('*'),
         supabase.from('planos_carreira').select('*'),
@@ -1573,21 +1576,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         supabase.from('movimentacoes_pessoal').select('*')
       ]);
 
-      if (colabsRes.error) throw colabsRes.error;
-
-      if (colabsRes.data) {
-        const colabsElegiveis = filtrarColaboradoresElegiveis(colabsRes.data);
-        setColaboradoresList(colabsElegiveis);
-        const nonDesligados = colabsElegiveis.filter((c: any) => c.status !== 'desligado');
-        if (!selectedColaboradorId && nonDesligados.length > 0) {
-          setSelectedColaboradorId(nonDesligados[0].id);
-          loadColaboradorOnboarding(nonDesligados[0]);
-        } else if (colabsElegiveis.length > 0) {
-          const activeCol = colabsElegiveis.find(c => c.id === selectedColaboradorId);
-          if (activeCol) loadColaboradorOnboarding(activeCol);
-        }
-      } else {
-        setColaboradoresList([]);
+      setColaboradoresList(colabsElegiveis);
+      const nonDesligados = colabsElegiveis.filter((c: any) => c.status !== 'desligado');
+      if (!selectedColaboradorId && nonDesligados.length > 0) {
+        setSelectedColaboradorId(nonDesligados[0].id);
+        loadColaboradorOnboarding(nonDesligados[0]);
+      } else if (colabsElegiveis.length > 0) {
+        const activeCol = colabsElegiveis.find(c => c.id === selectedColaboradorId);
+        if (activeCol) loadColaboradorOnboarding(activeCol);
       }
 
       if (benefitsRes.data) setDbBenefits(benefitsRes.data);
@@ -2133,25 +2129,15 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   const fetchAnalyticsData = async () => {
     try {
-      const [logsRes, colabsRes, ocorrenciasRes, indicadoresRes, benefitsRes, assocRes, pesquisasRes, cargosRes] = await Promise.all([
-        supabase.from('logs_auditoria').select('*').order('criado_em', { ascending: false }).limit(8),
-        supabase.from('colaboradores').select('*'),
-        supabase.from('ocorrencias_jornada').select('*, colaboradores(nome, setor)'),
-        supabase.from('indicadores_trabalhistas').select('*'),
-        supabase.from('beneficios').select('*'),
-        supabase.from('colaborador_beneficios').select('*'),
-        supabase.from('pesquisas_satisfacao').select('nota, categoria, criado_em'),
-        supabase.from('cargos').select('titulo, referencia_salarial_al, referencia_salarial_fonte, referencia_salarial_data')
-      ]);
-
-      if (logsRes.data) setLogsAuditoria(logsRes.data);
-      if (colabsRes.data) setColaboradoresList(filtrarColaboradoresElegiveis(colabsRes.data));
-      if (ocorrenciasRes.data) setOcorrenciasAnalytics(ocorrenciasRes.data);
-      if (indicadoresRes.data) setIndicadoresTrabalhistas(indicadoresRes.data);
-      if (benefitsRes.data) setDbBenefits(benefitsRes.data);
-      if (assocRes.data) setDbColaboradorBeneficios(assocRes.data);
-      if (pesquisasRes.data) setPesquisasSatisfacao(pesquisasRes.data);
-      if (cargosRes.data) setCargosAnalytics(cargosRes.data);
+      const bundle = await carregarDadosAnalytics();
+      setLogsAuditoria(bundle.logs);
+      setColaboradoresList(bundle.colaboradores);
+      setOcorrenciasAnalytics(bundle.ocorrencias);
+      setIndicadoresTrabalhistas(bundle.indicadores);
+      setDbBenefits(bundle.beneficios);
+      setDbColaboradorBeneficios(bundle.colaboradorBeneficios);
+      setPesquisasSatisfacao(bundle.pesquisas);
+      setCargosAnalytics(bundle.cargos);
     } catch (err) {
       console.error("Error fetching analytics data:", err);
     }
