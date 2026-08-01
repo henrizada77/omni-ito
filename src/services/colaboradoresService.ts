@@ -6,11 +6,17 @@ import type { Colaborador } from '../types';
  * Serviço isolado para acesso aos dados de Colaboradores.
  */
 
-export async function listarColaboradoresElegiveis(): Promise<Colaborador[]> {
-  const { data, error } = await supabase
+export async function listarColaboradoresElegiveis(incluirDesligados = false): Promise<Colaborador[]> {
+  let query = supabase
     .from('colaboradores')
     .select('*')
     .order('nome', { ascending: true });
+
+  if (!incluirDesligados) {
+    query = query.neq('status', 'desligado');
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error('Erro ao listar colaboradores:', error);

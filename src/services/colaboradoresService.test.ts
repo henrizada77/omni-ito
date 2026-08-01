@@ -6,13 +6,15 @@ vi.mock('../supabaseClient', () => ({
   supabase: {
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({
-        order: vi.fn().mockResolvedValue({
-          data: [
-            { id: '1', nome: 'Ana Silva', setor: 'Biomedicina', cargo: 'Biomédica' },
-            { id: '2', nome: 'Carlos CEO', setor: 'Diretoria', cargo: 'CEO' },
-            { id: '3', nome: 'Fernanda Rocha', setor: 'Enfermagem', cargo: 'Enfermeira' },
-          ],
-          error: null,
+        order: vi.fn().mockReturnValue({
+          neq: vi.fn().mockResolvedValue({
+            data: [
+              { id: '1', nome: 'Ana Silva', setor: 'Biomedicina', cargo: 'Biomédica', status: 'ativo' },
+              { id: '2', nome: 'Carlos CEO', setor: 'Diretoria', cargo: 'CEO', status: 'ativo' },
+              { id: '3', nome: 'Fernanda Rocha', setor: 'Enfermagem', cargo: 'Enfermeira', status: 'ativo' },
+            ],
+            error: null,
+          }),
         }),
       }),
     }),
