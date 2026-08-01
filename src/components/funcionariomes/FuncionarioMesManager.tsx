@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import PodioArte, { type TopItem } from './PodioArte';
 import { buscarUltimaRodada, listarVotosRodada, atualizarPrazoRodada } from '../../services/funcionarioMesService';
-import { listarColaboradoresElegiveis } from '../../services/colaboradoresService';
+import { listarColaboradoresFuncionarioMes } from '../../services/colaboradoresService';
 
 interface FuncionarioMesManagerProps {
   theme: 'dark' | 'light';
@@ -119,7 +119,7 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
     try {
       const [r, cols] = await Promise.all([
         buscarUltimaRodada(),
-        listarColaboradoresElegiveis()
+        listarColaboradoresFuncionarioMes()
       ]);
 
       setRodada(r);

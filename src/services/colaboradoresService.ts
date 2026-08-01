@@ -26,6 +26,25 @@ export async function listarColaboradoresElegiveis(incluirDesligados = false): P
   return filtrarColaboradoresElegiveis(data || []);
 }
 
+/**
+ * Retorna TODOS os colaboradores ativos para o Funcionário do Mês (inclui perfis fantasmas: SMARTSHAPE, CEO, DIRETORIA).
+ * Exclui estritamente colaboradores com status desligado.
+ */
+export async function listarColaboradoresFuncionarioMes(): Promise<Colaborador[]> {
+  const { data, error } = await supabase
+    .from('colaboradores')
+    .select('*')
+    .neq('status', 'desligado')
+    .order('nome', { ascending: true });
+
+  if (error) {
+    console.error('Erro ao listar colaboradores para Funcionário do Mês:', error);
+    throw error;
+  }
+
+  return data || [];
+}
+
 export async function buscarColaboradorPorId(id: string): Promise<Colaborador | null> {
   const { data, error } = await supabase
     .from('colaboradores')
