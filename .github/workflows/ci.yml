@@ -43,6 +43,9 @@ jobs:
 
       - name: Testes
         run: npm test
+        env:
+          VITE_SUPABASE_URL: https://exemplo.supabase.co
+          VITE_SUPABASE_ANON_KEY: chave-de-build
 
       - name: Build
         run: npx vite build

@@ -12,6 +12,9 @@ import { createClient } from '@supabase/supabase-js';
 
 function obrigatoria(nome: string, valor: string | undefined): string {
   if (!valor) {
+    if (import.meta.env.MODE === 'test') {
+      return nome === 'VITE_SUPABASE_URL' ? 'https://exemplo-test.supabase.co' : 'chave-de-teste';
+    }
     throw new Error(
       `Variável de ambiente ${nome} não definida. ` +
       `Copie .env.example para .env e preencha com os valores do projeto Supabase ` +
