@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+
+
 import {
   Trophy,
   Loader2,
@@ -11,7 +13,10 @@ import {
   Plus,
   Link as LinkIcon,
   Copy,
-  Check
+  Check,
+  Eye,
+  Pencil,
+  Save
 } from 'lucide-react';
 import PodioArte, { type TopItem } from './PodioArte';
 
@@ -63,6 +68,48 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
   const [competencia, setCompetencia] = useState(hojeCompetencia());
   const [dataFim, setDataFim] = useState('');
 
+  // Form editar / prorrogar rodada aberta
+  const [modoEdicaoRodada, setModoEdicaoRodada] = useState(false);
+  const [editDataFim, setEditDataFim] = useState('');
+  const [editTitulo, setEditTitulo] = useState('');
+
+  const iniciarEdicaoRodada = () => {
+    if (!rodada) return;
+    setEditDataFim(rodada.data_fim || '');
+    setEditTitulo(rodada.titulo || '');
+    setModoEdicaoRodada(true);
+  };
+
+  const salvarEdicaoRodada = async () => {
+    if (!rodada || !editDataFim) {
+      setErro('Informe a nova data-limite da votação.');
+      return;
+    }
+    setAcao(true);
+    setErro('');
+    const { error } = await supabase
+      .from('funcionario_mes_rodadas')
+      .update({ data_fim: editDataFim, titulo: editTitulo.trim() || null })
+      .eq('id', rodada.id);
+
+    if (error) {
+      console.error('Falha ao atualizar rodada:', error);
+      setErro('Não foi possível atualizar o prazo da rodada.');
+      setAcao(false);
+      return;
+    }
+
+    await logAuditoria('FUNCIONARIO_MES_RODADA_EDITADA', {
+      rodada_id: rodada.id,
+      nova_data_fim: editDataFim,
+      novo_titulo: editTitulo
+    });
+
+    setModoEdicaoRodada(false);
+    setAcao(false);
+    await fetchTudo();
+  };
+
   const logAuditoria = async (a: string, detalhes: any = {}) => {
     try { await supabase.from('logs_auditoria').insert({ usuario_id: userId, usuario_email: userEmail, acao: a, detalhes }); }
     catch (err) { console.error('Audit log failed:', err); }
@@ -73,7 +120,7 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
     setErro('');
     const [rd, cols] = await Promise.all([
       supabase.from('funcionario_mes_rodadas').select('*').order('criado_em', { ascending: false }).limit(1),
-      supabase.from('colaboradores').select('id, nome, setor, documentos_anexos').neq('status', 'desligado').order('nome')
+      supabase.from('colaboradores').select('id, nome, setor, cargo, documentos_anexos').neq('status', 'desligado').order('nome')
     ]);
     if (rd.error || cols.error) {
       console.error('Falha ao carregar funcionário do mês:', rd.error || cols.error);
@@ -232,13 +279,72 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
         <div className="space-y-5">
           <div className={`rounded-2xl border p-4 ${cardBg} flex flex-wrap items-center justify-between gap-3`}>
             <div>
-              <div className="text-sm font-bold">Rodada {rodada.competencia}</div>
+              <div className="text-sm font-bold flex items-center gap-2">
+                Rodada {rodada.competencia}
+                {rodada.titulo && <span className="text-xs font-normal opacity-70">({rodada.titulo})</span>}
+              </div>
               <div className="text-[11px] opacity-60">Aberta até {new Date(rodada.data_fim + 'T12:00:00').toLocaleDateString('pt-BR')} · {jaVotaram.length}/{colaboradores.length} votaram ({colaboradores.length ? Math.round((jaVotaram.length / colaboradores.length) * 100) : 0}%)</div>
             </div>
-            <button onClick={fecharRodada} disabled={acao} className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 ${btnPrimary} disabled:opacity-50`}>
-              {acao ? <Loader2 size={13} className="animate-spin" /> : <Flag size={13} />} Fechar e gerar pódio
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={iniciarEdicaoRodada}
+                disabled={acao}
+                className={`px-3 py-2 rounded-lg text-xs font-semibold border flex items-center gap-1.5 ${theme === 'dark' ? 'border-white/15 hover:bg-white/5' : 'border-black/15 hover:bg-black/5'} disabled:opacity-50`}
+              >
+                <Pencil size={13} /> Prorrogar / Editar prazo
+              </button>
+              <button onClick={fecharRodada} disabled={acao} className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 ${btnPrimary} disabled:opacity-50`}>
+                {acao ? <Loader2 size={13} className="animate-spin" /> : <Flag size={13} />} Fechar e gerar pódio
+              </button>
+            </div>
           </div>
+
+          {/* Form inline de edição de prazo */}
+          {modoEdicaoRodada && (
+            <div className={`rounded-2xl border p-4 ${cardBg} space-y-3 animate-fadeIn`}>
+              <div className="text-[11px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1.5">
+                <Pencil size={13} className="text-brand" /> Editar prazo da votação em andamento
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div>
+                  <label htmlFor="fmm-edit-dataFim" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Nova data-limite da votação *</label>
+                  <input
+                    id="fmm-edit-dataFim"
+                    type="date"
+                    value={editDataFim}
+                    onChange={e => setEditDataFim(e.target.value)}
+                    className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="fmm-edit-titulo" className="block text-[10px] font-bold uppercase tracking-wider opacity-60 mb-1">Título / Observação (opcional)</label>
+                  <input
+                    id="fmm-edit-titulo"
+                    type="text"
+                    value={editTitulo}
+                    onChange={e => setEditTitulo(e.target.value)}
+                    placeholder="Ex.: Prorrogado até sexta-feira"
+                    className={`w-full text-xs px-3 py-2 rounded-lg border ${inputBg}`}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={salvarEdicaoRodada}
+                  disabled={acao}
+                  className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 ${btnPrimary} disabled:opacity-50`}
+                >
+                  {acao ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />} Salvar novo prazo
+                </button>
+                <button
+                  onClick={() => setModoEdicaoRodada(false)}
+                  className={`px-4 py-2 rounded-lg border text-xs ${theme === 'dark' ? 'border-white/10 hover:bg-white/5' : 'border-black/10 hover:bg-black/5'}`}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Link de votação para divulgar aos colaboradores */}
           <div className={`p-4 rounded-2xl border ${cardBg} flex flex-col sm:flex-row sm:items-center gap-3`}>
@@ -280,6 +386,40 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
               <div className="max-h-52 overflow-y-auto space-y-1 pr-1">
                 {faltam.length === 0 ? <div className="text-xs opacity-40">Todos votaram! 🎉</div> : faltam.map(c => <div key={c.id} className="text-xs opacity-80">{c.nome}</div>)}
               </div>
+            </div>
+          </div>
+
+          {/* Tracker de Votos: Quem Votou em Quem */}
+          <div className={`rounded-2xl border p-4 ${cardBg} space-y-3`}>
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-bold uppercase tracking-wider opacity-70 flex items-center gap-1.5">
+                <Eye size={14} className="text-brand" /> Tracker de Votos (Quem votou em quem) — Total: {votos.length}
+              </div>
+              <span className="text-[10px] font-mono opacity-50">Visão exclusiva do RH</span>
+            </div>
+
+            <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+              {votos.length === 0 ? (
+                <div className="text-xs opacity-40 py-3 text-center">Nenhum voto registrado ainda nesta rodada.</div>
+              ) : (
+                votos.map((v) => {
+                  const votante = colaboradores.find(c => c.id === v.votante_id);
+                  const votado = colaboradores.find(c => c.id === v.votado_id);
+                  return (
+                    <div key={v.id} className="flex items-center justify-between text-xs py-2 px-3 rounded-xl border bg-white/[0.02] border-white/10">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{votante?.nome || 'Votante desconhecido'}</span>
+                        {votante?.setor && <span className="text-[10px] opacity-50 font-mono">({votante.setor})</span>}
+                      </div>
+                      <div className="flex items-center gap-2 text-brand font-medium">
+                        <span className="text-[10px] opacity-40 uppercase tracking-widest font-mono">votou em →</span>
+                        <span className="font-bold">{votado?.nome || 'Votado desconhecido'}</span>
+                        {votado?.setor && <span className="text-[10px] opacity-50 font-mono font-normal text-foreground">({votado.setor})</span>}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 

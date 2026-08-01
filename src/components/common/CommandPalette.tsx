@@ -19,6 +19,8 @@ import {
   User
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
+import { filtrarColaboradoresElegiveis } from '../../utils/colaboradoresFiltro';
+
 
 interface CommandPaletteProps {
   theme: 'dark' | 'light';
@@ -67,7 +69,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
         .limit(5);
 
       if (active && data) {
-        setColaboradores(data);
+        setColaboradores(filtrarColaboradoresElegiveis(data));
       }
     };
 

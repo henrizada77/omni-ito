@@ -59,6 +59,8 @@ import { supabase } from '../../supabaseClient';
 import type { DashboardProps } from '../../types';
 import { MESES_PT_BR, DEFAULT_MODELS, buildContractText, getEmpregadora } from '../../data/contractTemplates';
 import { calcularPrazosDesligamento } from '../../utils/desligamento';
+import { filtrarColaboradoresElegiveis } from '../../utils/colaboradoresFiltro';
+
 
 // Carregados sob demanda (code-splitting): os painéis de Analytics puxam o
 // Recharts (pesado) e cada Manager é um módulo grande. Assim o bundle inicial
@@ -1574,13 +1576,14 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (colabsRes.error) throw colabsRes.error;
 
       if (colabsRes.data) {
-        setColaboradoresList(colabsRes.data);
-        const nonDesligados = colabsRes.data.filter((c: any) => c.status !== 'desligado');
+        const colabsElegiveis = filtrarColaboradoresElegiveis(colabsRes.data);
+        setColaboradoresList(colabsElegiveis);
+        const nonDesligados = colabsElegiveis.filter((c: any) => c.status !== 'desligado');
         if (!selectedColaboradorId && nonDesligados.length > 0) {
           setSelectedColaboradorId(nonDesligados[0].id);
           loadColaboradorOnboarding(nonDesligados[0]);
-        } else if (colabsRes.data.length > 0) {
-          const activeCol = colabsRes.data.find(c => c.id === selectedColaboradorId);
+        } else if (colabsElegiveis.length > 0) {
+          const activeCol = colabsElegiveis.find(c => c.id === selectedColaboradorId);
           if (activeCol) loadColaboradorOnboarding(activeCol);
         }
       } else {
@@ -1750,7 +1753,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       const date60Ago = new Date(Date.now() - 60 * 86400000).toISOString().split('T')[0];
 
       const [colabsQ, contratos, admPend, asoQ, feriasQ, expQ, logs] = await Promise.all([
-        supabase.from('colaboradores').select('id, status, data_admissao').neq('status', 'desligado'),
+        supabase.from('colaboradores').select('id, status, data_admissao, cargo, setor').neq('status', 'desligado'),
         supabase.from('documentos_assinados').select('id', { count: 'exact', head: true }).eq('status', 'finalizado'),
         supabase.from('admission_tokens').select('id', { count: 'exact', head: true }).in('status', ['aguardando_homologacao', 'aguardando_assinatura', 'aguardando_assinatura_rh']),
         supabase.from('colaboradores').select('id, nome, cargo, setor, data_aso_vencimento').eq('status', 'ativo').lte('data_aso_vencimento', in30).order('data_aso_vencimento'),
@@ -1759,16 +1762,17 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         supabase.from('logs_auditoria').select('usuario_email, acao, criado_em').order('criado_em', { ascending: false }).limit(5)
       ]);
 
-      const totalColabs = colabsQ.data?.length ?? 0;
-      const efetivados = colabsQ.data?.filter(c => (c.status === 'ativo' || c.status === 'em_ferias') && c.data_admissao <= date90Ago).length ?? 0;
+      const colabsElegiveis = colabsQ.data ? filtrarColaboradoresElegiveis(colabsQ.data) : [];
+      const totalColabs = colabsElegiveis.length;
+      const efetivados = colabsElegiveis.filter(c => (c.status === 'ativo' || c.status === 'em_ferias') && c.data_admissao <= date90Ago).length;
 
       setKpiAtivos(totalColabs);
       setKpiEfetivados(efetivados);
       setKpiContratos(contratos.count ?? 0);
       setKpiAdmissoesP(admPend.count ?? 0);
-      setKpiAsoVencer(asoQ.data ?? []);
-      setKpiFeriasVencer(feriasQ.data ?? []);
-      setKpiExperienciaVencer(expQ.data ?? []);
+      setKpiAsoVencer(filtrarColaboradoresElegiveis(asoQ.data ?? []));
+      setKpiFeriasVencer(filtrarColaboradoresElegiveis(feriasQ.data ?? []));
+      setKpiExperienciaVencer(filtrarColaboradoresElegiveis(expQ.data ?? []));
       setRecentLogs(logs.data ?? []);
     } catch (err) {
       console.error('KPI fetch error:', err);
@@ -2141,7 +2145,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       ]);
 
       if (logsRes.data) setLogsAuditoria(logsRes.data);
-      if (colabsRes.data) setColaboradoresList(colabsRes.data);
+      if (colabsRes.data) setColaboradoresList(filtrarColaboradoresElegiveis(colabsRes.data));
       if (ocorrenciasRes.data) setOcorrenciasAnalytics(ocorrenciasRes.data);
       if (indicadoresRes.data) setIndicadoresTrabalhistas(indicadoresRes.data);
       if (benefitsRes.data) setDbBenefits(benefitsRes.data);

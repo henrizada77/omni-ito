@@ -15,11 +15,30 @@ interface PodioArteProps {
   theme: 'dark' | 'light';
 }
 
-const MESES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+const MESES = [
+  'JANEIRO', 'FEVEREIRO', 'MARÇO', 'ABRIL', 'MAIO', 'JUNHO',
+  'JULHO', 'AGOSTO', 'SETEMBRO', 'OUTUBRO', 'NOVEMBRO', 'DEZEMBRO'
+];
+
 const mesExtenso = (comp: string) => {
   const [ano, mes] = comp.split('-');
   const i = Number(mes) - 1;
-  return i >= 0 && i < 12 ? `${MESES[i]} · ${ano}` : comp;
+  return i >= 0 && i < 12 ? `${MESES[i]} DE ${ano}` : comp;
+};
+
+/**
+ * Retorna o primeiro nome (ou primeiro + segundo se o primeiro for curto como "Ana", "João").
+ * Evita nomes longos e quebras de linha estéticas na arte.
+ */
+const formatarNomeCurto = (nomeCompleto: string) => {
+  if (!nomeCompleto) return '';
+  const partes = nomeCompleto.trim().split(/\s+/);
+  if (partes.length === 1) return partes[0];
+  // Se o primeiro nome for curto (<= 3 letras), inclui o segundo nome
+  if (partes[0].length <= 3 && partes[1]) {
+    return `${partes[0]} ${partes[1]}`;
+  }
+  return partes[0];
 };
 
 const iniciais = (nome: string) => {
@@ -27,15 +46,18 @@ const iniciais = (nome: string) => {
   return ((p[0]?.[0] || '') + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase();
 };
 
-// Cores por posição (ouro, prata, bronze)
-const COR_POS = ['#F5C542', '#C0C7D0', '#CD7F32'];
-const MEDALHA = ['🥇', '🥈', '🥉'];
+// Cores temáticas por posição (1º Ouro, 2º Prata, 3º Bronze)
+const CORES_POS = [
+  { pos: '1º', cor: '#F5C542', corSoft: 'rgba(245, 197, 66, 0.15)', corGlow: 'rgba(245, 197, 66, 0.35)', medalha: '🥇', label: '1º LUGAR' },
+  { pos: '2º', cor: '#C0C7D0', corSoft: 'rgba(192, 199, 208, 0.15)', corGlow: 'rgba(192, 199, 208, 0.35)', medalha: '🥈', label: '2º LUGAR' },
+  { pos: '3º', cor: '#CD7F32', corSoft: 'rgba(205, 127, 50, 0.15)', corGlow: 'rgba(205, 127, 50, 0.35)', medalha: '🥉', label: '3º LUGAR' }
+];
 
-// Posições visuais no SVG: [2º à esquerda, 1º ao centro, 3º à direita]
+// Posições visuais no pódio de 1080x1080: [2º à esquerda, 1º ao centro, 3º à direita]
 const SLOTS = [
-  { idx: 1, cx: 270, avatarR: 95, avatarY: 430, baseY: 620, baseH: 300, label: '2º' },
-  { idx: 0, cx: 540, avatarR: 120, avatarY: 320, baseY: 540, baseH: 380, label: '1º' },
-  { idx: 2, cx: 810, avatarR: 85, avatarY: 470, baseY: 680, baseH: 240, label: '3º' }
+  { idx: 1, cx: 270, avatarR: 95, avatarY: 450, baseY: 630, baseH: 310 },
+  { idx: 0, cx: 540, avatarR: 120, avatarY: 360, baseY: 530, baseH: 410 },
+  { idx: 2, cx: 810, avatarR: 85, avatarY: 490, baseY: 670, baseH: 270 }
 ];
 
 function escapeXml(s: string) {
@@ -46,9 +68,12 @@ export default function PodioArte({ top3, fotos, competencia, theme }: PodioArte
   const svgRef = useRef<SVGSVGElement>(null);
   const [baixando, setBaixando] = useState(false);
 
-  const bg = theme === 'dark' ? '#0D0D0C' : '#FBFBFA';
-  const fg = theme === 'dark' ? '#E5DFD3' : '#0A0A0A';
-  const sub = theme === 'dark' ? '#ffffff10' : '#00000012';
+  const isDark = theme === 'dark';
+  const bgFill = isDark ? '#0A0E17' : '#F3F5FB';
+  const textPrimary = isDark ? '#E6EAF2' : '#0F1729';
+  const textMuted = isDark ? '#9AA4B6' : '#5B6472';
+  const cardFill = isDark ? '#121A2A' : '#FFFFFF';
+  const borderStroke = isDark ? '#1E2739' : '#E9ECF3';
 
   const baixarPng = () => {
     const svg = svgRef.current;
@@ -60,10 +85,11 @@ export default function PodioArte({ top3, fotos, competencia, theme }: PodioArte
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      canvas.width = 1080; canvas.height = 1080;
+      canvas.width = 1080;
+      canvas.height = 1080;
       const ctx = canvas.getContext('2d');
       if (!ctx) { setBaixando(false); URL.revokeObjectURL(url); return; }
-      ctx.fillStyle = bg;
+      ctx.fillStyle = bgFill;
       ctx.fillRect(0, 0, 1080, 1080);
       ctx.drawImage(img, 0, 0, 1080, 1080);
       canvas.toBlob(blob => {
@@ -83,10 +109,26 @@ export default function PodioArte({ top3, fotos, competencia, theme }: PodioArte
   };
 
   return (
-    <div className="space-y-3">
-      <div className="rounded-2xl overflow-hidden border border-white/10 max-w-md mx-auto">
-        <svg ref={svgRef} viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" style={{ width: '100%', display: 'block', background: bg }}>
+    <div className="space-y-4">
+      <div className="rounded-3xl overflow-hidden border border-white/10 max-w-md mx-auto shadow-2xl">
+        <svg
+          ref={svgRef}
+          viewBox="0 0 1080 1080"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ width: '100%', display: 'block', background: bgFill }}
+        >
           <defs>
+            {/* Gradientes decorativos de fundo */}
+            <radialGradient id="goldGlow" cx="50%" cy="30%" r="50%">
+              <stop offset="0%" stopColor="#F5C542" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#F5C542" stopOpacity="0" />
+            </radialGradient>
+            <radialGradient id="brandGlow" cx="50%" cy="80%" r="60%">
+              <stop offset="0%" stopColor="#4F6DF5" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#4F6DF5" stopOpacity="0" />
+            </radialGradient>
+
+            {/* Clipping paths para avatares redondos */}
             {SLOTS.map((s, i) => (
               <clipPath key={i} id={`clip-${i}`}>
                 <circle cx={s.cx} cy={s.avatarY} r={s.avatarR} />
@@ -94,44 +136,175 @@ export default function PodioArte({ top3, fotos, competencia, theme }: PodioArte
             ))}
           </defs>
 
-          {/* Título */}
-          <text x="540" y="130" textAnchor="middle" fontFamily="Georgia, serif" fontSize="62" fontWeight="bold" fill={fg}>Funcionário do Mês</text>
-          <text x="540" y="185" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="30" fill={fg} opacity="0.6">{escapeXml(mesExtenso(competencia))}</text>
-          <text x="540" y="250" textAnchor="middle" fontSize="46">🏆</text>
+          {/* Fundo com orbs decorativas */}
+          <rect width="1080" height="1080" fill={bgFill} />
+          <circle cx="540" cy="300" r="450" fill="url(#goldGlow)" />
+          <circle cx="540" cy="850" r="550" fill="url(#brandGlow)" />
 
+          {/* Cabeçalho de Destaque */}
+          <g transform="translate(540, 100)">
+            {/* Tag Badge */}
+            <rect x="-180" y="0" width="360" height="40" rx="20" fill="rgba(79, 109, 245, 0.15)" stroke="#4F6DF5" strokeOpacity="0.4" strokeWidth="2" />
+            <text x="0" y="25" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="800" letterSpacing="3" fill="#4F6DF5">RECONHECIMENTO &amp; CULTURA</text>
+
+            {/* Título Principal */}
+            <text x="0" y="90" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize="56" fontWeight="900" letterSpacing="-1" fill={textPrimary}>
+              Funcionário do Mês
+            </text>
+
+            {/* Mês de Referência */}
+            <rect x="-160" y="115" width="320" height="36" rx="18" fill={cardFill} stroke={borderStroke} strokeWidth="2" />
+            <text x="0" y="139" textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="700" letterSpacing="2" fill={textMuted}>
+              {escapeXml(mesExtenso(competencia))}
+            </text>
+          </g>
+
+          {/* Pódio e Integrantes */}
           {SLOTS.map((s, i) => {
             const item = top3[s.idx];
             if (!item) return null;
             const foto = fotos[s.idx];
-            const cor = COR_POS[s.idx] || '#888';
+            const meta = CORES_POS[s.idx];
+            const nomeCurto = formatarNomeCurto(item.nome);
+
             return (
               <g key={i}>
-                {/* Base do pódio */}
-                <rect x={s.cx - 130} y={s.baseY} width="260" height={s.baseH} rx="16" fill={sub} stroke={cor} strokeOpacity="0.5" strokeWidth="3" />
-                <text x={s.cx} y={s.baseY + 70} textAnchor="middle" fontSize="64" fontWeight="bold" fill={cor}>{s.label}</text>
+                {/* Pilar do Pódio */}
+                <rect
+                  x={s.cx - 130}
+                  y={s.baseY}
+                  width="260"
+                  height={s.baseH}
+                  rx="24"
+                  fill={cardFill}
+                  stroke={meta.cor}
+                  strokeOpacity="0.6"
+                  strokeWidth="4"
+                />
 
-                {/* Avatar: foto ou monograma */}
-                <circle cx={s.cx} cy={s.avatarY} r={s.avatarR + 6} fill="none" stroke={cor} strokeWidth="6" />
+                {/* Sombra suave interna do pódio */}
+                <rect
+                  x={s.cx - 130}
+                  y={s.baseY}
+                  width="260"
+                  height="60"
+                  rx="24"
+                  fill={meta.corSoft}
+                />
+
+                {/* Número da Posição */}
+                <text x={s.cx} y={s.baseY + 45} textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize="36" fontWeight="900" fill={meta.cor}>
+                  {meta.pos}
+                </text>
+
+                {/* Glow Ring atrás do Avatar */}
+                <circle cx={s.cx} cy={s.avatarY} r={s.avatarR + 14} fill={meta.corGlow} />
+
+                {/* Borda Externa da Foto */}
+                <circle cx={s.cx} cy={s.avatarY} r={s.avatarR + 6} fill={cardFill} stroke={meta.cor} strokeWidth="6" />
+
+                {/* Foto ou Monograma das Iniciais */}
                 {foto ? (
-                  <image href={foto} x={s.cx - s.avatarR} y={s.avatarY - s.avatarR} width={s.avatarR * 2} height={s.avatarR * 2} clipPath={`url(#clip-${i})`} preserveAspectRatio="xMidYMid slice" />
+                  <image
+                    href={foto}
+                    x={s.cx - s.avatarR}
+                    y={s.avatarY - s.avatarR}
+                    width={s.avatarR * 2}
+                    height={s.avatarR * 2}
+                    clipPath={`url(#clip-${i})`}
+                    preserveAspectRatio="xMidYMid slice"
+                  />
                 ) : (
                   <>
-                    <circle cx={s.cx} cy={s.avatarY} r={s.avatarR} fill={cor} opacity="0.85" />
-                    <text x={s.cx} y={s.avatarY + s.avatarR * 0.32} textAnchor="middle" fontSize={s.avatarR * 0.9} fontWeight="bold" fill="#0D0D0C">{escapeXml(iniciais(item.nome))}</text>
+                    <circle cx={s.cx} cy={s.avatarY} r={s.avatarR} fill={meta.cor} opacity="0.9" />
+                    <text x={s.cx} y={s.avatarY + s.avatarR * 0.32} textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize={s.avatarR * 0.85} fontWeight="900" fill="#0A0E17">
+                      {escapeXml(iniciais(item.nome))}
+                    </text>
                   </>
                 )}
-                {/* Medalha */}
-                <text x={s.cx + s.avatarR - 10} y={s.avatarY - s.avatarR + 20} textAnchor="middle" fontSize="54">{MEDALHA[s.idx]}</text>
 
-                {/* Nome / setor / votos */}
-                <text x={s.cx} y={s.baseY + 130} textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="30" fontWeight="bold" fill={fg}>{escapeXml(item.nome.length > 20 ? item.nome.slice(0, 19) + '…' : item.nome)}</text>
-                {item.setor && <text x={s.cx} y={s.baseY + 168} textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="22" fill={fg} opacity="0.6">{escapeXml(item.setor)}</text>}
-                <text x={s.cx} y={s.baseY + 210} textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="24" fontWeight="bold" fill={cor}>{item.votos} {item.votos === 1 ? 'voto' : 'votos'}</text>
+                {/* Badge da Medalha 🥇/🥈/🥉 */}
+                <g transform={`translate(${s.cx + s.avatarR - 15}, ${s.avatarY - s.avatarR + 15})`}>
+                  <circle cx="0" cy="0" r="28" fill={cardFill} stroke={meta.cor} strokeWidth="3" />
+                  <text x="0" y="8" textAnchor="middle" fontSize="28">{meta.medalha}</text>
+                </g>
+
+                {/* Informações: Primeiro Nome + Setor + Votos */}
+                {/* 1. Primeiro Nome (Destacado e limpo) */}
+                <text
+                  x={s.cx}
+                  y={s.baseY + 110}
+                  textAnchor="middle"
+                  fontFamily="Inter, system-ui, sans-serif"
+                  fontSize={nomeCurto.length > 10 ? '28' : '34'}
+                  fontWeight="800"
+                  fill={textPrimary}
+                >
+                  {escapeXml(nomeCurto)}
+                </text>
+
+                {/* 2. Setor (Pill ou texto secundário) */}
+                {item.setor && (
+                  <g transform={`translate(${s.cx}, ${s.baseY + 150})`}>
+                    <rect
+                      x="-100"
+                      y="-18"
+                      width="200"
+                      height="30"
+                      rx="15"
+                      fill={isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'}
+                      stroke={borderStroke}
+                      strokeWidth="1"
+                    />
+                    <text
+                      x="0"
+                      y="3"
+                      textAnchor="middle"
+                      fontFamily="Inter, system-ui, sans-serif"
+                      fontSize="14"
+                      fontWeight="600"
+                      fill={textMuted}
+                    >
+                      {escapeXml(item.setor.length > 18 ? item.setor.slice(0, 17) + '…' : item.setor)}
+                    </text>
+                  </g>
+                )}
+
+                {/* 3. Contagem de Votos */}
+                <g transform={`translate(${s.cx}, ${s.baseY + 205})`}>
+                  <rect
+                    x="-70"
+                    y="-18"
+                    width="140"
+                    height="32"
+                    rx="16"
+                    fill={meta.corSoft}
+                    stroke={meta.cor}
+                    strokeOpacity="0.4"
+                    strokeWidth="1.5"
+                  />
+                  <text
+                    x="0"
+                    y="4"
+                    textAnchor="middle"
+                    fontFamily="Inter, system-ui, sans-serif"
+                    fontSize="15"
+                    fontWeight="800"
+                    fill={meta.cor}
+                  >
+                    {item.votos} {item.votos === 1 ? 'VOTO' : 'VOTOS'}
+                  </text>
+                </g>
               </g>
             );
           })}
 
-          <text x="540" y="1030" textAnchor="middle" fontFamily="Arial, sans-serif" fontSize="22" fill={fg} opacity="0.4">ITO</text>
+          {/* Rodapé da Arte */}
+          <g transform="translate(540, 1025)">
+            <text textAnchor="middle" fontFamily="Inter, system-ui, sans-serif" fontSize="16" fontWeight="800" letterSpacing="4" fill={textMuted} opacity="0.6">
+              OMNI ITO · INSTITUTO THIAGO OMENA
+            </text>
+          </g>
         </svg>
       </div>
 
@@ -139,9 +312,9 @@ export default function PodioArte({ top3, fotos, competencia, theme }: PodioArte
         <button
           onClick={baixarPng}
           disabled={baixando}
-          className={`px-4 py-2 rounded-lg font-bold text-xs uppercase tracking-wider flex items-center gap-2 ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'} disabled:opacity-50`}
+          className={`px-5 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-2 ${theme === 'dark' ? 'bg-brand text-white hover:bg-brand-strong' : 'bg-brand text-white hover:bg-brand-strong'} shadow-lg shadow-brand/20 disabled:opacity-50 transition-all cursor-pointer`}
         >
-          {baixando ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />} Baixar PNG
+          {baixando ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} Baixar Arte em PNG (1080x1080)
         </button>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { filtrarColaboradoresElegiveis } from '../../utils/colaboradoresFiltro';
+
 import {
   Receipt,
   Plus,
@@ -88,12 +90,12 @@ export default function FolhaManager({ theme, userEmail }: FolhaManagerProps) {
     try {
       const [lRes, cRes] = await Promise.all([
         supabase.from('folha_lancamentos').select('*').order('criado_em', { ascending: false }),
-        supabase.from('colaboradores').select('id, nome, status').eq('status', 'ativo').order('nome')
+        supabase.from('colaboradores').select('id, nome, status, cargo, setor').eq('status', 'ativo').order('nome')
       ]);
       if (lRes.error) throw lRes.error;
       if (cRes.error) throw cRes.error;
       setLancamentos((lRes.data as FolhaLancamento[]) || []);
-      setColaboradores(cRes.data || []);
+      setColaboradores(filtrarColaboradoresElegiveis(cRes.data || []));
     } catch (err: any) {
       console.error('FolhaManager fetch:', err);
       setErrorMsg(err.message || 'Falha ao carregar lançamentos.');

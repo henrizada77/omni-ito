@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../../supabaseClient';
+import { filtrarColaboradoresElegiveis } from '../../utils/colaboradoresFiltro';
+
 import { 
   Gift, 
   Plus, 
@@ -90,7 +92,7 @@ export default function BenefitsManager({ theme }: BenefitsManagerProps) {
       if (assocRes.error) throw assocRes.error;
 
       setBenefits(benefitsRes.data || []);
-      setColaboradores(colabsRes.data || []);
+      setColaboradores(filtrarColaboradoresElegiveis(colabsRes.data || []));
       setAssociations(assocRes.data || []);
 
       // If a benefit was selected, refresh its temporary states

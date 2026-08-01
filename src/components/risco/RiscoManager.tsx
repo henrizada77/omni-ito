@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { filtrarColaboradoresElegiveis } from '../../utils/colaboradoresFiltro';
+
 import {
   ShieldAlert,
   AlertTriangle,
@@ -217,7 +219,7 @@ export default function RiscoManager({ theme }: RiscoManagerProps) {
         if (avalsRes.error) throw avalsRes.error;
         if (promsRes.error) throw promsRes.error;
 
-        setColaboradores(colabsRes.data || []);
+        setColaboradores(filtrarColaboradoresElegiveis(colabsRes.data || []));
         setOcorrencias(ocorrRes.data || []);
         setAvaliacoes(avalsRes.data || []);
         setPromocoes(promsRes.data || []);

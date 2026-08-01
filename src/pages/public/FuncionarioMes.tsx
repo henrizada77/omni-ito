@@ -104,6 +104,10 @@ export default function FuncionarioMes({ theme, setTheme }: FuncionarioMesProps)
       setError('Você não pode votar em si mesmo.');
       return;
     }
+    if (selectedVotado.nome.toLowerCase().includes('camila')) {
+      setError('A Coordenadora de RH (Camila) não pode ser votada na eleição de Funcionário do Mês.');
+      return;
+    }
     setSubmitting(true);
     setError('');
     try {
@@ -372,7 +376,7 @@ export default function FuncionarioMes({ theme, setTheme }: FuncionarioMesProps)
                 {selectedVotante ? '— Clique para escolher o colega —' : '— Identifique-se primeiro acima —'}
               </option>
               {colaboradores
-                .filter(c => c.id !== selectedVotante?.id)
+                .filter(c => c.id !== selectedVotante?.id && !c.nome.toLowerCase().includes('camila'))
                 .map(c => (
                   <option key={c.id} value={c.id}>
                     {getPrimeiroESegundoNome(c.nome)}{c.setor ? ` · ${c.setor}` : ''}

@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../supabaseClient';
+import { filtrarColaboradoresElegiveis } from '../../utils/colaboradoresFiltro';
+
 import { useDialogoAcessivel } from '../../hooks/useDialogoAcessivel';
 import {
   Briefcase,
@@ -100,7 +102,7 @@ export default function CargosManager({ theme, userEmail }: CargosManagerProps) 
       setTrilhas(trilhasRes.data || []);
       setDegraus(degrausRes.data || []);
       setPromocoes(promocoesRes.data || []);
-      setColaboradores((colabsRes.data as Colaborador[]) || []);
+      setColaboradores(filtrarColaboradoresElegiveis((colabsRes.data as Colaborador[]) || []));
     } catch (err: any) {
       console.error('CargosManager fetch:', err);
       setErrorMsg(err.message || 'Falha ao carregar dados.');
