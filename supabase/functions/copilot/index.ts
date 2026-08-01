@@ -307,9 +307,9 @@ serve(async (req) => {
     const incoming = Array.isArray(body?.messages) ? body.messages : [];
     const contextInfo = typeof body?.contextInfo === 'string' ? body.contextInfo : '';
 
-    // Mantém só role/content válidos e limita o contexto às últimas 24 mensagens.
+    // Mantém só role/content válidos (user, assistant, system) e limita o contexto às últimas 24 mensagens.
     const history = incoming
-      .filter((m: any) => (m?.role === 'user' || m?.role === 'assistant') && typeof m?.content === 'string')
+      .filter((m: any) => (m?.role === 'user' || m?.role === 'assistant' || m?.role === 'system') && typeof m?.content === 'string')
       .slice(-24)
       .map((m: any) => ({ role: m.role, content: m.content }));
 

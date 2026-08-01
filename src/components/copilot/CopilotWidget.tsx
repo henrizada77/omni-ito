@@ -18,7 +18,7 @@ interface CopilotWidgetProps {
   theme: 'dark' | 'light';
 }
 
-interface Msg { role: 'user' | 'assistant'; content: string }
+interface Msg { role: 'user' | 'assistant' | 'system'; content: string }
 interface Conversa { id: string; titulo: string | null; atualizado_em: string }
 
 export default function CopilotWidget({ theme }: CopilotWidgetProps) {
@@ -168,10 +168,18 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
       const { data: sessionData } = await supabase.auth.getSession();
       const token = sessionData?.session?.access_token || import.meta.env.VITE_SUPABASE_ANON_KEY;
       
+      // Injeta os dados ao vivo do sistema como mensagem de contexto para o provedor de IA
+      const contextSystemMsg: Msg = {
+        role: 'system',
+        content: `DADOS EM TEMPO REAL DO SISTEMA OMNI ITO (COLETADOS AGORA EM ${new Date().toLocaleDateString('pt-BR')}):\n${liveContextInfo}\nUse estes dados acima como verdade absoluta para responder sobre a empresa ITO.`
+      };
+
+      const payloadMessages = [contextSystemMsg, ...nextMessages];
+
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/copilot`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ messages: nextMessages, contextInfo: liveContextInfo })
+        body: JSON.stringify({ messages: payloadMessages, contextInfo: liveContextInfo })
       });
 
       if (!resp.ok || !resp.body) {
