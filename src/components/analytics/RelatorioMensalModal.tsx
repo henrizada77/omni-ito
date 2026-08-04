@@ -59,52 +59,85 @@ export default function RelatorioMensalModal({ isOpen, onClose, theme }: Relator
   const carregarDadosRelatorio = async (comp: string) => {
     setLoading(true);
     try {
+      const [anoStr, mesStr] = comp.split('-');
+      const ano = Number(anoStr);
+      const mes = Number(mesStr);
+      const inicioMesStr = `${comp}-01`;
+      const ultimoDiaMes = new Date(ano, mes, 0).getDate();
+      const fimMesStr = `${comp}-${String(ultimoDiaMes).padStart(2, '0')}`;
+
       const [colabsRes, rodadaRes, ocorrenciasRes] = await Promise.all([
-        supabase.from('colaboradores').select('id, nome, setor, status, data_admissao, data_desligamento, data_vencimento_aso'),
-        supabase.from('funcionario_mes_rodadas').select('id, status, competencia').eq('competencia', comp).maybeSingle(),
-        supabase.from('ocorrencias_jornada').select('id, tipo, criado_em')
+        supabase
+          .from('colaboradores')
+          .select('id, nome, setor, status, data_admissao, data_desligamento, data_vencimento_aso, data_inicio_ferias, data_fim_ferias, criado_em'),
+        supabase
+          .from('funcionario_mes_rodadas')
+          .select('id, status, competencia')
+          .eq('competencia', comp)
+          .maybeSingle(),
+        supabase
+          .from('ocorrencias_jornada')
+          .select('id, tipo, data_ocorrencia, criado_em')
       ]);
 
       const colabs = colabsRes.data || [];
       const rodada = rodadaRes.data;
       const ocorrencias = ocorrenciasRes.data || [];
 
-      // Colaboradores Ativos no momento
-      const ativos = colabs.filter(c => c.status !== 'desligado');
+      // 1. Headcount Ativo na Competência Selecionada:
+      // Admitido até o fim do mês E não desligado antes do início do mês
+      const ativosNaCompetencia = colabs.filter(c => {
+        const dataAdm = c.data_admissao || (c.criado_em ? c.criado_em.slice(0, 10) : '');
+        const admitidoAteMes = !dataAdm || dataAdm <= fimMesStr;
+        const naoDesligadoAntes = !c.data_desligamento || c.data_desligamento >= inicioMesStr;
+        return admitidoAteMes && naoDesligadoAntes;
+      });
 
-      // Admissões no mês da competência
-      const admissoes = colabs.filter(c => c.data_admissao && c.data_admissao.startsWith(comp));
+      // 2. Admissões no Mês da Competência:
+      const admissoes = colabs.filter(c => {
+        const dataAdm = c.data_admissao || (c.criado_em ? c.criado_em.slice(0, 10) : '');
+        return dataAdm.startsWith(comp);
+      });
 
-      // Desligamentos no mês da competência
-      const desligamentos = colabs.filter(c => c.status === 'desligado' && c.data_desligamento && c.data_desligamento.startsWith(comp));
+      // 3. Desligamentos no Mês da Competência:
+      const desligamentos = colabs.filter(c => {
+        return c.data_desligamento && c.data_desligamento.startsWith(comp);
+      });
 
-      // Turnover do Mês %
-      const mediaHeadcount = Math.max(ativos.length, 1);
+      // 4. Turnover Mensal %:
+      const mediaHeadcount = Math.max(ativosNaCompetencia.length, 1);
       const turnover = Number(((desligamentos.length / mediaHeadcount) * 100).toFixed(1));
 
-      // Férias
-      const emFerias = colabs.filter(c => c.status === 'em_ferias');
+      // 5. Férias no Mês da Competência:
+      const emFerias = colabs.filter(c => {
+        if (c.status === 'em_ferias') return true;
+        if (c.data_inicio_ferias && c.data_fim_ferias) {
+          return c.data_inicio_ferias <= fimMesStr && c.data_fim_ferias >= inicioMesStr;
+        }
+        return false;
+      });
 
-      // Setores
+      // 6. Distribuição de Setores no Mês:
       const setores: Record<string, number> = {};
-      ativos.forEach(c => {
+      ativosNaCompetencia.forEach(c => {
         const s = c.setor || 'Sem Setor';
         setores[s] = (setores[s] || 0) + 1;
       });
 
-      // ASOs Vincendos (próximos 30 dias)
-      const hojeMs = Date.now();
-      const limite30DiasMs = hojeMs + (30 * 24 * 60 * 60 * 1000);
-      const asos = ativos.filter(c => {
+      // 7. ASOs Vincendos (vencendo no mês da competência ou nos 30 dias subsequentes)
+      const asos = ativosNaCompetencia.filter(c => {
         if (!c.data_vencimento_aso) return false;
-        const v = new Date(c.data_vencimento_aso).getTime();
-        return v >= hojeMs && v <= limite30DiasMs;
+        return c.data_vencimento_aso >= inicioMesStr && c.data_vencimento_aso <= `${ano}-${String(mes + 1).padStart(2, '0')}-31`;
       });
 
-      // Atestados
-      const atestados = ocorrencias.filter(o => o.tipo === 'atestado' && o.criado_em && o.criado_em.startsWith(comp));
+      // 8. Atestados Registrados no Mês da Competência:
+      const atestados = ocorrencias.filter(o => {
+        const isAtestado = o.tipo && (o.tipo.toLowerCase().includes('atestado') || o.tipo.toLowerCase().includes('falta'));
+        const dataOc = o.data_ocorrencia || (o.criado_em ? o.criado_em.slice(0, 10) : '');
+        return isAtestado && dataOc.startsWith(comp);
+      });
 
-      // Vencedor do Funcionário do Mês
+      // 9. Vencedor do Funcionário do Mês da Competência:
       let vencedor: { nome: string; setor: string; votos: number } | null = null;
       if (rodada?.id) {
         const { data: votos } = await supabase
@@ -134,7 +167,7 @@ export default function RelatorioMensalModal({ isOpen, onClose, theme }: Relator
       }
 
       setDados({
-        totalAtivos: ativos.length,
+        totalAtivos: ativosNaCompetencia.length,
         admissoesMes: admissoes.length,
         desligamentosMes: desligamentos.length,
         turnoverMes: turnover,
