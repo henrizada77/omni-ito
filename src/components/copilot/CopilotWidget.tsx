@@ -241,12 +241,25 @@ export default function CopilotWidget({ theme }: CopilotWidgetProps) {
     const hasFuncMes = content.includes('/app/funcionario-mes') || content.toLowerCase().includes('funcionário do mês');
     const hasColabs = content.includes('/app/colaboradores') || content.toLowerCase().includes('colaboradores');
     const hasFolha = content.includes('/app/folha') || content.toLowerCase().includes('folha de pagamento');
+    const hasRelatorio = content.includes('/app/analytics') || content.toLowerCase().includes('relatório mensal') || content.toLowerCase().includes('briefing');
 
     return (
       <div className="space-y-2">
         <p className="whitespace-pre-wrap leading-relaxed">{content}</p>
-        {(hasFuncMes || hasColabs || hasFolha) && (
+        {(hasFuncMes || hasColabs || hasFolha || hasRelatorio) && (
           <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/10">
+            {hasRelatorio && (
+              <button
+                onClick={() => {
+                  setOpen(false);
+                  navigate('/app/analytics');
+                  setTimeout(() => window.dispatchEvent(new CustomEvent('omni-open-relatorio')), 300);
+                }}
+                className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30 flex items-center gap-1 cursor-pointer transition-colors"
+              >
+                <ExternalLink size={11} /> Gerar PDF do Relatório Mensal
+              </button>
+            )}
             {hasFuncMes && (
               <button
                 onClick={() => { setOpen(false); navigate('/app/funcionario-mes'); }}

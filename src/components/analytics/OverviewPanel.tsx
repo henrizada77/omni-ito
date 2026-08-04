@@ -1,13 +1,15 @@
 
-import { memo } from 'react';
+import { memo, useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   HeartPulse, 
   DollarSign, 
   ShieldAlert,
   ArrowRightLeft,
-  UserCheck
+  UserCheck,
+  FileCheck
 } from 'lucide-react';
+import RelatorioMensalModal from './RelatorioMensalModal';
 import { 
   ResponsiveContainer, 
   AreaChart, 
@@ -40,6 +42,14 @@ interface OverviewPanelProps {
 }
 
 function OverviewPanel({ theme, colaboradoresList, ocorrenciasList, indicadoresList, benefitsList, associationsList }: OverviewPanelProps) {
+  const [isRelatorioOpen, setIsRelatorioOpen] = useState(false);
+
+  useEffect(() => {
+    const handleOpenRelatorio = () => setIsRelatorioOpen(true);
+    window.addEventListener('omni-open-relatorio' as any, handleOpenRelatorio);
+    return () => window.removeEventListener('omni-open-relatorio' as any, handleOpenRelatorio);
+  }, []);
+
   // Calculations
   const activeColabs = colaboradoresList.filter(c => c.status === 'ativo' || c.status === 'em_ferias');
   const activeCount = activeColabs.length;
@@ -160,6 +170,22 @@ function OverviewPanel({ theme, colaboradoresList, ocorrenciasList, indicadoresL
 
   return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Top Action Bar */}
+      <div className="flex items-center justify-between p-4 rounded-2xl border bg-brand/5 border-brand/20">
+        <div>
+          <h3 className="text-sm font-bold flex items-center gap-2">
+            <FileCheck size={18} className="text-brand" /> Relatório Mensal de Gestão de RH
+          </h3>
+          <p className="text-xs opacity-60">Consolidado em formato executivo para reuniões de diretoria</p>
+        </div>
+        <button
+          onClick={() => setIsRelatorioOpen(true)}
+          className="text-xs font-bold px-4 py-2.5 rounded-xl bg-brand text-white hover:bg-brand-strong flex items-center gap-2 shadow-md shadow-brand/20 transition-all cursor-pointer"
+        >
+          <FileCheck size={16} /> Exportar Relatório Mensal (PDF)
+        </button>
+      </div>
+
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {kpis.map((kpi, idx) => (
@@ -252,6 +278,13 @@ function OverviewPanel({ theme, colaboradoresList, ocorrenciasList, indicadoresL
           </div>
         </div>
       </div>
+
+      {/* Relatório Mensal Modal */}
+      <RelatorioMensalModal
+        isOpen={isRelatorioOpen}
+        onClose={() => setIsRelatorioOpen(false)}
+        theme={theme}
+      />
     </div>
   );
 }
