@@ -1,7 +1,6 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
-
-type Role = 'coordenadora_rh' | 'ti';
+import type { Papel as Role } from '../auth/papeis';
 
 interface ProtectedRouteProps {
   user: any;

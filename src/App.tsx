@@ -19,36 +19,30 @@ import CommandPalette from './components/common/CommandPalette';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import AccessDenied403 from './pages/errors/AccessDenied403';
 import NotFound404 from './pages/errors/NotFound404';
+import { ROTAS_POR_PAPEL, rotaInicial, type Papel } from './auth/papeis';
 
 // Carregado sob demanda: o Dashboard e o recharts respondem pela maior parte do
 // bundle, e o candidato que abre /admissao/:token no celular não usa nenhum dos
 // dois. Importado estaticamente, ele baixava tudo isso antes de ver a ficha.
 const Dashboard = lazy(() => import('./pages/private/Dashboard'));
 
-type Role = 'coordenadora_rh' | 'ti';
+type Role = Papel;
 type Theme = 'dark' | 'light';
 
-// As 8 rotas privadas renderizam o mesmo Dashboard, que decide o conteúdo pelo
-// activePath. A única coisa que varia entre elas é quem pode entrar.
-const APP_ROUTES: { path: string; allowedRoles: Role[] }[] = [
-  { path: '/app/dashboard', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/documentos', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/colaboradores', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/onboarding', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/beneficios', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/ferias-aso', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/avaliacoes', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/cargos', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/vagas', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/funcionario-mes', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/feedback', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/ponto', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/riscos', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/folha', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/agenda', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/cultura', allowedRoles: ['coordenadora_rh'] },
-  { path: '/app/analytics', allowedRoles: ['coordenadora_rh', 'ti'] }
-];
+// As rotas privadas renderizam o mesmo Dashboard, que decide o conteúdo pelo
+// activePath. A única coisa que varia entre elas é quem pode entrar — e isso
+// agora vem de ROTAS_POR_PAPEL, não de uma segunda lista mantida à mão aqui.
+//
+// A lista da coordenadora é o conjunto completo: percorrê-la registra toda rota
+// privada que existe. O teste de invariante em auth/papeis.test.ts garante que
+// nenhum papel aponte para fora dela.
+const PAPEIS = Object.keys(ROTAS_POR_PAPEL) as Papel[];
+
+const APP_ROUTES: { path: string; allowedRoles: Role[] }[] =
+  ROTAS_POR_PAPEL.coordenadora_rh.map(path => ({
+    path,
+    allowedRoles: PAPEIS.filter(papel => ROTAS_POR_PAPEL[papel].includes(path))
+  }));
 
 function RouteFallback() {
   return (
@@ -247,11 +241,7 @@ export default function App() {
           path="/app" 
           element={
             <ProtectedRoute user={user} role={role} isInitialCheckDone={isInitialSessionCheckDone}>
-              {role === 'coordenadora_rh' || user?.email === 'ito.thiagosilva@gmail.com' ? (
-                <Navigate to="/app/dashboard" replace />
-              ) : (
-                <Navigate to="/app/analytics" replace />
-              )}
+              <Navigate to={rotaInicial(role, user?.email)} replace />
             </ProtectedRoute>
           }
         />
@@ -286,6 +276,8 @@ export default function App() {
         theme={theme}
         setTheme={setTheme}
         isAuthenticated={!!user}
+        papel={role}
+        email={user?.email}
         onLogout={async () => {
           await supabase.auth.signOut();
           setUser(null);

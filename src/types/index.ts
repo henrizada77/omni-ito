@@ -1,6 +1,10 @@
 // Domain types for Omni-ITO — derived from supabase_setup.sql schema
 
-export type Role = 'coordenadora_rh' | 'ti';
+// Espelha perfis.cargo no Postgres. A lista canônica vive em auth/papeis.ts,
+// junto das rotas que cada papel abre — separá-las foi o que deixou a paleta de
+// comandos divergir do resto do app.
+import type { Papel as Role } from '../auth/papeis';
+export type { Role };
 export type Theme = 'dark' | 'light';
 export type ColaboradorStatus = 'pendente' | 'ativo' | 'desligado' | 'em_ferias';
 export type Genero = 'M' | 'F';
