@@ -20,12 +20,17 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../supabaseClient';
 import { filtrarColaboradoresElegiveis } from '../../utils/colaboradoresFiltro';
+import { podeVerRota, type Papel } from '../../auth/papeis';
 
 
 interface CommandPaletteProps {
   theme: 'dark' | 'light';
   setTheme: (theme: 'dark' | 'light') => void;
   isAuthenticated?: boolean;
+  // A paleta só distinguia anônimo de autenticado. Com um papel que abre uma aba
+  // só, isso deixaria vazar atalho de Folha e busca de colaborador por nome.
+  papel?: Papel;
+  email?: string | null;
   onLogout?: () => void;
 }
 
@@ -43,6 +48,8 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
   theme,
   setTheme,
   isAuthenticated = false,
+  papel = 'ti',
+  email,
   onLogout
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -54,7 +61,10 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   // Busca colaboradores no Supabase quando o usuário digita na busca
   useEffect(() => {
-    if (!isAuthenticated || query.trim().length < 2) {
+    // Nome, cargo e setor de colaborador só para quem já tem a aba de
+    // colaboradores. Antes bastava estar autenticado — o auditor de TI e a
+    // diretoria recebiam a lista de quem trabalha aqui por Ctrl+K.
+    if (!isAuthenticated || !podeVerRota(papel, '/app/colaboradores', email) || query.trim().length < 2) {
       setColaboradores([]);
       return;
     }
@@ -75,7 +85,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
     fetchColabs();
     return () => { active = false; };
-  }, [query, isAuthenticated]);
+  }, [query, isAuthenticated, papel, email]);
 
   // Escuta atalho Ctrl+K / Cmd+K e tecla Esc
   useEffect(() => {
@@ -147,43 +157,52 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       }
     ];
 
-    const privateItems: CommandItem[] = [
+    // Filtrado pela mesma lista que registra as rotas no roteador: a paleta
+    // deixa de oferecer atalho que o ProtectedRoute vai recusar. O item
+    // 'organograma' some para todos — apontava para /app/organograma, que nunca
+    // existiu em APP_ROUTES e caía no 404.
+    const privateItems: CommandItem[] = ([
       {
         id: 'dashboard',
+        path: '/app/dashboard',
         title: 'Dashboard de Clima & Visão Geral',
-        category: 'Painel de Gestão',
+        category: 'Painel de Gestão' as const,
         icon: <TrendingUp size={18} />,
         action: () => navigate('/app/dashboard')
       },
       {
         id: 'analytics',
+        path: '/app/analytics',
         title: 'Analytics & Métricas de RH',
-        category: 'Painel de Gestão',
+        category: 'Painel de Gestão' as const,
         icon: <Sparkles size={18} />,
         action: () => navigate('/app/analytics')
       },
       {
         id: 'folha',
+        path: '/app/folha',
         title: 'Gestão de Folha & Compensação',
-        category: 'Painel de Gestão',
+        category: 'Painel de Gestão' as const,
         icon: <FileText size={18} />,
         action: () => navigate('/app/folha')
       },
       {
         id: 'vagas',
+        path: '/app/vagas',
         title: 'Processos Seletivos & Vagas',
-        category: 'Painel de Gestão',
+        category: 'Painel de Gestão' as const,
         icon: <Briefcase size={18} />,
         action: () => navigate('/app/vagas')
       },
       {
         id: 'organograma',
+        path: '/app/organograma',
         title: 'Organograma da Equipe',
-        category: 'Painel de Gestão',
+        category: 'Painel de Gestão' as const,
         icon: <Users size={18} />,
         action: () => navigate('/app/organograma')
       }
-    ];
+    ]).filter(item => podeVerRota(papel, item.path, email));
 
     const actionItems: CommandItem[] = [
       {
@@ -211,7 +230,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
       return [...privateItems, ...publicItems, ...actionItems];
     }
     return [...publicItems, ...(isAuthenticated ? privateItems : []), ...actionItems];
-  }, [location.pathname, isAuthenticated, theme, setTheme, navigate, onLogout]);
+  }, [location.pathname, isAuthenticated, papel, email, theme, setTheme, navigate, onLogout]);
 
   // Junta os colaboradores buscados no Supabase com os comandos do sistema
   const filteredItems = useMemo(() => {

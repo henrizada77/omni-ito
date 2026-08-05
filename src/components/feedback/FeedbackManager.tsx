@@ -33,6 +33,10 @@ import type {
 
 interface FeedbackManagerProps {
   theme: 'dark' | 'light';
+  // Esconde tudo que escreve. A trava de verdade é o RLS — a diretoria não tem
+  // UPDATE nem DELETE nestas quatro tabelas. Isto só evita oferecer botão que
+  // o banco vai recusar.
+  somenteLeitura?: boolean;
 }
 
 type SubTab = 'pulse' | 'pesquisa' | 'ouvidoria';
@@ -86,7 +90,7 @@ const TIPO_STYLE: Record<TipoOuvidoria, string> = {
 
 const CATEGORIAS_SAT: CategoriaSatisfacao[] = ['Geral', 'Ambiente', 'Liderança', 'Benefícios', 'Carreira', 'Comunicação'];
 
-export default function FeedbackManager({ theme }: FeedbackManagerProps) {
+export default function FeedbackManager({ theme, somenteLeitura = false }: FeedbackManagerProps) {
   const [subTab, setSubTab] = useState<SubTab>('pulse');
   const [loading, setLoading] = useState(true);
   const [pesquisas, setPesquisas] = useState<PesquisaSatisfacao[]>([]);
@@ -208,6 +212,7 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
           setSuccessMsg={setSuccessMsg}
           cardBg={cardBg}
           btnSecondary={btnSecondary}
+          somenteLeitura={somenteLeitura}
         />
       ) : subTab === 'pesquisa' ? (
         <PesquisaView
@@ -218,6 +223,7 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
           setSuccessMsg={setSuccessMsg}
           cardBg={cardBg}
           btnSecondary={btnSecondary}
+          somenteLeitura={somenteLeitura}
         />
       ) : (
         <OuvidoriaView
@@ -230,6 +236,7 @@ export default function FeedbackManager({ theme }: FeedbackManagerProps) {
           inputBg={inputBg}
           btnPrimary={btnPrimary}
           btnSecondary={btnSecondary}
+          somenteLeitura={somenteLeitura}
         />
       )}
     </div>
@@ -264,7 +271,8 @@ function PulseView({
   setErrorMsg,
   setSuccessMsg,
   cardBg,
-  btnSecondary
+  btnSecondary,
+  somenteLeitura
 }: {
   respostas: PulseResposta[];
   alertas: PulseAlerta[];
@@ -274,6 +282,7 @@ function PulseView({
   setSuccessMsg: (m: string) => void;
   cardBg: string;
   btnSecondary: string;
+  somenteLeitura: boolean;
 }) {
   const [saving, setSaving] = useState<string | null>(null);
   const semanaAtual = isoWeekKey(new Date());
@@ -374,27 +383,29 @@ function PulseView({
                       Detectado em {new Date(a.criado_em).toLocaleDateString('pt-BR')} · anônimo (sem nome/e-mail)
                     </p>
                   </div>
-                  <div className="flex gap-2 shrink-0">
-                    {a.status !== 'visto' && a.status !== 'resolvido' && (
-                      <button
-                        onClick={() => mudarStatusAlerta(a, 'visto')}
-                        disabled={saving === a.id}
-                        className={`text-[10px] font-bold px-3 py-1.5 rounded border ${btnSecondary} disabled:opacity-50`}
-                      >
-                        Marcar visto
-                      </button>
-                    )}
-                    {a.status !== 'resolvido' && (
-                      <button
-                        onClick={() => mudarStatusAlerta(a, 'resolvido')}
-                        disabled={saving === a.id}
-                        className="text-[10px] font-bold px-3 py-1.5 rounded border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50 flex items-center gap-1"
-                      >
-                        {saving === a.id ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                        Resolver
-                      </button>
-                    )}
-                  </div>
+                  {!somenteLeitura && (
+                    <div className="flex gap-2 shrink-0">
+                      {a.status !== 'visto' && a.status !== 'resolvido' && (
+                        <button
+                          onClick={() => mudarStatusAlerta(a, 'visto')}
+                          disabled={saving === a.id}
+                          className={`text-[10px] font-bold px-3 py-1.5 rounded border ${btnSecondary} disabled:opacity-50`}
+                        >
+                          Marcar visto
+                        </button>
+                      )}
+                      {a.status !== 'resolvido' && (
+                        <button
+                          onClick={() => mudarStatusAlerta(a, 'resolvido')}
+                          disabled={saving === a.id}
+                          className="text-[10px] font-bold px-3 py-1.5 rounded border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/10 disabled:opacity-50 flex items-center gap-1"
+                        >
+                          {saving === a.id ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                          Resolver
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -555,7 +566,8 @@ function PesquisaView({
   setErrorMsg,
   setSuccessMsg,
   cardBg,
-  btnSecondary
+  btnSecondary,
+  somenteLeitura
 }: {
   pesquisas: PesquisaSatisfacao[];
   theme: 'dark' | 'light';
@@ -564,6 +576,7 @@ function PesquisaView({
   setSuccessMsg: (m: string) => void;
   cardBg: string;
   btnSecondary: string;
+  somenteLeitura: boolean;
 }) {
   const [filterCategoria, setFilterCategoria] = useState<CategoriaSatisfacao | 'Todas'>('Todas');
   const [filterPeriodo, setFilterPeriodo] = useState<'30' | '90' | '365' | 'all'>('90');
@@ -738,14 +751,16 @@ function PesquisaView({
                     </span>
                     <span className="text-[10px] opacity-50">{new Date(p.criado_em).toLocaleString('pt-BR')}</span>
                   </div>
-                  <button
-                    onClick={() => excluir(p.id)}
-                    disabled={deleting === p.id}
-                    className="opacity-40 hover:opacity-100 hover:text-rose-500 transition-opacity"
-                    title="Excluir"
-                  >
-                    {deleting === p.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-                  </button>
+                  {!somenteLeitura && (
+                    <button
+                      onClick={() => excluir(p.id)}
+                      disabled={deleting === p.id}
+                      className="opacity-40 hover:opacity-100 hover:text-rose-500 transition-opacity"
+                      title="Excluir"
+                    >
+                      {deleting === p.id ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
+                    </button>
+                  )}
                 </div>
                 {p.comentario ? (
                   <p className="text-xs mt-2 leading-relaxed whitespace-pre-wrap">{p.comentario}</p>
@@ -774,7 +789,8 @@ function OuvidoriaView({
   cardBg,
   inputBg,
   btnPrimary,
-  btnSecondary
+  btnSecondary,
+  somenteLeitura
 }: {
   manifestacoes: OuvidoriaManifestacao[];
   theme: 'dark' | 'light';
@@ -785,6 +801,7 @@ function OuvidoriaView({
   inputBg: string;
   btnPrimary: string;
   btnSecondary: string;
+  somenteLeitura: boolean;
 }) {
   const [statusFilter, setStatusFilter] = useState<'todos' | StatusOuvidoria>('todos');
   const [tipoFilter, setTipoFilter] = useState<'todos' | TipoOuvidoria>('todos');
@@ -952,51 +969,67 @@ function OuvidoriaView({
                   {isOpen && (
                     <div className="px-4 pb-4 space-y-3 border-t border-white/5">
                       {/* Ações de status */}
-                      <div className="flex flex-wrap gap-2 pt-3">
-                        {(['novo', 'em_analise', 'resolvido', 'arquivado'] as const)
-                          .filter(s => s !== m.status)
-                          .map(s => (
-                            <button
-                              key={s}
-                              onClick={() => mudarStatus(m, s)}
-                              disabled={saving === m.id}
-                              className={`text-[10px] font-bold px-3 py-1.5 rounded border ${btnSecondary} disabled:opacity-50`}
-                            >
-                              Mover para {STATUS_LABEL[s]}
-                            </button>
-                          ))}
-                        <button
-                          onClick={() => excluir(m)}
-                          disabled={saving === m.id}
-                          className="text-[10px] font-bold px-3 py-1.5 rounded border border-rose-500/30 text-rose-500 hover:bg-rose-500/10"
-                        >
-                          <Trash2 size={11} className="inline mr-1" /> Excluir
-                        </button>
-                      </div>
-
-                      {/* Nota interna */}
-                      <div>
-                        <label htmlFor={`fb-resposta-${m.id}`} className="text-[10px] font-bold uppercase tracking-wider opacity-60">
-                          Nota interna (visível só para o RH)
-                        </label>
-                        <textarea id={`fb-resposta-${m.id}`}
-                          value={respostaAtual}
-                          onChange={e => setRespostaDrafts(prev => ({ ...prev, [m.id]: e.target.value }))}
-                          rows={3}
-                          placeholder="Anote encaminhamentos, decisões, contato feito, etc."
-                          className={`w-full text-xs px-3 py-2 rounded-lg border mt-1 ${inputBg}`}
-                        />
-                        {draft !== undefined && (
+                      {!somenteLeitura && (
+                        <div className="flex flex-wrap gap-2 pt-3">
+                          {(['novo', 'em_analise', 'resolvido', 'arquivado'] as const)
+                            .filter(s => s !== m.status)
+                            .map(s => (
+                              <button
+                                key={s}
+                                onClick={() => mudarStatus(m, s)}
+                                disabled={saving === m.id}
+                                className={`text-[10px] font-bold px-3 py-1.5 rounded border ${btnSecondary} disabled:opacity-50`}
+                              >
+                                Mover para {STATUS_LABEL[s]}
+                              </button>
+                            ))}
                           <button
-                            onClick={() => salvarResposta(m)}
+                            onClick={() => excluir(m)}
                             disabled={saving === m.id}
-                            className={`mt-2 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 ${btnPrimary} disabled:opacity-50`}
+                            className="text-[10px] font-bold px-3 py-1.5 rounded border border-rose-500/30 text-rose-500 hover:bg-rose-500/10"
                           >
-                            {saving === m.id ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
-                            Salvar nota
+                            <Trash2 size={11} className="inline mr-1" /> Excluir
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
+
+                      {/* Nota interna. Em somente leitura ela continua legível — é
+                          informação útil para acompanhar o caso, não ação. */}
+                      {somenteLeitura ? (
+                        m.resposta_interna ? (
+                          <div className="pt-3">
+                            <span className="text-[10px] font-bold uppercase tracking-wider opacity-60">
+                              Nota interna do RH
+                            </span>
+                            <p className="text-xs mt-1 leading-relaxed whitespace-pre-wrap opacity-80">
+                              {m.resposta_interna}
+                            </p>
+                          </div>
+                        ) : null
+                      ) : (
+                        <div>
+                          <label htmlFor={`fb-resposta-${m.id}`} className="text-[10px] font-bold uppercase tracking-wider opacity-60">
+                            Nota interna (visível só para o RH)
+                          </label>
+                          <textarea id={`fb-resposta-${m.id}`}
+                            value={respostaAtual}
+                            onChange={e => setRespostaDrafts(prev => ({ ...prev, [m.id]: e.target.value }))}
+                            rows={3}
+                            placeholder="Anote encaminhamentos, decisões, contato feito, etc."
+                            className={`w-full text-xs px-3 py-2 rounded-lg border mt-1 ${inputBg}`}
+                          />
+                          {draft !== undefined && (
+                            <button
+                              onClick={() => salvarResposta(m)}
+                              disabled={saving === m.id}
+                              className={`mt-2 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 ${btnPrimary} disabled:opacity-50`}
+                            >
+                              {saving === m.id ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
+                              Salvar nota
+                            </button>
+                          )}
+                        </div>
+                      )}
 
                       <div className="text-[9px] opacity-40 font-mono border-t border-white/5 pt-2">
                         Última atualização: {new Date(m.atualizado_em).toLocaleString('pt-BR')} · Envio anônimo (sem IP/e-mail)

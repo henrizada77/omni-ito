@@ -62,6 +62,7 @@ import { calcularPrazosDesligamento } from '../../utils/desligamento';
 import { filtrarColaboradoresElegiveis } from '../../utils/colaboradoresFiltro';
 import { listarColaboradoresElegiveis } from '../../services/colaboradoresService';
 import { carregarDadosAnalytics } from '../../services/analyticsService';
+import { podeVerRota } from '../../auth/papeis';
 
 
 
@@ -141,6 +142,12 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
 
   // Security Helper for RH role OR TI superuser email
   const hasFullAccess = role === 'coordenadora_rh' || user?.email === 'ito.thiagosilva@gmail.com';
+
+  // A diretoria enxerga esta aba e nenhuma outra. Deliberadamente separado de
+  // hasFullAccess: os dezesseis outros usos daquele booleano guardam os fetch de
+  // colaborador, folha, risco e advertência. Mantendo-os intocados, a sessão da
+  // diretoria não dispara nenhuma dessas consultas.
+  const podeVerVozDoTime = hasFullAccess || role === 'diretoria';
 
   const handleLogout = async () => {
     try {
@@ -2483,11 +2490,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
   }, [colaboradoresList, dbAdvertencias, currentYear, acoesEndomarketing]);
 
   // Sidebar Links array builder
-  // Badge da sidebar: nº de alertas de pulse ainda não vistos (só faz sentido
-  // para o RH; para o `ti` o RLS devolve 0).
+  // Badge da sidebar: nº de alertas de pulse ainda não vistos. Faz sentido para
+  // quem abre a Voz do Time; para o `ti` o RLS devolve 0.
   const [pulseAlertasNovos, setPulseAlertasNovos] = useState(0);
   useEffect(() => {
-    if (!hasFullAccess) return;
+    if (!podeVerVozDoTime) return;
     let active = true;
     (async () => {
       const { count } = await supabase
@@ -2497,7 +2504,7 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
       if (active) setPulseAlertasNovos(count || 0);
     })();
     return () => { active = false; };
-  }, [hasFullAccess]);
+  }, [podeVerVozDoTime]);
 
   // Badge da sidebar: lançamentos da folha pendentes na competência atual.
   const [folhaPendentes, setFolhaPendentes] = useState(0);
@@ -2531,27 +2538,30 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     return () => { active = false; };
   }, [hasFullAccess, activePath]);
 
-  const sidebarLinks = [
-    ...(hasFullAccess ? [
-      { path: '/app/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
-      { path: '/app/colaboradores', label: 'Colaboradores', icon: <Users size={16} /> },
-      { path: '/app/onboarding', label: 'Onboarding', icon: <ClipboardCheck size={16} /> },
-      { path: '/app/documentos', label: 'Documentos', icon: <FileText size={16} /> },
-      { path: '/app/beneficios', label: 'Benefícios', icon: <Gift size={16} /> },
-      { path: '/app/ferias-aso', label: 'Férias & ASO', icon: <Calendar size={16} /> },
-      { path: '/app/avaliacoes', label: 'Avaliações', icon: <Award size={16} /> },
-      { path: '/app/cargos', label: 'Cargos & Carreira', icon: <Briefcase size={16} /> },
-      { path: '/app/feedback', label: 'Voz do Time', icon: <MessageSquare size={16} /> },
-      { path: '/app/vagas', label: 'Vagas', icon: <UserPlus size={16} /> },
-      { path: '/app/funcionario-mes', label: 'Funcionário do Mês', icon: <Trophy size={16} /> },
-      { path: '/app/ponto', label: 'Espelho de Ponto', icon: <Clock size={16} /> },
-      { path: '/app/riscos', label: 'Mapa de Riscos', icon: <Shield size={16} /> },
-      { path: '/app/folha', label: 'Lançamentos da Folha', icon: <Receipt size={16} /> },
-      { path: '/app/agenda', label: 'Agenda RH', icon: <Calendar size={16} /> },
-      { path: '/app/cultura', label: 'Manual de Cultura', icon: <BookOpen size={16} /> }
-    ] : []),
+  // A lista completa, na ordem em que aparece para a coordenadora. Quem vê o quê
+  // sai de ROTAS_POR_PAPEL — a mesma fonte que registra as rotas no roteador, para
+  // que a sidebar nunca ofereça um link que o ProtectedRoute vai recusar.
+  const TODOS_OS_LINKS = [
+    { path: '/app/dashboard', label: 'Dashboard', icon: <LayoutDashboard size={16} /> },
+    { path: '/app/colaboradores', label: 'Colaboradores', icon: <Users size={16} /> },
+    { path: '/app/onboarding', label: 'Onboarding', icon: <ClipboardCheck size={16} /> },
+    { path: '/app/documentos', label: 'Documentos', icon: <FileText size={16} /> },
+    { path: '/app/beneficios', label: 'Benefícios', icon: <Gift size={16} /> },
+    { path: '/app/ferias-aso', label: 'Férias & ASO', icon: <Calendar size={16} /> },
+    { path: '/app/avaliacoes', label: 'Avaliações', icon: <Award size={16} /> },
+    { path: '/app/cargos', label: 'Cargos & Carreira', icon: <Briefcase size={16} /> },
+    { path: '/app/feedback', label: 'Voz do Time', icon: <MessageSquare size={16} /> },
+    { path: '/app/vagas', label: 'Vagas', icon: <UserPlus size={16} /> },
+    { path: '/app/funcionario-mes', label: 'Funcionário do Mês', icon: <Trophy size={16} /> },
+    { path: '/app/ponto', label: 'Espelho de Ponto', icon: <Clock size={16} /> },
+    { path: '/app/riscos', label: 'Mapa de Riscos', icon: <Shield size={16} /> },
+    { path: '/app/folha', label: 'Lançamentos da Folha', icon: <Receipt size={16} /> },
+    { path: '/app/agenda', label: 'Agenda RH', icon: <Calendar size={16} /> },
+    { path: '/app/cultura', label: 'Manual de Cultura', icon: <BookOpen size={16} /> },
     { path: '/app/analytics', label: 'Analytics', icon: <TrendingUp size={16} /> }
   ];
+
+  const sidebarLinks = TODOS_OS_LINKS.filter(l => podeVerRota(role, l.path, user?.email));
 
   const renderSidebarContent = () => (
     <div className="flex flex-col h-full">
@@ -2650,7 +2660,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
           <div className="flex flex-col text-left min-w-0">
             <span className="text-[10px] font-bold opacity-80 leading-none truncate">{user?.email}</span>
             <span className="text-[9px] font-mono opacity-50 capitalize mt-1">
-              {role === 'coordenadora_rh' ? 'Coordenadora RH' : (user?.email === 'ito.thiagosilva@gmail.com' ? 'TI Admin (Bypass)' : 'Auditor TI')}
+              {role === 'coordenadora_rh'
+                ? 'Coordenadora RH'
+                : role === 'diretoria'
+                  ? 'Diretoria'
+                  : user?.email === 'ito.thiagosilva@gmail.com' ? 'TI Admin (Bypass)' : 'Auditor TI'}
             </span>
           </div>
 
@@ -2686,11 +2700,13 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
         </div>
 
         <div className="flex items-center gap-3">
-          <span className={`text-[9px] px-2 py-0.5 rounded border font-mono ${role === 'coordenadora_rh' || user?.email === 'ito.thiagosilva@gmail.com'
+          <span className={`text-[9px] px-2 py-0.5 rounded border font-mono ${hasFullAccess
               ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-              : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+              : role === 'diretoria'
+                ? 'bg-sky-500/10 text-sky-500 border-sky-500/20'
+                : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
             }`}>
-            {role === 'coordenadora_rh' || user?.email === 'ito.thiagosilva@gmail.com' ? 'ADM' : 'TI'}
+            {hasFullAccess ? 'ADM' : role === 'diretoria' ? 'DIR' : 'TI'}
           </span>
           <button
             onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
@@ -5567,8 +5583,8 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
               <CargosManager theme={theme} userEmail={user?.email || ''} />
             )}
 
-            {activePath === '/app/feedback' && hasFullAccess && (
-              <FeedbackManager theme={theme} />
+            {activePath === '/app/feedback' && podeVerVozDoTime && (
+              <FeedbackManager theme={theme} somenteLeitura={role === 'diretoria'} />
             )}
 
             {activePath === '/app/ponto' && hasFullAccess && (
