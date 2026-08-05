@@ -1567,7 +1567,11 @@ export default function Dashboard({ theme, setTheme, user, role }: DashboardProp
     setLoadingColabs(true);
     try {
       const [colabsElegiveis, benefitsRes, assocRes, planosRes, avaliacoesRes, desligRes, movRes] = await Promise.all([
-        listarColaboradoresElegiveis(),
+        // Traz desligados de propósito: esta lista é a base da sub-aba "Desligados"
+        // e dos painéis de turnover, que os contam. Quem não os quer filtra por
+        // conta própria (quadro, folha, clima) — status é decisão de cada tela.
+        // SMARTSHAPE/CEO/DIRETORIA seguem fora: esse filtro é outro, e é sempre aplicado.
+        listarColaboradoresElegiveis(true),
         supabase.from('beneficios').select('*'),
         supabase.from('colaborador_beneficios').select('*'),
         supabase.from('planos_carreira').select('*'),
