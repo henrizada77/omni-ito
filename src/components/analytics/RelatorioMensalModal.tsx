@@ -142,7 +142,7 @@ export default function RelatorioMensalModal({ isOpen, onClose, theme }: Relator
       if (rodada?.id) {
         const { data: votos } = await supabase
           .from('funcionario_mes_votos')
-          .select('votado_id, colaboradores:votado_id(nome, setor)')
+          .select('votante_id, votado_id, colaboradores:votado_id(nome, setor), votante:votante_id(nome, setor)')
           .eq('rodada_id', rodada.id);
 
         if (votos && votos.length > 0) {
@@ -151,8 +151,12 @@ export default function RelatorioMensalModal({ isOpen, onClose, theme }: Relator
             const vid = v.votado_id;
             const cNome = v.colaboradores?.nome || 'Desconhecido';
             const cSetor = v.colaboradores?.setor || '—';
+            const vSetor = (v.votante?.setor || '').toLowerCase().trim();
+            const vNome = (v.votante?.nome || '').toLowerCase().trim();
+            const peso = (vSetor.includes('diretoria') || vNome.includes('thiago omena')) ? 2 : 1;
+
             if (!contagem[vid]) contagem[vid] = { nome: cNome, setor: cSetor, qtd: 0 };
-            contagem[vid].qtd += 1;
+            contagem[vid].qtd += peso;
           });
 
           const ordenados = Object.values(contagem).sort((a, b) => b.qtd - a.qtd);

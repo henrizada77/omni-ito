@@ -190,10 +190,21 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
     await fetchTudo();
   };
 
-  // Apuração: votado_id -> contagem
+  const isVotoPesoDois = (c?: Colab | null) => {
+    if (!c) return false;
+    const setor = (c.setor || '').toLowerCase().trim();
+    const nome = (c.nome || '').toLowerCase().trim();
+    return setor.includes('diretoria') || nome.includes('thiago omena');
+  };
+
+  // Apuração: votado_id -> contagem (voto comum = 1 pt, voto Diretoria/CEO = 2 pts)
   const apuracao = useMemo(() => {
     const cont = new Map<string, number>();
-    for (const v of votos) cont.set(v.votado_id, (cont.get(v.votado_id) || 0) + 1);
+    for (const v of votos) {
+      const votante = colaboradores.find(c => c.id === v.votante_id);
+      const peso = isVotoPesoDois(votante) ? 2 : 1;
+      cont.set(v.votado_id, (cont.get(v.votado_id) || 0) + peso);
+    }
     const nome = (id: string) => colaboradores.find(c => c.id === id);
     return Array.from(cont.entries())
       .map(([id, n]) => ({ colaborador_id: id, nome: nome(id)?.nome || '—', setor: nome(id)?.setor ?? null, votos: n }))
@@ -408,6 +419,11 @@ export default function FuncionarioMesManager({ theme, userId, userEmail }: Func
                       <div className="flex items-center gap-2">
                         <span className="font-semibold">{votante?.nome || 'Votante desconhecido'}</span>
                         {votante?.setor && <span className="text-[10px] opacity-50 font-mono">({votante.setor})</span>}
+                        {isVotoPesoDois(votante) && (
+                          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                            ⚡ Peso 2 (Diretoria/CEO)
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-brand font-medium">
                         <span className="text-[10px] opacity-40 uppercase tracking-widest font-mono">votou em →</span>
